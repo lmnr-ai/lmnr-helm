@@ -1,29 +1,33 @@
-{{- if .Values.appServer.enabled }}
+{{- if .Values.appServerConsumer.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: app-server
+  name: app-server-consumer
   labels:
-    app: app-server
+    app: app-server-consumer
 spec:
-  replicas: {{ .Values.appServer.replicaCount }}
+  replicas: {{ .Values.appServerConsumer.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
-      app: app-server
+      app: app-server-consumer
   template:
     metadata:
       labels:
-        app: app-server
+        app: app-server-consumer
     spec:
       containers:
-        - name: app-server
+        - name: app-server-consumer
           image: {{ .Values.images.repository }}/{{ .Values.images.appServer.name }}:{{ .Values.images.appServer.tag }}
           imagePullPolicy: {{ .Values.images.pullPolicy }}
           ports:
             - containerPort: 8000
-            - containerPort: 8001
           resources:
-            {{- toYaml .Values.appServer.resources | nindent 12 }}
+            {{- toYaml .Values.appServerConsumer.resources | nindent 12 }}
           livenessProbe:
             httpGet:
               path: /health
@@ -40,35 +44,37 @@ spec:
             failureThreshold: 1
           env:
             - name: OPERATION_MODE
-              value: "producer"
+              value: "consumer"
             - name: PORT
-              value: {{ .Values.appServer.env.port | quote }}
-            - name: GRPC_PORT
-              value: {{ .Values.appServer.env.grpcPort | quote }}
-            - name: AGENT_MANAGER_URL
-              value: {{ .Values.appServer.env.agentManagerUrl }}
+              value: {{ .Values.appServerConsumer.env.port | quote }}
+            - name: CONSUMER_PORT
+              value: {{ .Values.appServerConsumer.env.consumerPort | quote }}
             - name: DATABASE_MAX_CONNECTIONS
-              value: {{ .Values.appServer.env.databaseMaxConnections | quote }}
+              value: {{ .Values.appServerConsumer.env.databaseMaxConnections | quote }}
+            - name: NUM_SPANS_WORKERS
+              value: {{ .Values.appServerConsumer.env.numSpansWorkers | quote }}
+            - name: NUM_BROWSER_EVENTS_WORKERS
+              value: {{ .Values.appServerConsumer.env.numBrowserEventsWorkers | quote }}
+            - name: NUM_PAYLOAD_WORKERS
+              value: {{ .Values.appServerConsumer.env.numPayloadWorkers | quote }}
+            - name: NUM_TRACE_SUMMARY_WORKERS
+              value: {{ .Values.appServerConsumer.env.numTraceSummaryWorkers | quote }}
+            - name: NUM_EVALUATORS_WORKERS
+              value: {{ .Values.appServerConsumer.env.numEvaluatorsWorkers | quote }}
+            - name: NUM_NOTIFICATION_WORKERS
+              value: {{ .Values.appServerConsumer.env.numNotificationWorkers | quote }}
+            - name: NUM_CLUSTERING_WORKERS
+              value: {{ .Values.appServerConsumer.env.numClusteringWorkers | quote }}
             - name: RABBITMQ_MAX_CHANNEL_POOL_SIZE
-              value: {{ .Values.appServer.env.rabbitmqMaxChannelPoolSize | quote }}
-            - name: DB_WRITE_SPAN_BATCH_SIZE
-              value: {{ .Values.appServer.env.dbWriteSpanBatchSize | quote }}
-            - name: MAX_DB_SPAN_PAYLOAD_BYTES
-              value: {{ .Values.appServer.env.maxDbSpanPayloadBytes | quote }}
+              value: {{ .Values.appServerConsumer.env.rabbitmqMaxChannelPoolSize | quote }}
             - name: REDIS_URL
-              value: {{ .Values.appServer.env.redisUrl }}
+              value: {{ .Values.appServerConsumer.env.redisUrl }}
             - name: ENVIRONMENT
               value: {{ .Values.global.environment }}
-            - name: HTTP_PAYLOAD_LIMIT
-              value: {{ .Values.appServer.env.httpPayloadLimit | quote }}
-            - name: GRPC_PAYLOAD_LIMIT
-              value: {{ .Values.appServer.env.grpcPayloadLimit | quote }}
             - name: AGGREGATE_TRACES
-              value: {{ .Values.appServer.env.aggregateTraces | quote }}
+              value: {{ .Values.appServerConsumer.env.aggregateTraces | quote }}
             - name: ENABLE_TRACING
-              value: {{ .Values.appServer.env.enableTracing | quote }}
-            - name: QUERY_ENGINE_URL
-              value: {{ .Values.appServer.env.queryEngineUrl }}
+              value: {{ .Values.appServerConsumer.env.enableTracing | quote }}
             - name: RABBITMQ_URL
               valueFrom:
                 secretKeyRef:
@@ -94,11 +100,6 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: CLICKHOUSE_PASSWORD
-            - name: AEAD_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AEAD_SECRET_KEY
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
@@ -109,70 +110,71 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: AWS_SECRET_ACCESS_KEY
-            - name: S3_TRACE_PAYLOADS_BUCKET
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: S3_TRACE_PAYLOADS_BUCKET
             - name: AWS_REGION
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
                   key: AWS_REGION
-            - name: S3_EXPORTS_BUCKET
+            - name: S3_TRACE_PAYLOADS_BUCKET
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
-                  key: S3_EXPORTS_BUCKET
+                  key: S3_TRACE_PAYLOADS_BUCKET
+            - name: SHARED_SECRET_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: SHARED_SECRET_TOKEN
+            - name: AEAD_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: AEAD_SECRET_KEY
+            - name: ONLINE_EVALUATORS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: ONLINE_EVALUATORS_SECRET_KEY
             - name: PYTHON_ONLINE_EVALUATOR_URL
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
                   key: PYTHON_ONLINE_EVALUATOR_URL
-            - name: CLICKHOUSE_RO_USER
+            - name: TRACE_SUMMARIZER_SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
-                  key: CLICKHOUSE_RO_USER
-            - name: CLICKHOUSE_RO_PASSWORD
+                  key: TRACE_SUMMARIZER_SECRET_KEY
+            - name: TRACE_SUMMARIZER_URL
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
-                  key: CLICKHOUSE_RO_PASSWORD
+                  key: TRACE_SUMMARIZER_URL
+            - name: TRACE_EVENT_IDENTIFIER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: TRACE_EVENT_IDENTIFIER_URL
+            - name: SLACK_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: SLACK_ENCRYPTION_KEY
+            - name: CLUSTER_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: CLUSTER_ENDPOINT
+            - name: CLUSTER_ENDPOINT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: CLUSTER_ENDPOINT_KEY
             - name: DATABASE_SSL_ROOT_CERT
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
                   key: DATABASE_SSL_ROOT_CERT
-        - name: nginx
-          image: {{ .Values.images.nginx.repository }}:{{ .Values.images.nginx.tag }}
-          ports:
-            - containerPort: 8080
-          volumeMounts:
-            - name: nginx-config
-              mountPath: /etc/nginx/nginx.conf
-              subPath: nginx.conf
-          resources:
-            {{- toYaml .Values.appServer.nginx.resources | nindent 12 }}
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 8080
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 8080
-            initialDelaySeconds: 5
-            periodSeconds: 5
-      volumes:
-        - name: nginx-config
-          configMap:
-            name: app-server-nginx-config
-            items:
-            - key: nginx.conf
-              path: nginx.conf
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -182,4 +184,4 @@ spec:
                 operator: In
                 values:
                 - {{ .Values.global.nodeGroupName }}
-{{- end }} 
+{{- end }}

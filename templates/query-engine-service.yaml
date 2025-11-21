@@ -1,0 +1,14 @@
+{{- if .Values.queryEngine.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: query-engine-service
+spec:
+  selector:
+    app: query-engine
+  ports:
+    - protocol: TCP
+      port: {{ .Values.queryEngine.service.port }}
+      targetPort: {{ .Values.queryEngine.service.targetPort }}
+  type: {{ .Values.queryEngine.service.type }}
+{{- end }}

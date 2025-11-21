@@ -1,0 +1,35 @@
+{{- if .Values.queryEngine.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: query-engine
+  labels:
+    app: query-engine
+spec:
+  replicas: {{ .Values.queryEngine.replicaCount }}
+  selector:
+    matchLabels:
+      app: query-engine
+  template:
+    metadata:
+      labels:
+        app: query-engine
+    spec:
+      containers:
+        - name: query-engine
+          image: {{ .Values.images.repository }}/{{ .Values.images.queryEngine.name }}:{{ .Values.images.queryEngine.tag }}
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          ports:
+            - containerPort: 8903
+          resources:
+            {{- toYaml .Values.queryEngine.resources | nindent 12 }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: alpha.eksctl.io/nodegroup-name
+                operator: In
+                values:
+                - {{ .Values.global.nodeGroupName }}
+{{- end }}

@@ -26,10 +26,14 @@ spec:
           env:
             - name: BACKEND_URL
               value: {{ .Values.frontend.env.backendUrl }}
+            - name: BACKEND_RT_URL
+              value: {{ .Values.frontend.env.backendRtUrl }}
             - name: NEXTAUTH_URL
               value: {{ .Values.frontend.env.nextauthUrl }}
             - name: ENVIRONMENT
               value: {{ .Values.global.environment }}
+            - name: NEXT_PUBLIC_URL
+              value: {{ .Values.frontend.env.nextPublicUrl }}
             - name: REDIS_URL
               value: {{ .Values.frontend.env.redisUrl }}
             - name: DATABASE_URL
@@ -82,6 +86,166 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: S3_TRACE_PAYLOADS_BUCKET
+            - name: AUTH_GITHUB_ID
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: AUTH_GITHUB_ID
+            - name: AUTH_GITHUB_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: AUTH_GITHUB_SECRET
+            - name: AUTH_GOOGLE_ID
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: AUTH_GOOGLE_ID
+            - name: AUTH_GOOGLE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: AUTH_GOOGLE_SECRET
+            - name: AUTH_AZURE_AD_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: AUTH_AZURE_AD_CLIENT_ID
+            - name: AUTH_AZURE_AD_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: AUTH_AZURE_AD_CLIENT_SECRET
+            - name: AUTH_AZURE_AD_TENANT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: AUTH_AZURE_AD_TENANT_ID
+            - name: STRIPE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: STRIPE_SECRET_KEY
+            - name: STRIPE_WEBHOOK_ENDPOINT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: STRIPE_WEBHOOK_ENDPOINT_SECRET
+            - name: RESEND_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: RESEND_API_KEY
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: GITHUB_TOKEN
+            - name: LAMINAR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: LAMINAR_API_KEY
+            - name: SUPABASE_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: SUPABASE_JWT_SECRET
+            - name: DATASET_EXPORT_WORKER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DATASET_EXPORT_WORKER_URL
+            - name: DATASET_EXPORT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DATASET_EXPORT_SECRET_KEY
+            - name: DATA_EXPORTER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DATA_EXPORTER_URL
+            - name: DATA_EXPORTER_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DATA_EXPORTER_SECRET_KEY
+            - name: SLACK_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: SLACK_CLIENT_ID
+            - name: SLACK_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: SLACK_CLIENT_SECRET
+            - name: SLACK_SIGNING_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: SLACK_SIGNING_SECRET
+            - name: SLACK_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: SLACK_ENCRYPTION_KEY
+            - name: SLACK_REDIRECT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: SLACK_REDIRECT_URL
+            - name: AWS_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: AWS_REGION
+            - name: S3_EXPORTS_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: S3_EXPORTS_BUCKET
+            - name: ONLINE_EVALUATORS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: ONLINE_EVALUATORS_SECRET_KEY
+            - name: PYTHON_ONLINE_EVALUATOR_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: PYTHON_ONLINE_EVALUATOR_URL
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: OPENAI_API_KEY
+            - name: GOOGLE_GENERATIVE_AI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: GOOGLE_GENERATIVE_AI_API_KEY
+            - name: LMNR_PROJECT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: LMNR_PROJECT_API_KEY
+            - name: TRACE_SUMMARIZER_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: TRACE_SUMMARIZER_SECRET_KEY
+            - name: TRACE_SUMMARIZER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: TRACE_SUMMARIZER_URL
+            - name: DATABASE_SSL_ROOT_CERT
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DATABASE_SSL_ROOT_CERT
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -91,4 +255,4 @@ spec:
                 operator: In
                 values:
                 - {{ .Values.global.nodeGroupName }}
-{{- end }} 
+{{- end }}
