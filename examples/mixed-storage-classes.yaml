@@ -1,0 +1,36 @@
+# Mix of storage classes for different services
+# This example shows how to use different storage classes for different workloads
+# to optimize for performance vs cost
+#
+# Storage class comparison:
+#   - io2: High IOPS (50-64K), low latency - best for transactional databases
+#   - gp3: Balanced (3K-16K IOPS), good price/performance - default for most workloads
+#   - S3: Lowest cost, scalable - best for analytical workloads with separation of compute
+
+# PostgreSQL with io2 (high IOPS for transactional workload)
+postgres:
+  persistence:
+    enabled: true
+    storageClass: "io2"
+    size: "100Gi"
+
+# RabbitMQ with gp3 (balanced performance/cost)
+rabbitmq:
+  persistence:
+    enabled: true
+    storageClass: "gp3"
+    size: "10Gi"
+
+# ClickHouse with S3 (lowest cost, separation of storage/compute)
+clickhouse:
+  persistence:
+    enabled: false
+  s3:
+    enabled: true
+    endpoint: "https://my-bucket.s3.us-east-1.amazonaws.com/"
+    region: "us-east-1"
+    useEnvironmentCredentials: true
+    cache:
+      enabled: true
+      maxSize: "50Gi"
+

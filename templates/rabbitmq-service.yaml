@@ -35,4 +35,4 @@ spec:
   type: ClusterIP
   sessionAffinity: None
 {{- end }}
-{{- end }} 
+{{- end }}

@@ -22,4 +22,7 @@ spec:
             - containerPort: {{ .Values.redis.service.port }}
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
-{{- end }} 
+      {{- include "laminar.nodeSelector" (dict "service" .Values.redis "global" .Values.global) | nindent 6 }}
+      {{- include "laminar.affinity" (dict "service" .Values.redis "global" .Values.global) | nindent 6 }}
+      {{- include "laminar.tolerations" (dict "service" .Values.redis "global" .Values.global) | nindent 6 }}
+{{- end }}

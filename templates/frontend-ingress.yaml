@@ -19,4 +19,4 @@ spec:
                 name: frontend-service
                 port:
                   number: {{ .Values.frontend.service.port }}
-{{- end }} 
+{{- end }}

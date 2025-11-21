@@ -39,4 +39,4 @@ spec:
       name: native
   selector:
     app: clickhouse
-{{- end }} 
+{{- end }}

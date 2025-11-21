@@ -21,4 +21,4 @@ data:
     queue_master_locator=min-masters
 
     max_message_size = {{ .Values.rabbitmq.config.maxMessageSize | int }}
-{{- end }} 
+{{- end }}

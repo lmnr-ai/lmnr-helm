@@ -31,4 +31,4 @@ spec:
       name: postgresql
   selector:
     app: postgres
-{{- end }} 
+{{- end }}

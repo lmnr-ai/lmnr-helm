@@ -173,13 +173,7 @@ spec:
             items:
             - key: nginx.conf
               path: nginx.conf
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: alpha.eksctl.io/nodegroup-name
-                operator: In
-                values:
-                - {{ .Values.global.nodeGroupName }}
-{{- end }} 
+      {{- include "laminar.nodeSelector" (dict "service" .Values.appServer "global" .Values.global) | nindent 6 }}
+      {{- include "laminar.affinity" (dict "service" .Values.appServer "global" .Values.global) | nindent 6 }}
+      {{- include "laminar.tolerations" (dict "service" .Values.appServer "global" .Values.global) | nindent 6 }}
+{{- end }}

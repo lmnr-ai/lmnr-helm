@@ -2,6 +2,10 @@
 global:
   environment: "FULL"
   nodeGroupName: "t3a-xlarge"
+  # Default node scheduling configuration (can be overridden per service)
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
 
 # Image configuration
 images:
@@ -106,6 +110,10 @@ frontend:
     limits:
       cpu: "2.0"
       memory: "4Gi"
+  # Node scheduling configuration
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
   service:
     type: ClusterIP
     port: 80
@@ -135,6 +143,10 @@ appServer:
     limits:
       cpu: "2"
       memory: "8Gi"
+  # Node scheduling configuration
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
   service:
     type: ClusterIP
     port: 8000
@@ -180,6 +192,10 @@ appServerConsumer:
     limits:
       cpu: "2"
       memory: "4Gi"
+  # Node scheduling configuration
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
   service:
     type: ClusterIP
     port: 8000
@@ -211,6 +227,10 @@ queryEngine:
     limits:
       cpu: "0.5"
       memory: "256Mi"
+  # Node scheduling configuration
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
   service:
     type: ClusterIP
     port: 8903
@@ -228,8 +248,13 @@ postgres:
     limits:
       cpu: "2"
       memory: "4Gi"
+  # Node scheduling configuration
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
   persistence:
     enabled: true
+    # Storage class name - if empty, uses default storage class
     storageClass: "ebs-sc"
     size: "20Gi"
   service:
@@ -249,10 +274,37 @@ clickhouse:
     limits:
       cpu: "2"
       memory: "4Gi"
+  # Node scheduling configuration
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
   persistence:
     enabled: true
+    # Storage class name - if empty, uses default storage class
     storageClass: "ebs-sc"
     size: "50Gi"
+  # S3 storage configuration for separation of storage and compute
+  # When enabled, ClickHouse will store data in S3 instead of local disks
+  s3:
+    enabled: false
+    # S3 bucket endpoint (e.g., https://my-bucket.s3.us-east-1.amazonaws.com/)
+    endpoint: ""
+    # S3 bucket region
+    region: ""
+    # S3 access credentials - can use secrets instead
+    accessKeyId: ""
+    secretAccessKey: ""
+    # Use environment credentials or EC2 instance profile
+    useEnvironmentCredentials: false
+    # Local cache configuration for S3 data
+    cache:
+      enabled: true
+      # Local disk path for cache
+      path: "/var/lib/clickhouse/disks/s3_cache/"
+      # Maximum cache size (e.g., 10Gi, 50Gi)
+      maxSize: "10Gi"
+    # Metadata path for S3 disk
+    metadataPath: "/var/lib/clickhouse/disks/s3_disk/"
   service:
     type: ClusterIP
     port: 8123
@@ -270,6 +322,10 @@ redis:
     limits:
       cpu: "1"
       memory: "1Gi"
+  # Node scheduling configuration
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
   service:
     type: ClusterIP
     port: 6379
@@ -286,8 +342,13 @@ rabbitmq:
     limits:
       cpu: "4"
       memory: "4Gi"
+  # Node scheduling configuration
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
   persistence:
     enabled: true
+    # Storage class name - if empty, uses default storage class
     storageClass: "ebs-sc"
     size: "5Gi"
   service:

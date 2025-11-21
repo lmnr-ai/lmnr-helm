@@ -36,4 +36,4 @@ spec:
       targetPort: 8001
   type: LoadBalancer
 {{- end }}
-{{- end }} 
+{{- end }}

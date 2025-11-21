@@ -1,0 +1,47 @@
+# Deploy different services to different node groups
+# This example shows how to place compute-intensive and storage-intensive workloads
+# on separate node groups for better resource utilization and cost optimization
+
+# Default node group configuration
+global:
+  environment: "FULL"
+  nodeGroupName: "general-purpose"
+
+# Override for compute-intensive services
+appServer:
+  enabled: true
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: alpha.eksctl.io/nodegroup-name
+            operator: In
+            values:
+            - compute-optimized-nodegroup
+  tolerations:
+    - key: "workload-type"
+      operator: "Equal"
+      value: "compute"
+      effect: "NoSchedule"
+
+# Override for database services (with storage)
+postgres:
+  enabled: true
+  nodeSelector:
+    disktype: ssd
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: alpha.eksctl.io/nodegroup-name
+            operator: In
+            values:
+            - storage-optimized-nodegroup
+  persistence:
+    enabled: true
+    # Use high-performance storage class
+    storageClass: "io2"
+    size: "100Gi"
+

@@ -1,0 +1,65 @@
+# Multi-zone deployment for high availability
+# This example spreads replicas across multiple availability zones
+# to protect against zone failures
+#
+# Benefits:
+#   - Higher availability (survives AZ failures)
+#   - Better fault tolerance
+#   - Reduced blast radius
+#
+# Prerequisites:
+#   - Multiple availability zones configured in your cluster
+#   - Storage classes should use WaitForFirstConsumer binding mode
+
+# Spread PostgreSQL pods across availability zones
+postgres:
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: app
+              operator: In
+              values:
+              - postgres
+          topologyKey: topology.kubernetes.io/zone
+
+# Spread ClickHouse pods across availability zones
+clickhouse:
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: app
+              operator: In
+              values:
+              - clickhouse
+          topologyKey: topology.kubernetes.io/zone
+
+# Spread RabbitMQ pods across availability zones
+rabbitmq:
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: app
+              operator: In
+              values:
+              - rabbitmq
+          topologyKey: topology.kubernetes.io/zone
+
+# Note: For true HA, you should also increase replica counts
+# Example:
+# postgres:
+#   replicaCount: 3
+# clickhouse:
+#   replicaCount: 3
+

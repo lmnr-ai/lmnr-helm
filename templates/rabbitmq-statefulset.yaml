@@ -107,4 +107,7 @@ spec:
             initialDelaySeconds: 20
             periodSeconds: 60
             timeoutSeconds: 10
-{{- end }} 
+      {{- include "laminar.nodeSelector" (dict "service" .Values.rabbitmq "global" .Values.global) | nindent 6 }}
+      {{- include "laminar.affinity" (dict "service" .Values.rabbitmq "global" .Values.global) | nindent 6 }}
+      {{- include "laminar.tolerations" (dict "service" .Values.rabbitmq "global" .Values.global) | nindent 6 }}
+{{- end }}

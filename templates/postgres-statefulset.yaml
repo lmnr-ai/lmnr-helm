@@ -82,4 +82,7 @@ spec:
         - name: postgres-data
           emptyDir: {}
       {{- end }}
-{{- end }} 
+      {{- include "laminar.nodeSelector" (dict "service" .Values.postgres "global" .Values.global) | nindent 6 }}
+      {{- include "laminar.affinity" (dict "service" .Values.postgres "global" .Values.global) | nindent 6 }}
+      {{- include "laminar.tolerations" (dict "service" .Values.postgres "global" .Values.global) | nindent 6 }}
+{{- end }}

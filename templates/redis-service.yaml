@@ -11,4 +11,4 @@ spec:
       port: {{ .Values.redis.service.port }}
       targetPort: {{ .Values.redis.service.targetPort }}
   type: {{ .Values.redis.service.type }}
-{{- end }} 
+{{- end }}

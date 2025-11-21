@@ -11,7 +11,7 @@ spec:
   selector:
     matchLabels:
       app: clickhouse
-  {{- if .Values.clickhouse.persistence.enabled }}
+  {{- if and .Values.clickhouse.persistence.enabled (not .Values.clickhouse.s3.enabled) }}
   volumeClaimTemplates:
     - metadata:
         name: clickhouse-data
@@ -54,9 +54,18 @@ spec:
             - name: CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT
               value: "1"
           volumeMounts:
-            {{- if .Values.clickhouse.persistence.enabled }}
+            {{- if and .Values.clickhouse.persistence.enabled (not .Values.clickhouse.s3.enabled) }}
             - name: clickhouse-data
               mountPath: /var/lib/clickhouse
+            {{- end }}
+            {{- if .Values.clickhouse.s3.enabled }}
+            - name: clickhouse-storage-config
+              mountPath: /etc/clickhouse-server/config.d/storage_config.xml
+              subPath: storage_config.xml
+            {{- if .Values.clickhouse.s3.cache.enabled }}
+            - name: clickhouse-s3-cache
+              mountPath: {{ .Values.clickhouse.s3.cache.path }}
+            {{- end }}
             {{- end }}
           livenessProbe:
             httpGet:
@@ -76,9 +85,25 @@ spec:
             timeoutSeconds: 5
             successThreshold: 1
             failureThreshold: 3
-      {{- if not .Values.clickhouse.persistence.enabled }}
       volumes:
+      {{- if and (not .Values.clickhouse.persistence.enabled) (not .Values.clickhouse.s3.enabled) }}
         - name: clickhouse-data
           emptyDir: {}
       {{- end }}
-{{- end }} 
+      {{- if .Values.clickhouse.s3.enabled }}
+        - name: clickhouse-storage-config
+          configMap:
+            name: clickhouse-storage-config
+            items:
+              - key: storage_config.xml
+                path: storage_config.xml
+        {{- if .Values.clickhouse.s3.cache.enabled }}
+        - name: clickhouse-s3-cache
+          emptyDir:
+            sizeLimit: {{ .Values.clickhouse.s3.cache.maxSize }}
+        {{- end }}
+      {{- end }}
+      {{- include "laminar.nodeSelector" (dict "service" .Values.clickhouse "global" .Values.global) | nindent 6 }}
+      {{- include "laminar.affinity" (dict "service" .Values.clickhouse "global" .Values.global) | nindent 6 }}
+      {{- include "laminar.tolerations" (dict "service" .Values.clickhouse "global" .Values.global) | nindent 6 }}
+{{- end }}

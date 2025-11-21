@@ -13,4 +13,4 @@ allowedTopologies:
         values:
           {{- range .Values.storage.storageClass.zones }}
           - {{ . }}
-          {{- end }} 
+          {{- end }}
