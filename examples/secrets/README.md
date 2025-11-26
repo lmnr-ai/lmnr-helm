@@ -2,6 +2,12 @@
 
 Examples for configuring different secret backends.
 
+## Important: Auto-Generated URLs
+
+When database credentials (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `RABBITMQ_DEFAULT_USER`, `RABBITMQ_DEFAULT_PASS`) are fetched from AWS Secrets Manager or Vault, the template will **NOT** auto-generate connection URLs (`DATABASE_URL`, `RABBITMQ_URL`). 
+
+You **MUST** include these URLs in your external secret store with the correct credentials.
+
 ## Examples
 
 | File | Description |
