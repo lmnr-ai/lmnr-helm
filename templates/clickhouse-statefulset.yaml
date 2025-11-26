@@ -47,7 +47,7 @@ spec:
             - name: CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT
               value: "1"
           volumeMounts:
-            {{- if and .Values.clickhouse.persistence.enabled (not .Values.clickhouse.s3.enabled) }}
+            {{- if not .Values.clickhouse.s3.enabled }}
             - name: clickhouse-data
               mountPath: /var/lib/clickhouse
             {{- end }}
