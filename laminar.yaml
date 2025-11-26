@@ -35,6 +35,11 @@ secrets:
     NEXTAUTH_URL: "https://localhost:3000"
     NEXTAUTH_PUBLIC_URL: "https://localhost:3000"
 
+quickwit:
+  s3:
+    defaultIndexRootUri: "an-existing-bucket-for-quickwit-indexes"
+    region: "us-east-1"
+
 clickhouse:
   s3:
     # S3 bucket endpoint (replace with your bucket)
@@ -57,5 +62,6 @@ clickhouse:
     metadataPath: "/var/lib/clickhouse/disks/s3_disk/"
 
 storage:
-  zones:
-    - "us-east-1b"
+  storageClass:
+    zones:
+      - "us-east-1b"
