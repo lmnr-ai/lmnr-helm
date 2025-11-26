@@ -560,7 +560,7 @@ rabbitmq:
 storage:
   storageClass:
     name: "ebs-sc"
-    provisioner: "kubernetes.io/aws-ebs"
+    provisioner: "ebs.csi.aws.com"
     type: "gp3"  # Options: gp3, gp2, io1, io2, st1, sc1
     reclaimPolicy: "Retain"  # Retain volumes after pod deletion
     volumeBindingMode: "WaitForFirstConsumer"  # Bind volumes when pod is scheduled

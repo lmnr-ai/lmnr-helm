@@ -355,7 +355,7 @@ reclaimPolicy: Retain
 volumeBindingMode: WaitForFirstConsumer
 allowedTopologies:
   - matchLabelExpressions:
-      - key: topology.kubernetes.io/zone
+      - key: topology.ebs.csi.aws.com/zone
         values:
           - us-east-1a
           - us-east-1b

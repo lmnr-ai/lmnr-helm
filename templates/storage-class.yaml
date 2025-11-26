@@ -9,7 +9,7 @@ reclaimPolicy: {{ .Values.storage.storageClass.reclaimPolicy }}
 volumeBindingMode: {{ .Values.storage.storageClass.volumeBindingMode }}
 allowedTopologies:
   - matchLabelExpressions:
-      - key: topology.kubernetes.io/zone
+      - key: topology.ebs.csi.aws.com/zone
         values:
           {{- range .Values.storage.storageClass.zones }}
           - {{ . }}
