@@ -559,8 +559,11 @@ storage:
   storageClass:
     name: "ebs-sc"
     provisioner: "kubernetes.io/aws-ebs"
-    type: "gp3"
-    reclaimPolicy: "Retain"
-    volumeBindingMode: "WaitForFirstConsumer"
+    type: "gp3"  # Options: gp3, gp2, io1, io2, st1, sc1
+    reclaimPolicy: "Retain"  # Retain volumes after pod deletion
+    volumeBindingMode: "WaitForFirstConsumer"  # Bind volumes when pod is scheduled
+    # Availability zones where volumes can be created
+    # This restricts persistent volumes to specific AZs
+    # Important: Ensure your nodes are running in these zones
     zones:
       - "us-east-1b"

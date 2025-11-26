@@ -203,7 +203,39 @@ kubectl get ingress frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].h
 
 ## Storage Configuration
 
+### Default Storage Class
+
+The chart creates a default EBS storage class with configurable availability zones:
+
+```yaml
+storage:
+  storageClass:
+    name: "ebs-sc"
+    type: "gp3"  # EBS volume type
+    reclaimPolicy: "Retain"  # Keep volumes after deletion
+    volumeBindingMode: "WaitForFirstConsumer"
+    zones:
+      - "us-east-1b"  # Single AZ deployment
+```
+
+**Multi-AZ Configuration:**
+
+For high availability across multiple zones:
+
+```yaml
+storage:
+  storageClass:
+    zones:
+      - "us-east-1a"
+      - "us-east-1b"
+      - "us-east-1c"
+```
+
+**Important:** Ensure your Kubernetes nodes are running in the zones you specify. Pods with persistent volumes can only be scheduled on nodes in the same zone as their volume.
+
 ### Per-Service Storage Classes
+
+Each service can use a different storage class:
 
 ```yaml
 postgres:
@@ -225,6 +257,14 @@ rabbitmq:
     size: "10Gi"
 ```
 
+### EBS Volume Types
+
+- **gp3** - General Purpose SSD (recommended, cost-effective)
+- **gp2** - General Purpose SSD (legacy)
+- **io1/io2** - Provisioned IOPS SSD (high performance)
+- **st1** - Throughput Optimized HDD (big data)
+- **sc1** - Cold HDD (infrequent access)
+
 ### Creating Custom Storage Classes
 
 ```yaml
@@ -239,6 +279,12 @@ parameters:
   encrypted: "true"
 reclaimPolicy: Retain
 volumeBindingMode: WaitForFirstConsumer
+allowedTopologies:
+  - matchLabelExpressions:
+      - key: topology.kubernetes.io/zone
+        values:
+          - us-east-1a
+          - us-east-1b
 ```
 
 ## ClickHouse S3 Storage
