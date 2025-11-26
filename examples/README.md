@@ -10,8 +10,10 @@ Store ClickHouse data in S3 instead of local EBS volumes.
 
 **Use case:** Lower storage costs, scale storage independently from compute.
 
+**Note:** The default `laminar.yaml` already includes ClickHouse S3 configuration. Use this example for additional customization.
+
 ```bash
-helm install laminar .. -f ../values.yaml -f clickhouse-s3-storage.yaml
+helm upgrade -i laminar .. -f ../laminar.yaml -f clickhouse-s3-storage.yaml --namespace laminar --create-namespace
 ```
 
 ### Mixed Storage Classes (`mixed-storage-classes.yaml`)
@@ -21,7 +23,7 @@ Use different storage classes for different services based on performance needs.
 **Use case:** High IOPS for PostgreSQL, standard storage for RabbitMQ.
 
 ```bash
-helm install laminar .. -f ../values.yaml -f mixed-storage-classes.yaml
+helm upgrade -i laminar .. -f ../laminar.yaml -f mixed-storage-classes.yaml --namespace laminar --create-namespace
 ```
 
 ### Multiple Node Groups (`multiple-node-groups.yaml`)
@@ -31,7 +33,7 @@ Deploy services to different node groups based on resource requirements.
 **Use case:** Compute-optimized nodes for app servers, storage-optimized for databases.
 
 ```bash
-helm install laminar .. -f ../values.yaml -f multiple-node-groups.yaml
+helm upgrade -i laminar .. -f ../laminar.yaml -f multiple-node-groups.yaml --namespace laminar --create-namespace
 ```
 
 ### Secrets Management (`secrets/`)
@@ -46,12 +48,15 @@ Examples for different secret management backends:
 
 ## Combining Examples
 
-You can combine multiple example files:
+You can combine multiple example files. Files are merged left-to-right, with later files taking precedence:
 
 ```bash
-helm install laminar .. \
-  -f ../values.yaml \
-  -f mixed-storage-classes.yaml
+helm upgrade -i laminar .. \
+  -f ../laminar.yaml \
+  -f mixed-storage-classes.yaml \
+  --namespace laminar \
+  --create-namespace \
+  -f multiple-node-groups.yaml
 ```
 
 ## Customizing
@@ -67,11 +72,11 @@ Before deploying, update placeholder values:
 
 ```bash
 # Check pod placement
-kubectl get pods -o wide
+kubectl get pods -n laminar -o wide
 
 # Check storage
-kubectl get pvc
+kubectl get pvc -n laminar
 
 # Check ClickHouse S3 config
-kubectl exec clickhouse-0 -- clickhouse-client --query "SELECT * FROM system.disks"
+kubectl exec clickhouse-0 -n laminar -- clickhouse-client --query "SELECT * FROM system.disks"
 ```

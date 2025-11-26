@@ -1,6 +1,6 @@
 # Configuration Reference
 
-This guide covers all configuration options for the Laminar Helm chart.
+This guide covers advanced configuration options for the Laminar Helm chart.
 
 ## Table of Contents
 
@@ -21,17 +21,26 @@ The chart supports three secret backends:
 
 ### Kubernetes Secrets (Default)
 
-All secrets are provided in `secrets.data`:
+All secrets are provided in `secrets.data` in your `laminar.yaml` file:
 
 ```yaml
 secrets:
   enabled: true
   data:
     NEXTAUTH_SECRET: "your-secret"
-    POSTGRES_PASSWORD: "secure-password"
-    CLICKHOUSE_PASSWORD: "secure-password"
-    RABBITMQ_DEFAULT_PASS: "secure-password"
+    NEXTAUTH_URL: "https://localhost:3000"
+    NEXTAUTH_PUBLIC_URL: "https://localhost:3000"
+    AWS_ACCESS_KEY_ID: "your-aws-access-key-id"
+    AWS_SECRET_ACCESS_KEY: "your-secret-access-key"
+    AWS_REGION: "us-east-1"
+    S3_TRACE_PAYLOADS_BUCKET: "an-existing-bucket-for-trace-payloads"
     # ... other secrets
+```
+
+Install with:
+
+```bash
+helm upgrade -i laminar . -f laminar.yaml
 ```
 
 ### AWS Secrets Manager
@@ -42,11 +51,27 @@ Fetch secrets from AWS Secrets Manager using the Secrets Store CSI Driver.
 
 1. Install Secrets Store CSI Driver:
    ```bash
-   helm repo add secrets-store-csi-driver https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts
-   helm install csi-secrets-store secrets-store-csi-driver/secrets-store-csi-driver \
-     --namespace kube-system \
-     --set syncSecret.enabled=true
+    helm repo add secrets-store-csi-driver https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts
+    helm upgrade --install -n kube-system --set syncSecret.enabled=true --set enableSecretRotation=true csi-secrets-store secrets-store-csi-driver/secrets-store-csi-driver
+    # it is important to include syncSecret.enabled=true so that csi-secrets-store will be able to get secrets from aws secret manager
+    # enableSecretRotation=true will make sure that new secrets will be pull from AWS secret manager if updated
+    helm repo add aws-secrets-manager https://aws.github.io/secrets-store-csi-driver-provider-aws
+    helm install -n kube-system secrets-provider-aws aws-secrets-manager/secrets-store-csi-driver-provider-aws
    ```
+
+2. Create policy to read secrets. Name it LaminarSecretsPolicy:
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "secretsmanager:GetSecretValue",
+            "Resource": "*" # to read all secrets
+        }
+    ]
+}
+```
 
 2. Install AWS provider:
    ```bash
@@ -71,7 +96,7 @@ Fetch secrets from AWS Secrets Manager using the Secrets Store CSI Driver.
      --region us-east-1
    ```
 
-**Configuration:**
+**Configuration in `laminar.yaml`:**
 
 ```yaml
 secrets:
@@ -98,6 +123,12 @@ secrets:
     AWS_REGION: "us-east-1"
 ```
 
+Install with:
+
+```bash
+helm upgrade -i laminar . -f laminar.yaml
+```
+
 ### HashiCorp Vault
 
 **Prerequisites:**
@@ -113,7 +144,7 @@ secrets:
      ttl=24h
    ```
 
-**Configuration:**
+**Configuration in `laminar.yaml`:**
 
 ```yaml
 secrets:
@@ -132,9 +163,15 @@ secrets:
       - POSTGRES_PASSWORD
 ```
 
+Install with:
+
+```bash
+helm upgrade -i laminar . -f laminar.yaml
+```
+
 ### Mixed Sources
 
-You can use multiple backends:
+You can use multiple backends in your `laminar.yaml`:
 
 ```yaml
 secrets:
@@ -154,9 +191,17 @@ secrets:
     S3_TRACE_PAYLOADS_BUCKET: "my-bucket"
 ```
 
+Install with:
+
+```bash
+helm upgrade -i laminar . -f laminar.yaml
+```
+
 ## Ingress and DNS
 
 ### Custom Domain with External-DNS
+
+Add to your `laminar.yaml`:
 
 ```yaml
 frontend:
@@ -167,9 +212,22 @@ frontend:
   env:
     nextauthUrl: "https://app.yourdomain.com"
     nextPublicUrl: "https://app.yourdomain.com"
+
+secrets:
+  data:
+    NEXTAUTH_URL: "https://app.yourdomain.com"
+    NEXTAUTH_PUBLIC_URL: "https://app.yourdomain.com"
+```
+
+Install with:
+
+```bash
+helm upgrade -i laminar . -f laminar.yaml
 ```
 
 ### HTTPS with ACM Certificate
+
+Add to your `laminar.yaml`:
 
 ```yaml
 frontend:
@@ -182,11 +240,22 @@ frontend:
   env:
     nextauthUrl: "https://app.yourdomain.com"
     nextPublicUrl: "https://app.yourdomain.com"
+
+secrets:
+  data:
+    NEXTAUTH_URL: "https://app.yourdomain.com"
+    NEXTAUTH_PUBLIC_URL: "https://app.yourdomain.com"
+```
+
+Install with:
+
+```bash
+helm upgrade -i laminar . -f laminar.yaml
 ```
 
 ### Manual DNS
 
-Set hostname but manage DNS yourself:
+Set hostname but manage DNS yourself in your `laminar.yaml`:
 
 ```yaml
 frontend:
@@ -197,15 +266,24 @@ frontend:
 ```
 
 After deployment, create a CNAME record pointing to the ALB:
+
 ```bash
-kubectl get ingress frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+kubectl get ingress frontend-alb -n laminar -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 ```
 
 ## Storage Configuration
 
 ### Default Storage Class
 
-The chart creates a default EBS storage class with configurable availability zones:
+The chart creates a default EBS storage class with configurable availability zones. In your `laminar.yaml`:
+
+```yaml
+storage:
+  zones:
+    - "us-east-1b"  # Single AZ deployment
+```
+
+The full storage class configuration is in `values.yaml` and can be overridden:
 
 ```yaml
 storage:
@@ -220,39 +298,35 @@ storage:
 
 **Multi-AZ Configuration:**
 
-For high availability across multiple zones:
+For high availability across multiple zones in your `laminar.yaml`:
 
 ```yaml
 storage:
-  storageClass:
-    zones:
-      - "us-east-1a"
-      - "us-east-1b"
-      - "us-east-1c"
+  zones:
+    - "us-east-1a"
+    - "us-east-1b"
+    - "us-east-1c"
 ```
 
 **Important:** Ensure your Kubernetes nodes are running in the zones you specify. Pods with persistent volumes can only be scheduled on nodes in the same zone as their volume.
 
 ### Per-Service Storage Classes
 
-Each service can use a different storage class:
+Each service can use a different storage class. Add to your `laminar.yaml`:
 
 ```yaml
 postgres:
   persistence:
-    enabled: true
-    storageClass: "gp3"  # Or "io2" for high IOPS
+    storageClass: "io2"  # High IOPS for database
     size: "100Gi"
 
 clickhouse:
   persistence:
-    enabled: true
     storageClass: "gp3"
     size: "50Gi"
 
 rabbitmq:
   persistence:
-    enabled: true
     storageClass: "gp3"
     size: "10Gi"
 ```
@@ -289,12 +363,12 @@ allowedTopologies:
 
 ## ClickHouse S3 Storage
 
-Store ClickHouse data in S3 for cost efficiency and scalability.
+Store ClickHouse data in S3 for cost efficiency and scalability. The `laminar.yaml` template includes this by default:
 
 ```yaml
 clickhouse:
   persistence:
-    enabled: false  # Disable local storage
+    enabled: false  # Disable local storage (optional)
 
   s3:
     enabled: true
@@ -322,13 +396,15 @@ clickhouse:
 **Verify S3 storage:**
 
 ```bash
-kubectl exec clickhouse-0 -- clickhouse-client --query "SELECT * FROM system.disks"
-kubectl exec clickhouse-0 -- clickhouse-client --query "SELECT * FROM system.storage_policies"
+kubectl exec clickhouse-0 -n laminar -- clickhouse-client --query "SELECT * FROM system.disks"
+kubectl exec clickhouse-0 -n laminar -- clickhouse-client --query "SELECT * FROM system.storage_policies"
 ```
 
 ## Node Placement
 
 ### Node Selectors
+
+Add to your `laminar.yaml` to control pod placement:
 
 ```yaml
 postgres:
@@ -338,6 +414,8 @@ postgres:
 ```
 
 ### Node Affinity
+
+Add to your `laminar.yaml`:
 
 ```yaml
 appServer:
@@ -354,7 +432,7 @@ appServer:
 
 ## Resource Limits
 
-Each service can have resource limits configured:
+Each service can have resource limits configured. Add to your `laminar.yaml`:
 
 ```yaml
 appServer:
@@ -378,7 +456,9 @@ postgres:
 
 ## All Configuration Options
 
-For the complete list of configuration options, see the comments in [values.yaml](./values.yaml).
+- **Base defaults:** See [values.yaml](./values.yaml) for all available options
+- **Your overrides:** Edit [laminar.yaml](./laminar.yaml) with your specific settings
+- Helm merges both files, with `laminar.yaml` taking precedence
 
 ## Examples
 
@@ -388,3 +468,9 @@ See the [examples/](./examples/) directory for complete configuration examples:
 - `mixed-storage-classes.yaml` - Different storage classes per service
 - `multiple-node-groups.yaml` - Deploy to different node groups
 - `secrets/` - Secret management examples (AWS, Vault, mixed)
+
+Use examples as additional override files:
+
+```bash
+helm upgrade -i laminar . -f laminar.yaml -f examples/mixed-storage-classes.yaml
+```

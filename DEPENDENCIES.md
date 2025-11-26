@@ -3,6 +3,7 @@
 This document explains how service dependencies are managed in this Helm chart and addresses common questions about Kubernetes vs CloudFormation/GitHub Actions.
 
 ## Table of Contents
+
 - [The Init Container Solution](#the-init-container-solution)
 - [Configuration](#configuration)
 - [Dependency Tree](#dependency-tree)
@@ -52,6 +53,7 @@ initContainers:
 You can enable/disable dependency waiting in `values.yaml`:
 
 ### App Server Example
+
 ```yaml
 appServer:
   waitForDependencies:
@@ -66,6 +68,7 @@ appServer:
 ```
 
 ### Frontend Example (Mixed TCP + HTTP)
+
 ```yaml
 frontend:
   waitForDependencies:
@@ -80,11 +83,19 @@ frontend:
 ```
 
 ### Disabling for Fast Iteration
-During development, you may want to disable waiting:
+
+During development, you may want to disable waiting. Add to your `laminar.yaml`:
+
 ```yaml
 appServer:
   waitForDependencies:
     enabled: false  # Pods start immediately
+```
+
+Or use command line:
+
+```bash
+helm upgrade -i laminar . -f laminar.yaml --set appServer.waitForDependencies.enabled=false
 ```
 
 ## Dependency Tree
@@ -146,6 +157,7 @@ Here's the complete dependency graph for this application:
 ## Best Practices
 
 ### 1. Health Checks vs Port Checks
+
 - Use **TCP port checks** (`nc -z`) for databases and message queues
 - Use **HTTP health checks** (`curl -f`) for applications with health endpoints
 - HTTP checks are more reliable because they verify the service is actually ready
@@ -153,8 +165,8 @@ Here's the complete dependency graph for this application:
 ### 2. Timeouts
 Init containers will retry indefinitely. If a dependency never becomes ready, the pod stays in `Init:0/N` state. You can inspect with:
 ```bash
-kubectl describe pod <pod-name>
-kubectl logs <pod-name> -c wait-for-<service-name>
+kubectl describe pod <pod-name> -n laminar
+kubectl logs <pod-name> -n laminar -c wait-for-<service-name>
 ```
 
 ### 3. Readiness Probes
@@ -179,33 +191,41 @@ Init containers are a safety net, but your application should still:
 ## Troubleshooting
 
 ### Pod Stuck in Init State
+
 ```bash
 # Check which init container is waiting
-kubectl get pods
+kubectl get pods -n laminar
 # NAME            READY   STATUS     RESTARTS   AGE
 # app-server-xxx  0/1     Init:2/4   0          5m
 
 # Check init container logs
-kubectl logs app-server-xxx -c wait-for-postgres
+kubectl logs app-server-xxx -n laminar -c wait-for-postgres
 # waiting for postgres...
 # waiting for postgres...
 ```
 
 **Solution:** Check if the dependency service is running:
 ```bash
-kubectl get pods -l app=postgres
-kubectl describe svc postgres-service
+kubectl get pods -l app=postgres -n laminar
+kubectl describe svc postgres-service -n laminar
+```
+
+If it is running, just restart the deployment that creates the problematic pod:
+```bash
+kubectl -n laminar rollout restart deployment app-server
 ```
 
 ### Disable Init Containers Temporarily
+
 ```bash
-helm upgrade lmnr . --set appServer.waitForDependencies.enabled=false
+helm upgrade -i laminar . -f laminar.yaml --set appServer.waitForDependencies.enabled=false
 ```
 
 ### Check Service Connectivity
+
 From within a pod:
 ```bash
-kubectl run -it --rm debug --image=busybox --restart=Never -- sh
+kubectl run -it --rm debug -n laminar --image=busybox --restart=Never -- sh
 nc -zv postgres-service 5432
 ```
 

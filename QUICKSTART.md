@@ -11,43 +11,57 @@ Get Laminar running on your Kubernetes cluster in minutes.
 
 ## Installation
 
-### Step 1: Install with Default Settings
+### Step 1: Customize Configuration
+
+Copy and edit `laminar.yaml` with your settings:
+
+- Set AWS credentials and S3 bucket names
+- Set ClickHouse S3 bucket endpoint and region
+- Set your availability zone(s)
+
+### Step 2: Install with Customized Settings
+
+The `--create-namespace` flag will automatically create the `laminar` namespace if it doesn't exist:
 
 ```bash
-helm install laminar . -f values.yaml
+helm upgrade -i laminar . -f laminar.yaml --namespace laminar --create-namespace
 ```
 
-### Step 2: Get the Load Balancer URL
+### Step 3: Get the Load Balancer URL
 
 Wait for the ALB to be provisioned (1-2 minutes), then get the URL:
 
 ```bash
-kubectl get ingress frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+kubectl get ingress frontend-alb -n laminar -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 ```
 
-### Step 3: Configure Frontend URLs
+### Step 4: Configure Frontend URLs
 
-Upgrade with the actual ALB URL:
+Update `laminar.yaml` with the ALB URL or upgrade directly:
 
 ```bash
-ALB_URL=$(kubectl get ingress frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+ALB_URL=$(kubectl get ingress frontend-alb -n laminar -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
-helm upgrade laminar . -f values.yaml \
+helm upgrade -i laminar . -f laminar.yaml --namespace laminar \
+  --set secrets.data.NEXTAUTH_URL="http://$ALB_URL" \
+  --set secrets.data.NEXTAUTH_PUBLIC_URL="http://$ALB_URL" \
   --set frontend.env.nextauthUrl="http://$ALB_URL" \
   --set frontend.env.nextPublicUrl="http://$ALB_URL"
 ```
 
-### Step 4: Access the Application
+### Step 5: Access the Application
 
 Open your browser and navigate to the ALB URL.
 
 ## Using a Custom Domain (Optional)
 
-If you have a custom domain, skip Step 2-3 and install directly:
+If you have a custom domain, skip Step 3-4 and install directly:
 
 ```bash
-helm install laminar . -f values.yaml \
+helm upgrade -i laminar . -f laminar.yaml --namespace laminar --create-namespace \
   --set frontend.ingress.hostname="app.yourdomain.com" \
+  --set secrets.data.NEXTAUTH_URL="https://app.yourdomain.com" \
+  --set secrets.data.NEXTAUTH_PUBLIC_URL="https://app.yourdomain.com" \
   --set frontend.env.nextauthUrl="https://app.yourdomain.com" \
   --set frontend.env.nextPublicUrl="https://app.yourdomain.com"
 ```
@@ -59,7 +73,7 @@ Then create a CNAME record pointing your domain to the ALB hostname.
 Check that all pods are running:
 
 ```bash
-kubectl get pods
+kubectl get pods -n laminar
 ```
 
 Expected output (all pods should be `Running` or `1/1`):
@@ -89,7 +103,7 @@ Check if EBS CSI driver is installed and storage class exists:
 
 ```bash
 kubectl get storageclass
-kubectl describe pod <pod-name>
+kubectl describe pod <pod-name> -n laminar
 ```
 
 ### Pods stuck in Init state
@@ -97,8 +111,8 @@ kubectl describe pod <pod-name>
 Services are waiting for dependencies. Check which service is not ready:
 
 ```bash
-kubectl logs <pod-name> -c wait-for-postgres
-kubectl logs <pod-name> -c wait-for-redis
+kubectl logs <pod-name> -n laminar -c wait-for-postgres
+kubectl logs <pod-name> -n laminar -c wait-for-redis
 ```
 
 ### Load Balancer not created

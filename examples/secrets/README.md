@@ -20,8 +20,14 @@ You **MUST** include these URLs in your external secret store with the correct c
 
 ## Usage
 
+Replace or supplement your `laminar.yaml` configuration:
+
 ```bash
-helm install laminar ../.. -f aws-all-secrets.yaml
+# Use example as-is (customize the example file first)
+helm upgrade -i laminar ../.. -f aws-all-secrets.yaml --namespace laminar --create-namespace
+
+# Or combine with your laminar.yaml
+helm upgrade -i laminar ../.. -f ../../laminar.yaml -f aws-partial-secrets.yaml --namespace laminar --create-namespace
 ```
 
 ## Prerequisites

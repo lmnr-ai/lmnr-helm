@@ -59,6 +59,13 @@ meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 {{- end }}
 
 {{/*
+Namespace - returns the namespace to use for resources
+*/}}
+{{- define "laminar.namespace" -}}
+{{- .Release.Namespace | default .Values.global.namespace | default "default" }}
+{{- end }}
+
+{{/*
 Node selector - merges service-specific with global defaults
 Usage: {{ include "laminar.nodeSelector" (dict "service" .Values.frontend "global" .Values.global) }}
 */}}

@@ -15,14 +15,18 @@ Deploy Laminar on Kubernetes with a single command.
 ## Quick Start
 
 ```bash
-# Install
-helm install laminar . -f values.yaml
+# 1. Customize laminar.yaml with your AWS credentials and S3 buckets
 
-# Get ALB URL (wait 1-2 minutes for provisioning)
-ALB_URL=$(kubectl get ingress frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+# 2. Install (namespace will be created automatically)
+helm upgrade -i laminar . -f laminar.yaml --namespace laminar --create-namespace
 
-# Configure frontend URLs
-helm upgrade laminar . -f values.yaml \
+# 3. Get ALB URL (wait 1-2 minutes for provisioning)
+ALB_URL=$(kubectl get ingress frontend-alb -n laminar -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+
+# 4. Configure frontend URLs
+helm upgrade -i laminar . -f laminar.yaml --namespace laminar \
+  --set secrets.data.NEXTAUTH_URL="http://$ALB_URL" \
+  --set secrets.data.NEXTAUTH_PUBLIC_URL="http://$ALB_URL" \
   --set frontend.env.nextauthUrl="http://$ALB_URL" \
   --set frontend.env.nextPublicUrl="http://$ALB_URL"
 ```
@@ -72,25 +76,48 @@ See [QUICKSTART.md](./QUICKSTART.md) for detailed installation steps.
 
 ## Configuration
 
+### Configuration Files
+
+- **`laminar.yaml`** - Your custom configuration (edit this)
+- **`values.yaml`** - Base defaults (don't edit, use for reference)
+
+Helm merges both files, with `laminar.yaml` taking precedence.
+
 ### Minimal Configuration
 
-The only required configuration is the frontend URL:
+Edit `laminar.yaml` and set:
+
+1. **AWS credentials and S3 buckets** for trace storage
+2. **ClickHouse S3 bucket** endpoint and region
+3. **Availability zones** for EBS volumes
+4. **Frontend URLs** (can be set after initial deployment)
 
 ```yaml
-frontend:
-  env:
-    nextauthUrl: "https://app.yourdomain.com"
-    nextPublicUrl: "https://app.yourdomain.com"
+secrets:
+  data:
+    AWS_ACCESS_KEY_ID: "your-key"
+    AWS_SECRET_ACCESS_KEY: "your-secret"
+    S3_TRACE_PAYLOADS_BUCKET: "your-bucket"
+    NEXTAUTH_SECRET: "random-secret-string"
+
+clickhouse:
+  s3:
+    endpoint: "https://your-bucket.s3.us-east-1.amazonaws.com/"
+    region: "us-east-1"
+
+storage:
+  zones:
+    - "us-east-1b"
 ```
 
 ### Production Configuration
 
-For production deployments, you should:
+For production deployments, additionally configure:
 
-1. **Set secure passwords** for PostgreSQL, ClickHouse, and RabbitMQ
-2. **Configure secrets** using AWS Secrets Manager or HashiCorp Vault
-3. **Enable HTTPS** with an ACM certificate
-4. **Configure S3** for ClickHouse and trace storage
+1. **Secure passwords** for PostgreSQL, ClickHouse, and RabbitMQ (in secrets.data)
+2. **External secret management** (AWS Secrets Manager or HashiCorp Vault)
+3. **HTTPS** with an ACM certificate
+4. **Custom domain** with external-dns
 
 See [CONFIGURATION.md](./CONFIGURATION.md) for complete configuration reference.
 
@@ -99,43 +126,46 @@ See [CONFIGURATION.md](./CONFIGURATION.md) for complete configuration reference.
 ### Check Status
 
 ```bash
-kubectl get pods
-kubectl get svc
-kubectl get ingress
+kubectl get pods -n laminar
+kubectl get svc -n laminar
+kubectl get ingress -n laminar
 ```
 
 ### View Logs
 
 ```bash
-kubectl logs -l app=frontend -f
-kubectl logs -l app=app-server -f
+kubectl logs -l app=frontend -n laminar -f
+kubectl logs -l app=app-server -n laminar -f
 ```
 
 ### Access Databases
 
 ```bash
 # PostgreSQL
-kubectl exec -it postgres-0 -- psql -U lmnr -d lmnr
+kubectl exec -it postgres-0 -n laminar -- psql -U lmnr -d lmnr
 
 # ClickHouse
-kubectl exec -it clickhouse-0 -- clickhouse-client
+kubectl exec -it clickhouse-0 -n laminar -- clickhouse-client
 ```
 
 ### Upgrade
 
 ```bash
-helm upgrade laminar . -f values.yaml
+helm upgrade -i laminar . -f laminar.yaml --namespace laminar
 ```
 
 ### Uninstall
 
 ```bash
-helm uninstall laminar
+helm uninstall laminar --namespace laminar
 
 # To also delete persistent data:
-kubectl delete pvc -l app=postgres
-kubectl delete pvc -l app=clickhouse
-kubectl delete pvc -l app=rabbitmq
+kubectl delete pvc -l app=postgres -n laminar
+kubectl delete pvc -l app=clickhouse -n laminar
+kubectl delete pvc -l app=rabbitmq -n laminar
+
+# To delete the namespace:
+kubectl delete namespace laminar
 ```
 
 ## Documentation

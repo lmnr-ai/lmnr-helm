@@ -1,6 +1,9 @@
 # Global configuration
 global:
   environment: "FULL"
+  # Namespace for all resources (default: default)
+  # When installing the chart, use: helm install laminar . --namespace laminar --create-namespace
+  namespace: "laminar"
   # Your node group name. Example: managed-ng-m6a-xlarge-1-80-gb-01
   nodeGroupName: ""
   # Default node scheduling configuration (can be overridden per service)
@@ -220,8 +223,8 @@ frontend:
     # Set these to your actual frontend URL
     # If ingress.hostname is set, you can use "http://<hostname>" or "https://<hostname>"
     # Otherwise, set the ALB DNS name after initial deployment (see QUICKSTART.md)
-    nextauthUrl: ""
-    nextPublicUrl: ""
+    nextauthUrl: "https://localhost:3000"
+    nextPublicUrl: "https://localhost:3000"
     redisUrl: "redis://redis-service:6379"
 
 # App Server configuration
@@ -349,7 +352,6 @@ quickwit:
   enabled: true
   version: "v0.8.2"
   clusterId: "default-quickwit"
-  namespace: "default"
   # Node scheduling configuration
   nodeSelector: {}
   affinity: {}
@@ -481,7 +483,7 @@ clickhouse:
   # S3 storage configuration for separation of storage and compute
   # When enabled, ClickHouse will store data in S3 instead of local disks
   s3:
-    enabled: false
+    enabled: true
     # S3 bucket endpoint (e.g., https://my-bucket.s3.us-east-1.amazonaws.com/)
     endpoint: ""
     # S3 bucket region
@@ -545,7 +547,7 @@ rabbitmq:
     enabled: true
     # Storage class name - if empty, uses default storage class
     storageClass: "ebs-sc"
-    size: "5Gi"
+    size: "50Gi"
   service:
     type: ClusterIP
     amqpPort: 5672
