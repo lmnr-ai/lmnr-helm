@@ -24,7 +24,7 @@ spec:
           command: ['sh', '-c', 'until nc -z {{ .host }} {{ .port }}; do echo "waiting for {{ .name }}..."; sleep 2; done; echo "{{ .name }} is ready"']
         {{- end }}
         {{- range .Values.frontend.waitForDependencies.httpChecks }}
-        - name: wait-for-{{ .name }}
+        - name: http-wait-for-{{ .name }}
           image: curlimages/curl:8.5.0
           command: ['sh', '-c', 'until curl -f {{ .url }}; do echo "waiting for {{ .name }}..."; sleep 2; done; echo "{{ .name }} is ready"']
         {{- end }}
