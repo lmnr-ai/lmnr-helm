@@ -7,10 +7,18 @@ metadata:
     {{- range $key, $value := .Values.frontend.ingress.annotations }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
+    {{- if and .Values.frontend.ingress.externalDns.enabled .Values.frontend.ingress.hostname }}
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.frontend.ingress.hostname }}
+    {{- end }}
 spec:
   ingressClassName: {{ .Values.frontend.ingress.className }}
   rules:
+    {{- if .Values.frontend.ingress.hostname }}
+    - host: {{ .Values.frontend.ingress.hostname }}
+      http:
+    {{- else }}
     - http:
+    {{- end }}
         paths:
           - path: /
             pathType: Prefix

@@ -28,4 +28,4 @@ Thumbs.db
 .helmignore
 # Additional files that shouldn't be packaged
 README.md
-cluster-config.yaml 
+cluster-config.yaml

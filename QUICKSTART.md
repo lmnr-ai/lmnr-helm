@@ -1,393 +1,115 @@
 # Quick Start Guide
 
-This guide provides quick examples for common configuration scenarios.
+Get Laminar running on your Kubernetes cluster in minutes.
 
-## Basic Deployment
+## Prerequisites
 
-Deploy with default settings (all services on the same node group):
+- Kubernetes cluster (EKS recommended)
+- Helm 3.x
+- [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html) installed
+- [EBS CSI Driver](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html) installed
+
+## Installation
+
+### Step 1: Install with Default Settings
 
 ```bash
 helm install laminar . -f values.yaml
 ```
 
-## Scenario 1: Deploy to Multiple Node Groups
+### Step 2: Get the Load Balancer URL
 
-Create a `values-custom.yaml` file:
-
-```yaml
-# values-custom.yaml
-global:
-  nodeGroupName: "general"  # Default for all services
-
-# Override for databases - use storage-optimized nodes
-postgres:
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: alpha.eksctl.io/nodegroup-name
-            operator: In
-            values:
-            - storage-optimized
-
-clickhouse:
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: alpha.eksctl.io/nodegroup-name
-            operator: In
-            values:
-            - storage-optimized
-
-# Override for compute-intensive services
-appServer:
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: alpha.eksctl.io/nodegroup-name
-            operator: In
-            values:
-            - compute-optimized
-```
-
-Deploy:
+Wait for the ALB to be provisioned (1-2 minutes), then get the URL:
 
 ```bash
-helm install laminar . -f values.yaml -f values-custom.yaml
+kubectl get ingress frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 ```
 
-## Scenario 2: ClickHouse with S3 Storage
+### Step 3: Configure Frontend URLs
 
-Create a `values-s3.yaml` file:
-
-```yaml
-# values-s3.yaml
-clickhouse:
-  # Disable local persistence
-  persistence:
-    enabled: false
-  
-  # Enable S3-backed storage
-  s3:
-    enabled: true
-    endpoint: "https://my-clickhouse-data.s3.us-east-1.amazonaws.com/"
-    region: "us-east-1"
-    # Use IAM role for credentials (recommended)
-    useEnvironmentCredentials: true
-    # Local cache for hot data
-    cache:
-      enabled: true
-      maxSize: "50Gi"
-```
-
-Deploy:
+Upgrade with the actual ALB URL:
 
 ```bash
-helm install laminar . -f values.yaml -f values-s3.yaml
+ALB_URL=$(kubectl get ingress frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+
+helm upgrade laminar . -f values.yaml \
+  --set frontend.env.nextauthUrl="http://$ALB_URL" \
+  --set frontend.env.nextPublicUrl="http://$ALB_URL"
 ```
 
-### Prerequisites for S3 Storage:
+### Step 4: Access the Application
 
-1. **Create S3 bucket**:
-   ```bash
-   aws s3 mb s3://my-clickhouse-data --region us-east-1
-   ```
+Open your browser and navigate to the ALB URL.
 
-2. **Create IAM policy** (`clickhouse-s3-policy.json`):
-   ```json
-   {
-     "Version": "2012-10-17",
-     "Statement": [
-       {
-         "Effect": "Allow",
-         "Action": [
-           "s3:GetObject",
-           "s3:PutObject",
-           "s3:DeleteObject",
-           "s3:ListBucket",
-           "s3:GetBucketLocation"
-         ],
-         "Resource": [
-           "arn:aws:s3:::my-clickhouse-data",
-           "arn:aws:s3:::my-clickhouse-data/*"
-         ]
-       }
-     ]
-   }
-   ```
+## Using a Custom Domain (Optional)
 
-3. **Attach policy to node IAM role** (for EC2 instances) or **create IRSA** (for EKS with pod-level IAM):
-   ```bash
-   # For EC2 node IAM role
-   aws iam put-role-policy \
-     --role-name <your-node-role> \
-     --policy-name ClickHouseS3Access \
-     --policy-document file://clickhouse-s3-policy.json
-   ```
-
-## Scenario 3: Different Storage Classes
-
-Create a `values-storage.yaml` file:
-
-```yaml
-# values-storage.yaml
-
-# PostgreSQL with io2 (high IOPS for transactional workload)
-postgres:
-  persistence:
-    enabled: true
-    storageClass: "io2-sc"
-    size: "100Gi"
-
-# RabbitMQ with gp3 (balanced)
-rabbitmq:
-  persistence:
-    enabled: true
-    storageClass: "gp3-sc"
-    size: "10Gi"
-
-# ClickHouse with S3 (cost-effective, scalable)
-clickhouse:
-  persistence:
-    enabled: false
-  s3:
-    enabled: true
-    endpoint: "https://my-clickhouse-data.s3.us-east-1.amazonaws.com/"
-    region: "us-east-1"
-    useEnvironmentCredentials: true
-```
-
-First, create the storage classes if needed:
-
-```yaml
-# storage-classes.yaml
----
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: io2-sc
-provisioner: ebs.csi.aws.com
-parameters:
-  type: io2
-  iopsPerGB: "50"
-  encrypted: "true"
-reclaimPolicy: Retain
-volumeBindingMode: WaitForFirstConsumer
-allowedTopologies:
-- matchLabelExpressions:
-  - key: topology.kubernetes.io/zone
-    values:
-    - us-east-1a
-    - us-east-1b
----
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: gp3-sc
-provisioner: ebs.csi.aws.com
-parameters:
-  type: gp3
-  encrypted: "true"
-reclaimPolicy: Retain
-volumeBindingMode: WaitForFirstConsumer
-```
-
-Deploy:
+If you have a custom domain, skip Step 2-3 and install directly:
 
 ```bash
-kubectl apply -f storage-classes.yaml
-helm install laminar . -f values.yaml -f values-storage.yaml
+helm install laminar . -f values.yaml \
+  --set frontend.ingress.hostname="app.yourdomain.com" \
+  --set frontend.env.nextauthUrl="https://app.yourdomain.com" \
+  --set frontend.env.nextPublicUrl="https://app.yourdomain.com"
 ```
 
-## Scenario 4: Spot Instances for Stateless Services
+Then create a CNAME record pointing your domain to the ALB hostname.
 
-Create a `values-spot.yaml` file:
+## Verify Installation
 
-```yaml
-# values-spot.yaml
-
-# Frontend can use spot instances
-frontend:
-  tolerations:
-    - key: "node.kubernetes.io/instance-type"
-      operator: "Equal"
-      value: "spot"
-      effect: "NoSchedule"
-  affinity:
-    nodeAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 100
-        preference:
-          matchExpressions:
-          - key: "node.kubernetes.io/instance-type"
-            operator: In
-            values:
-            - spot
-
-# App servers can use spot instances
-appServer:
-  tolerations:
-    - key: "node.kubernetes.io/instance-type"
-      operator: "Equal"
-      value: "spot"
-      effect: "NoSchedule"
-  affinity:
-    nodeAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 100
-        preference:
-          matchExpressions:
-          - key: "node.kubernetes.io/instance-type"
-            operator: In
-            values:
-            - spot
-
-# Databases MUST use on-demand instances
-postgres:
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: "node.kubernetes.io/instance-type"
-            operator: NotIn
-            values:
-            - spot
-
-clickhouse:
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: "node.kubernetes.io/instance-type"
-            operator: NotIn
-            values:
-            - spot
-```
-
-## Verification
-
-Check pod placement:
+Check that all pods are running:
 
 ```bash
-# See which nodes pods are running on
-kubectl get pods -o wide
-
-# Check pod affinity/tolerations
-kubectl describe pod <pod-name>
-
-# For ClickHouse with S3, verify the configuration
-kubectl exec -it clickhouse-0 -- cat /etc/clickhouse-server/config.d/storage_config.xml
-
-# Check ClickHouse storage policy
-kubectl exec -it clickhouse-0 -- clickhouse-client --query "SELECT * FROM system.disks"
-kubectl exec -it clickhouse-0 -- clickhouse-client --query "SELECT * FROM system.storage_policies"
+kubectl get pods
 ```
 
-## Testing ClickHouse S3 Storage
+Expected output (all pods should be `Running` or `1/1`):
 
-Create a test table using the S3 storage policy:
-
-```bash
-# Connect to ClickHouse
-kubectl exec -it clickhouse-0 -- clickhouse-client
-
-# Create a test table with S3 storage
-CREATE TABLE test_s3 (
-    id UInt64,
-    name String,
-    created DateTime
-) ENGINE = MergeTree()
-ORDER BY id
-SETTINGS storage_policy = 's3_main';
-
-# Insert test data
-INSERT INTO test_s3 VALUES (1, 'test', now());
-
-# Verify data is stored
-SELECT * FROM test_s3;
-
-# Check which disk is being used
-SELECT 
-    table,
-    disk_name,
-    path 
-FROM system.parts 
-WHERE table = 'test_s3';
 ```
-
-## Upgrading Existing Deployments
-
-To upgrade an existing deployment with new configuration:
-
-```bash
-# Check what will change
-helm diff upgrade laminar . -f values.yaml -f values-custom.yaml
-
-# Apply the upgrade
-helm upgrade laminar . -f values.yaml -f values-custom.yaml
-
-# Watch the rollout
-kubectl rollout status statefulset/clickhouse
-kubectl rollout status deployment/frontend
+NAME                                      READY   STATUS    AGE
+app-server-xxx                            2/2     Running   5m
+app-server-consumer-xxx                   1/1     Running   5m
+clickhouse-0                              1/1     Running   5m
+frontend-xxx                              1/1     Running   5m
+postgres-0                                1/1     Running   5m
+query-engine-xxx                          1/1     Running   5m
+quickwit-control-plane-xxx                1/1     Running   5m
+quickwit-indexer-0                        1/1     Running   5m
+quickwit-janitor-xxx                      1/1     Running   5m
+quickwit-metastore-xxx                    1/1     Running   5m
+quickwit-searcher-0                       1/1     Running   5m
+rabbitmq-0                                1/1     Running   5m
+redis-xxx                                 1/1     Running   5m
 ```
 
 ## Troubleshooting
 
 ### Pods stuck in Pending
 
-```bash
-# Check events
-kubectl describe pod <pod-name>
-
-# Common issues:
-# - Node selector doesn't match any nodes
-# - Tolerations don't match node taints
-# - Insufficient resources on matching nodes
-```
-
-### ClickHouse S3 connection issues
+Check if EBS CSI driver is installed and storage class exists:
 
 ```bash
-# Check ClickHouse logs
-kubectl logs clickhouse-0
-
-# Verify S3 config is mounted
-kubectl exec clickhouse-0 -- cat /etc/clickhouse-server/config.d/storage_config.xml
-
-# Test S3 access from pod
-kubectl exec -it clickhouse-0 -- sh
-# Inside the pod:
-apk add aws-cli
-aws s3 ls s3://my-clickhouse-data/
-```
-
-### Storage class not found
-
-```bash
-# List available storage classes
 kubectl get storageclass
+kubectl describe pod <pod-name>
+```
 
-# If missing, create them
-kubectl apply -f storage-classes.yaml
+### Pods stuck in Init state
+
+Services are waiting for dependencies. Check which service is not ready:
+
+```bash
+kubectl logs <pod-name> -c wait-for-postgres
+kubectl logs <pod-name> -c wait-for-redis
+```
+
+### Load Balancer not created
+
+Verify AWS Load Balancer Controller is installed:
+
+```bash
+kubectl get deployment -n kube-system aws-load-balancer-controller
 ```
 
 ## Next Steps
 
-- See [CONFIGURATION.md](./CONFIGURATION.md) for detailed documentation
-- See [examples/](./examples/) directory for more configuration examples
-- Refer to [ClickHouse S3 Storage Guide](https://clickhouse.com/docs/guides/separation-storage-compute) for advanced S3 configuration
-
-## Support
-
-For issues or questions:
-- Check pod events: `kubectl describe pod <pod-name>`
-- Check logs: `kubectl logs <pod-name>`
-- Review Helm values: `helm get values laminar`
-
+- See [CONFIGURATION.md](./CONFIGURATION.md) for production settings, secrets management, and S3 storage
+- See [DEPENDENCIES.md](./DEPENDENCIES.md) for understanding service startup order

@@ -15,6 +15,15 @@ spec:
       labels:
         app: app-server
     spec:
+      serviceAccountName: {{ include "lmnr.secrets.serviceAccountName" . }}
+      {{- if .Values.appServer.waitForDependencies.enabled }}
+      initContainers:
+        {{- range .Values.appServer.waitForDependencies.services }}
+        - name: wait-for-{{ .name }}
+          image: busybox:latest
+          command: ['sh', '-c', 'until nc -z {{ .host }} {{ .port }}; do echo "waiting for {{ .name }}..."; sleep 2; done; echo "{{ .name }} is ready"']
+        {{- end }}
+      {{- end }}
       containers:
         - name: app-server
           image: {{ .Values.images.repository }}/{{ .Values.images.appServer.name }}:{{ .Values.images.appServer.tag }}
@@ -24,6 +33,8 @@ spec:
             - containerPort: 8001
           resources:
             {{- toYaml .Values.appServer.resources | nindent 12 }}
+          envFrom:
+            {{- include "lmnr.secrets.envFrom" . | nindent 12 }}
           livenessProbe:
             httpGet:
               path: /health
@@ -69,81 +80,11 @@ spec:
               value: {{ .Values.appServer.env.enableTracing | quote }}
             - name: QUERY_ENGINE_URL
               value: {{ .Values.appServer.env.queryEngineUrl }}
-            - name: RABBITMQ_URL
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: RABBITMQ_URL
-            - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: DATABASE_URL
-            - name: CLICKHOUSE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: CLICKHOUSE_URL
-            - name: CLICKHOUSE_USER
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: CLICKHOUSE_USER
-            - name: CLICKHOUSE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: CLICKHOUSE_PASSWORD
-            - name: AEAD_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AEAD_SECRET_KEY
-            - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AWS_ACCESS_KEY_ID
-            - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AWS_SECRET_ACCESS_KEY
-            - name: S3_TRACE_PAYLOADS_BUCKET
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: S3_TRACE_PAYLOADS_BUCKET
-            - name: AWS_REGION
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AWS_REGION
-            - name: S3_EXPORTS_BUCKET
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: S3_EXPORTS_BUCKET
-            - name: PYTHON_ONLINE_EVALUATOR_URL
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: PYTHON_ONLINE_EVALUATOR_URL
-            - name: CLICKHOUSE_RO_USER
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: CLICKHOUSE_RO_USER
-            - name: CLICKHOUSE_RO_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: CLICKHOUSE_RO_PASSWORD
-            - name: DATABASE_SSL_ROOT_CERT
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: DATABASE_SSL_ROOT_CERT
+            - name: QUICKWIT_SEARCH_URL
+              value: {{ .Values.appServer.env.quickwitSearchUrl }}
+            - name: QUICKWIT_INGEST_URL
+              value: {{ .Values.appServer.env.quickwitIngestUrl }}
+            # All secrets loaded via envFrom from app-secrets, app-secrets-aws, app-secrets-vault
         - name: nginx
           image: {{ .Values.images.nginx.repository }}:{{ .Values.images.nginx.tag }}
           ports:

@@ -51,5 +51,8 @@ data:
           </s3_main>
         </policies>
       </storage_configuration>
+      <merge_tree>
+        <storage_policy>s3_main</storage_policy>
+      </merge_tree>
     </clickhouse>
 {{- end }}

@@ -20,6 +20,15 @@ spec:
       labels:
         app: app-server-consumer
     spec:
+      serviceAccountName: {{ include "lmnr.secrets.serviceAccountName" . }}
+      {{- if .Values.appServerConsumer.waitForDependencies.enabled }}
+      initContainers:
+        {{- range .Values.appServerConsumer.waitForDependencies.services }}
+        - name: wait-for-{{ .name }}
+          image: busybox:latest
+          command: ['sh', '-c', 'until nc -z {{ .host }} {{ .port }}; do echo "waiting for {{ .name }}..."; sleep 2; done; echo "{{ .name }} is ready"']
+        {{- end }}
+      {{- end }}
       containers:
         - name: app-server-consumer
           image: {{ .Values.images.repository }}/{{ .Values.images.appServer.name }}:{{ .Values.images.appServer.tag }}
@@ -28,6 +37,8 @@ spec:
             - containerPort: 8000
           resources:
             {{- toYaml .Values.appServerConsumer.resources | nindent 12 }}
+          envFrom:
+            {{- include "lmnr.secrets.envFrom" . | nindent 12 }}
           livenessProbe:
             httpGet:
               path: /health
@@ -75,106 +86,11 @@ spec:
               value: {{ .Values.appServerConsumer.env.aggregateTraces | quote }}
             - name: ENABLE_TRACING
               value: {{ .Values.appServerConsumer.env.enableTracing | quote }}
-            - name: RABBITMQ_URL
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: RABBITMQ_URL
-            - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: DATABASE_URL
-            - name: CLICKHOUSE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: CLICKHOUSE_URL
-            - name: CLICKHOUSE_USER
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: CLICKHOUSE_USER
-            - name: CLICKHOUSE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: CLICKHOUSE_PASSWORD
-            - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AWS_ACCESS_KEY_ID
-            - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AWS_SECRET_ACCESS_KEY
-            - name: AWS_REGION
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AWS_REGION
-            - name: S3_TRACE_PAYLOADS_BUCKET
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: S3_TRACE_PAYLOADS_BUCKET
-            - name: SHARED_SECRET_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: SHARED_SECRET_TOKEN
-            - name: AEAD_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AEAD_SECRET_KEY
-            - name: ONLINE_EVALUATORS_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: ONLINE_EVALUATORS_SECRET_KEY
-            - name: PYTHON_ONLINE_EVALUATOR_URL
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: PYTHON_ONLINE_EVALUATOR_URL
-            - name: TRACE_SUMMARIZER_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: TRACE_SUMMARIZER_SECRET_KEY
-            - name: TRACE_SUMMARIZER_URL
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: TRACE_SUMMARIZER_URL
-            - name: TRACE_EVENT_IDENTIFIER_URL
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: TRACE_EVENT_IDENTIFIER_URL
-            - name: SLACK_ENCRYPTION_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: SLACK_ENCRYPTION_KEY
-            - name: CLUSTER_ENDPOINT
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: CLUSTER_ENDPOINT
-            - name: CLUSTER_ENDPOINT_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: CLUSTER_ENDPOINT_KEY
-            - name: DATABASE_SSL_ROOT_CERT
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: DATABASE_SSL_ROOT_CERT
+            - name: QUICKWIT_SEARCH_URL
+              value: {{ .Values.appServerConsumer.env.quickwitSearchUrl }}
+            - name: QUICKWIT_INGEST_URL
+              value: {{ .Values.appServerConsumer.env.quickwitIngestUrl }}
+            # All secrets loaded via envFrom from app-secrets, app-secrets-aws, app-secrets-vault
       {{- include "laminar.nodeSelector" (dict "service" .Values.appServerConsumer "global" .Values.global) | nindent 6 }}
       {{- include "laminar.affinity" (dict "service" .Values.appServerConsumer "global" .Values.global) | nindent 6 }}
       {{- include "laminar.tolerations" (dict "service" .Values.appServerConsumer "global" .Values.global) | nindent 6 }}

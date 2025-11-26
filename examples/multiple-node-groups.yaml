@@ -44,4 +44,3 @@ postgres:
     # Use high-performance storage class
     storageClass: "io2"
     size: "100Gi"
-

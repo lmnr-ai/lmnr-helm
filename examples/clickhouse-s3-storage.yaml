@@ -15,7 +15,7 @@ clickhouse:
   # Disable local persistence when using S3
   persistence:
     enabled: false
-  
+
   # Enable S3 storage configuration
   s3:
     enabled: true
@@ -23,23 +23,22 @@ clickhouse:
     endpoint: "https://my-clickhouse-bucket.s3.us-east-1.amazonaws.com/"
     # S3 region
     region: "us-east-1"
-    
+
     # Option 1: Use explicit credentials (not recommended for production)
     accessKeyId: "YOUR_ACCESS_KEY_ID"
     secretAccessKey: "YOUR_SECRET_ACCESS_KEY"
     useEnvironmentCredentials: false
-    
+
     # Option 2: Use IAM role / environment credentials (recommended for production)
     # accessKeyId: ""
     # secretAccessKey: ""
     # useEnvironmentCredentials: true
-    
+
     # Local cache configuration for frequently accessed data
     cache:
       enabled: true
       path: "/var/lib/clickhouse/disks/s3_cache/"
       maxSize: "50Gi"  # Adjust based on your working set size
-    
+
     # Metadata path
     metadataPath: "/var/lib/clickhouse/disks/s3_disk/"
-

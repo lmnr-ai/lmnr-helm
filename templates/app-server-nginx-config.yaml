@@ -22,12 +22,12 @@ data:
       log_format main '$remote_addr - $remote_user [$time_local] "$request" '
                       '$status $body_bytes_sent "$http_referer" '
                       '"$http_user_agent" "$http_x_forwarded_for"';
-      
+
       # Regular HTTP server for path-based routing
       server {
         listen 8080;
         access_log /var/log/nginx/access.log main;
-        
+
         # Forward only /v1/* requests
         location ~* ^/v1/ {
           proxy_pass http://localhost:{{ .Values.appServer.env.port }};
@@ -37,14 +37,14 @@ data:
           proxy_http_version 1.1;
           chunked_transfer_encoding on;
         }
-        
+
         # Health check endpoint
         location /health {
           proxy_pass http://localhost:{{ .Values.appServer.env.port }};
           proxy_set_header Host $host;
           proxy_set_header X-Real-IP $remote_addr;
         }
-        
+
         # Return 404 for all other paths
         location / {
           return 404;

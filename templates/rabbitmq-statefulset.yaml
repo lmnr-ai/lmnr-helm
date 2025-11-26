@@ -4,6 +4,7 @@ kind: StatefulSet
 metadata:
   name: rabbitmq
 spec:
+  replicas: {{ .Values.rabbitmq.replicaCount }}
   selector:
     matchLabels:
       app: "rabbitmq"
@@ -26,9 +27,10 @@ spec:
       labels:
         app: rabbitmq
     spec:
+      serviceAccountName: {{ include "lmnr.secrets.serviceAccountName" . }}
       initContainers:
         - name: "rabbitmq-config"
-          image: busybox:1.32.0
+          image: busybox:latest
           volumeMounts:
             - name: rabbitmq-config
               mountPath: /tmp/rabbitmq
@@ -55,6 +57,22 @@ spec:
         - name: rabbitmq-data
           emptyDir: {}
         {{- end }}
+        {{- if include "lmnr.secrets.awsEnabled" . }}
+        - name: secrets-store-aws
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: lmnr-secrets-aws
+        {{- end }}
+        {{- if include "lmnr.secrets.vaultEnabled" . }}
+        - name: secrets-store-vault
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: lmnr-secrets-vault
+        {{- end }}
       securityContext:
         fsGroup: 999
         runAsUser: 999
@@ -69,22 +87,18 @@ spec:
               mountPath: "/etc/rabbitmq"
             - name: rabbitmq-data
               mountPath: "/var/lib/rabbitmq/mnesia"
-          env:
-            - name: RABBITMQ_DEFAULT_USER
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: RABBITMQ_DEFAULT_USER
-            - name: RABBITMQ_DEFAULT_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: RABBITMQ_DEFAULT_PASS
-            - name: RABBITMQ_ERLANG_COOKIE
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: RABBITMQ_ERLANG_COOKIE
+            {{- if include "lmnr.secrets.awsEnabled" . }}
+            - name: secrets-store-aws
+              mountPath: "/mnt/secrets-store-aws"
+              readOnly: true
+            {{- end }}
+            {{- if include "lmnr.secrets.vaultEnabled" . }}
+            - name: secrets-store-vault
+              mountPath: "/mnt/secrets-store-vault"
+              readOnly: true
+            {{- end }}
+          envFrom:
+            {{- include "lmnr.secrets.envFrom" . | nindent 12 }}
           ports:
             - name: amqp
               containerPort: {{ .Values.rabbitmq.service.amqpPort }}

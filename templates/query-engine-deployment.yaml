@@ -15,6 +15,7 @@ spec:
       labels:
         app: query-engine
     spec:
+      serviceAccountName: {{ include "lmnr.secrets.serviceAccountName" . }}
       containers:
         - name: query-engine
           image: {{ .Values.images.repository }}/{{ .Values.images.queryEngine.name }}:{{ .Values.images.queryEngine.tag }}

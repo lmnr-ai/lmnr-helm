@@ -116,4 +116,77 @@ Usage: {{ include "laminar.tolerations" (dict "service" .Values.frontend "global
 tolerations:
   {{- toYaml $tolerations | nindent 2 }}
 {{- end }}
-{{- end }} 
+{{- end }}
+
+{{/*
+Secrets Management Helpers
+*/}}
+
+{{/*
+Check if AWS Secrets Manager is enabled
+*/}}
+{{- define "lmnr.secrets.awsEnabled" -}}
+{{- if and .Values.secrets.awsSecretsManager .Values.secrets.awsSecretsManager.enabled }}
+{{- true }}
+{{- end }}
+{{- end }}
+
+{{/*
+Check if Vault is enabled
+*/}}
+{{- define "lmnr.secrets.vaultEnabled" -}}
+{{- if and .Values.secrets.vault .Values.secrets.vault.enabled }}
+{{- true }}
+{{- end }}
+{{- end }}
+
+{{/*
+Check if any external secret provider needs CSI mount
+*/}}
+{{- define "lmnr.secrets.needsCSIMount" -}}
+{{- if or (include "lmnr.secrets.awsEnabled" .) (include "lmnr.secrets.vaultEnabled" .) }}
+{{- true }}
+{{- end }}
+{{- end }}
+
+{{/*
+Generate AWS secret name from clusterName or use explicit secretName
+*/}}
+{{- define "lmnr.secrets.awsSecretName" -}}
+{{- if .Values.secrets.awsSecretsManager.secretName }}
+{{- .Values.secrets.awsSecretsManager.secretName }}
+{{- else if .Values.secrets.awsSecretsManager.clusterName }}
+{{- printf "%s/lmnr-secrets" .Values.secrets.awsSecretsManager.clusterName }}
+{{- else }}
+{{- fail "AWS Secrets Manager is enabled but neither secretName nor clusterName is set" }}
+{{- end }}
+{{- end }}
+
+{{/*
+Return the appropriate service account name for secrets
+*/}}
+{{- define "lmnr.secrets.serviceAccountName" -}}
+{{- if include "lmnr.secrets.awsEnabled" . }}
+{{- .Values.secrets.awsSecretsManager.serviceAccount.name }}
+{{- else if include "lmnr.secrets.vaultEnabled" . }}
+{{- .Values.secrets.vault.serviceAccount.name }}
+{{- else }}
+{{- "default" }}
+{{- end }}
+{{- end }}
+
+{{/*
+Generate envFrom for loading secrets from all applicable sources
+*/}}
+{{- define "lmnr.secrets.envFrom" -}}
+- secretRef:
+    name: app-secrets
+{{- if include "lmnr.secrets.awsEnabled" . }}
+- secretRef:
+    name: app-secrets-aws
+{{- end }}
+{{- if include "lmnr.secrets.vaultEnabled" . }}
+- secretRef:
+    name: app-secrets-vault
+{{- end }}
+{{- end }}

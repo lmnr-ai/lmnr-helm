@@ -33,4 +33,3 @@ clickhouse:
     cache:
       enabled: true
       maxSize: "50Gi"
-

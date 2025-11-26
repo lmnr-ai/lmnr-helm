@@ -15,6 +15,20 @@ spec:
       labels:
         app: frontend
     spec:
+      serviceAccountName: {{ include "lmnr.secrets.serviceAccountName" . }}
+      {{- if .Values.frontend.waitForDependencies.enabled }}
+      initContainers:
+        {{- range .Values.frontend.waitForDependencies.services }}
+        - name: wait-for-{{ .name }}
+          image: busybox:latest
+          command: ['sh', '-c', 'until nc -z {{ .host }} {{ .port }}; do echo "waiting for {{ .name }}..."; sleep 2; done; echo "{{ .name }} is ready"']
+        {{- end }}
+        {{- range .Values.frontend.waitForDependencies.httpChecks }}
+        - name: wait-for-{{ .name }}
+          image: curlimages/curl:8.5.0
+          command: ['sh', '-c', 'until curl -f {{ .url }}; do echo "waiting for {{ .name }}..."; sleep 2; done; echo "{{ .name }} is ready"']
+        {{- end }}
+      {{- end }}
       containers:
         - name: frontend
           image: {{ .Values.images.repository }}/{{ .Values.images.frontend.name }}:{{ .Values.images.frontend.tag }}
@@ -23,6 +37,8 @@ spec:
             - containerPort: 3000
           resources:
             {{- toYaml .Values.frontend.resources | nindent 12 }}
+          envFrom:
+            {{- include "lmnr.secrets.envFrom" . | nindent 12 }}
           env:
             - name: BACKEND_URL
               value: {{ .Values.frontend.env.backendUrl }}
@@ -36,216 +52,7 @@ spec:
               value: {{ .Values.frontend.env.nextPublicUrl }}
             - name: REDIS_URL
               value: {{ .Values.frontend.env.redisUrl }}
-            - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: DATABASE_URL
-            - name: NEXTAUTH_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: NEXTAUTH_SECRET
-            - name: CLICKHOUSE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: CLICKHOUSE_URL
-            - name: CLICKHOUSE_USER
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: CLICKHOUSE_USER
-            - name: CLICKHOUSE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: CLICKHOUSE_PASSWORD
-            - name: AEAD_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AEAD_SECRET_KEY
-            - name: SHARED_SECRET_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: SHARED_SECRET_TOKEN
-            - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AWS_ACCESS_KEY_ID
-            - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AWS_SECRET_ACCESS_KEY
-            - name: S3_TRACE_PAYLOADS_BUCKET
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: S3_TRACE_PAYLOADS_BUCKET
-            - name: AUTH_GITHUB_ID
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AUTH_GITHUB_ID
-            - name: AUTH_GITHUB_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AUTH_GITHUB_SECRET
-            - name: AUTH_GOOGLE_ID
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AUTH_GOOGLE_ID
-            - name: AUTH_GOOGLE_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AUTH_GOOGLE_SECRET
-            - name: AUTH_AZURE_AD_CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AUTH_AZURE_AD_CLIENT_ID
-            - name: AUTH_AZURE_AD_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AUTH_AZURE_AD_CLIENT_SECRET
-            - name: AUTH_AZURE_AD_TENANT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AUTH_AZURE_AD_TENANT_ID
-            - name: STRIPE_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: STRIPE_SECRET_KEY
-            - name: STRIPE_WEBHOOK_ENDPOINT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: STRIPE_WEBHOOK_ENDPOINT_SECRET
-            - name: RESEND_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: RESEND_API_KEY
-            - name: GITHUB_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: GITHUB_TOKEN
-            - name: LAMINAR_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: LAMINAR_API_KEY
-            - name: SUPABASE_JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: SUPABASE_JWT_SECRET
-            - name: DATASET_EXPORT_WORKER_URL
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: DATASET_EXPORT_WORKER_URL
-            - name: DATASET_EXPORT_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: DATASET_EXPORT_SECRET_KEY
-            - name: DATA_EXPORTER_URL
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: DATA_EXPORTER_URL
-            - name: DATA_EXPORTER_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: DATA_EXPORTER_SECRET_KEY
-            - name: SLACK_CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: SLACK_CLIENT_ID
-            - name: SLACK_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: SLACK_CLIENT_SECRET
-            - name: SLACK_SIGNING_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: SLACK_SIGNING_SECRET
-            - name: SLACK_ENCRYPTION_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: SLACK_ENCRYPTION_KEY
-            - name: SLACK_REDIRECT_URL
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: SLACK_REDIRECT_URL
-            - name: AWS_REGION
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AWS_REGION
-            - name: S3_EXPORTS_BUCKET
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: S3_EXPORTS_BUCKET
-            - name: ONLINE_EVALUATORS_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: ONLINE_EVALUATORS_SECRET_KEY
-            - name: PYTHON_ONLINE_EVALUATOR_URL
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: PYTHON_ONLINE_EVALUATOR_URL
-            - name: OPENAI_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: OPENAI_API_KEY
-            - name: GOOGLE_GENERATIVE_AI_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: GOOGLE_GENERATIVE_AI_API_KEY
-            - name: LMNR_PROJECT_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: LMNR_PROJECT_API_KEY
-            - name: TRACE_SUMMARIZER_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: TRACE_SUMMARIZER_SECRET_KEY
-            - name: TRACE_SUMMARIZER_URL
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: TRACE_SUMMARIZER_URL
-            - name: DATABASE_SSL_ROOT_CERT
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: DATABASE_SSL_ROOT_CERT
+            # All secrets loaded via envFrom from app-secrets, app-secrets-aws, app-secrets-vault
       {{- include "laminar.nodeSelector" (dict "service" .Values.frontend "global" .Values.global) | nindent 6 }}
       {{- include "laminar.affinity" (dict "service" .Values.frontend "global" .Values.global) | nindent 6 }}
       {{- include "laminar.tolerations" (dict "service" .Values.frontend "global" .Values.global) | nindent 6 }}
