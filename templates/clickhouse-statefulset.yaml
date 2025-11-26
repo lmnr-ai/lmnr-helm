@@ -89,7 +89,7 @@ spec:
             successThreshold: 1
             failureThreshold: 3
       volumes:
-      {{- if and (not .Values.clickhouse.persistence.enabled) (not .Values.clickhouse.s3.enabled) }}
+        {{- if not .Values.clickhouse.persistence.enabled }}
         - name: clickhouse-data
           emptyDir: {}
       {{- end }}
