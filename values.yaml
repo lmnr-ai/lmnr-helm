@@ -368,17 +368,6 @@ quickwit:
       limits:
         cpu: "1.0"
         memory: "1Gi"
-    waitForDependencies:
-      enabled: true
-      httpChecks:
-        - name: quickwit-indexer
-          url: http://quickwit-indexer:7280/health/livez
-        - name: quickwit-searcher
-          url: http://quickwit-searcher:7280/health/livez
-        - name: quickwit-metastore
-          url: http://quickwit-metastore:7280/health/livez
-        - name: quickwit-janitor
-          url: http://quickwit-janitor:7280/health/livez
   janitor:
     replicaCount: 1
     resources:
@@ -492,7 +481,7 @@ clickhouse:
   # S3 storage configuration for separation of storage and compute
   # When enabled, ClickHouse will store data in S3 instead of local disks
   s3:
-    enabled: true
+    enabled: false
     # S3 bucket endpoint (e.g., https://my-bucket.s3.us-east-1.amazonaws.com/)
     endpoint: ""
     # S3 bucket region
