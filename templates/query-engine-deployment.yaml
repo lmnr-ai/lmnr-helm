@@ -2,18 +2,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: query-engine
+  name: {{ include "laminar.resourceName" "query-engine" }}
   labels:
-    app: query-engine
+    app: {{ include "laminar.resourceName" "query-engine" }}
 spec:
   replicas: {{ .Values.queryEngine.replicaCount }}
   selector:
     matchLabels:
-      app: query-engine
+      app: {{ include "laminar.resourceName" "query-engine" }}
   template:
     metadata:
       labels:
-        app: query-engine
+        app: {{ include "laminar.resourceName" "query-engine" }}
     spec:
       serviceAccountName: {{ include "lmnr.secrets.serviceAccountName" . }}
       containers:

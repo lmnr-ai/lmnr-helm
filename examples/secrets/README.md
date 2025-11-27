@@ -2,6 +2,8 @@
 
 Examples for configuring different secret backends.
 
+> **Note on Namespaces:** All examples assume the default namespace. If using a custom namespace, add `--namespace <your-namespace> --create-namespace` to the `helm` commands below.
+
 ## Important: Auto-Generated URLs
 
 When database credentials (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `RABBITMQ_DEFAULT_USER`, `RABBITMQ_DEFAULT_PASS`) are fetched from AWS Secrets Manager or Vault, the template will **NOT** auto-generate connection URLs (`DATABASE_URL`, `RABBITMQ_URL`). 
@@ -23,11 +25,7 @@ You **MUST** include these URLs in your external secret store with the correct c
 Replace or supplement your `laminar.yaml` configuration:
 
 ```bash
-# Use example as-is (customize the example file first)
-helm upgrade -i laminar ../.. -f aws-all-secrets.yaml --namespace laminar --create-namespace
-
-# Or combine with your laminar.yaml
-helm upgrade -i laminar ../.. -f ../../laminar.yaml -f aws-partial-secrets.yaml --namespace laminar --create-namespace
+helm upgrade -i laminar ../.. -f ../../laminar.yaml -f aws-partial-secrets.yaml
 ```
 
 ## Prerequisites

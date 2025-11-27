@@ -17,16 +17,14 @@ Deploy Laminar on Kubernetes with a single command.
 ```bash
 # 1. Customize laminar.yaml with your AWS credentials and S3 buckets
 
-# 2. Install (namespace will be created automatically)
-helm upgrade -i laminar . -f laminar.yaml --namespace laminar --create-namespace
+# 2. Install
+helm upgrade -i laminar . -f laminar.yaml
 
 # 3. Get ALB URL (wait 1-2 minutes for provisioning)
-ALB_URL=$(kubectl get ingress frontend-alb -n laminar -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+ALB_URL=$(kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
 # 4. Configure frontend URLs
-helm upgrade -i laminar . -f laminar.yaml --namespace laminar \
-  --set secrets.data.NEXTAUTH_URL="http://$ALB_URL" \
-  --set secrets.data.NEXTAUTH_PUBLIC_URL="http://$ALB_URL" \
+helm upgrade -i laminar . -f laminar.yaml \
   --set frontend.env.nextauthUrl="http://$ALB_URL" \
   --set frontend.env.nextPublicUrl="http://$ALB_URL"
 ```
@@ -73,6 +71,8 @@ See [QUICKSTART.md](./QUICKSTART.md) for detailed installation steps.
 - Helm 3.x
 - [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html)
 - [EBS CSI Driver](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html)
+
+> **Note on Namespaces:** By default, all resources are created in the `default` namespace. Advanced users who prefer a custom namespace (e.g., `laminar`) should add `--namespace laminar --create-namespace` to `helm` commands and `-n laminar` to `kubectl` commands.
 
 ## Configuration
 
@@ -126,46 +126,44 @@ See [CONFIGURATION.md](./CONFIGURATION.md) for complete configuration reference.
 ### Check Status
 
 ```bash
-kubectl get pods -n laminar
-kubectl get svc -n laminar
-kubectl get ingress -n laminar
+kubectl get pods
+kubectl get svc
+kubectl get ingress
+
 ```
 
 ### View Logs
 
 ```bash
-kubectl logs -l app=frontend -n laminar -f
-kubectl logs -l app=app-server -n laminar -f
+kubectl logs -l app=laminar-frontend -f
+kubectl logs -l app=laminar-app-server -f
 ```
 
 ### Access Databases
 
 ```bash
 # PostgreSQL
-kubectl exec -it postgres-0 -n laminar -- psql -U lmnr -d lmnr
+kubectl exec -it laminar-postgres-0 -- psql -U lmnr -d lmnr
 
 # ClickHouse
-kubectl exec -it clickhouse-0 -n laminar -- clickhouse-client
+kubectl exec -it laminar-clickhouse-0 -- clickhouse-client
 ```
 
 ### Upgrade
 
 ```bash
-helm upgrade -i laminar . -f laminar.yaml --namespace laminar
+helm upgrade -i laminar . -f laminar.yaml
 ```
 
 ### Uninstall
 
 ```bash
-helm uninstall laminar --namespace laminar
+helm uninstall laminar
 
 # To also delete persistent data:
-kubectl delete pvc -l app=postgres -n laminar
-kubectl delete pvc -l app=clickhouse -n laminar
-kubectl delete pvc -l app=rabbitmq -n laminar
-
-# To delete the namespace:
-kubectl delete namespace laminar
+kubectl delete pvc -l app=laminar-postgres
+kubectl delete pvc -l app=laminar-clickhouse
+kubectl delete pvc -l app=laminar-rabbitmq
 ```
 
 ## Documentation

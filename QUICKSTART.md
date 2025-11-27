@@ -9,6 +9,8 @@ Get Laminar running on your Kubernetes cluster in minutes.
 - [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html) installed
 - [EBS CSI Driver](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html) installed
 
+> **Note on Namespaces:** By default, all resources are created in the `default` namespace. If you prefer using a custom namespace (e.g., `laminar`), add `--namespace laminar --create-namespace` to all `helm` commands and `-n laminar` to all `kubectl` commands in this guide.
+
 ## Installation
 
 ### Step 1: Customize Configuration
@@ -21,10 +23,10 @@ Copy and edit `laminar.yaml` with your settings:
 
 ### Step 2: Install with Customized Settings
 
-The `--create-namespace` flag will automatically create the `laminar` namespace if it doesn't exist:
+Install Laminar with your customized configuration:
 
 ```bash
-helm upgrade -i laminar . -f laminar.yaml --namespace laminar --create-namespace
+helm upgrade -i laminar . -f laminar.yaml
 ```
 
 ### Step 3: Get the Load Balancer URL
@@ -32,7 +34,7 @@ helm upgrade -i laminar . -f laminar.yaml --namespace laminar --create-namespace
 Wait for the ALB to be provisioned (1-2 minutes), then get the URL:
 
 ```bash
-kubectl get ingress frontend-alb -n laminar -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 ```
 
 ### Step 4: Configure Frontend URLs
@@ -40,11 +42,9 @@ kubectl get ingress frontend-alb -n laminar -o jsonpath='{.status.loadBalancer.i
 Update `laminar.yaml` with the ALB URL or upgrade directly:
 
 ```bash
-ALB_URL=$(kubectl get ingress frontend-alb -n laminar -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+ALB_URL=$(kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
-helm upgrade -i laminar . -f laminar.yaml --namespace laminar \
-  --set secrets.data.NEXTAUTH_URL="http://$ALB_URL" \
-  --set secrets.data.NEXTAUTH_PUBLIC_URL="http://$ALB_URL" \
+helm upgrade -i laminar . -f laminar.yaml \
   --set frontend.env.nextauthUrl="http://$ALB_URL" \
   --set frontend.env.nextPublicUrl="http://$ALB_URL"
 ```
@@ -58,10 +58,8 @@ Open your browser and navigate to the ALB URL.
 If you have a custom domain, skip Step 3-4 and install directly:
 
 ```bash
-helm upgrade -i laminar . -f laminar.yaml --namespace laminar --create-namespace \
+helm upgrade -i laminar . -f laminar.yaml \
   --set frontend.ingress.hostname="app.yourdomain.com" \
-  --set secrets.data.NEXTAUTH_URL="https://app.yourdomain.com" \
-  --set secrets.data.NEXTAUTH_PUBLIC_URL="https://app.yourdomain.com" \
   --set frontend.env.nextauthUrl="https://app.yourdomain.com" \
   --set frontend.env.nextPublicUrl="https://app.yourdomain.com"
 ```
@@ -73,26 +71,26 @@ Then create a CNAME record pointing your domain to the ALB hostname.
 Check that all pods are running:
 
 ```bash
-kubectl get pods -n laminar
+kubectl get pods
 ```
 
 Expected output (all pods should be `Running` or `1/1`):
 
 ```
-NAME                                      READY   STATUS    AGE
-app-server-xxx                            2/2     Running   5m
-app-server-consumer-xxx                   1/1     Running   5m
-clickhouse-0                              1/1     Running   5m
-frontend-xxx                              1/1     Running   5m
-postgres-0                                1/1     Running   5m
-query-engine-xxx                          1/1     Running   5m
-quickwit-control-plane-xxx                1/1     Running   5m
-quickwit-indexer-0                        1/1     Running   5m
-quickwit-janitor-xxx                      1/1     Running   5m
-quickwit-metastore-xxx                    1/1     Running   5m
-quickwit-searcher-0                       1/1     Running   5m
-rabbitmq-0                                1/1     Running   5m
-redis-xxx                                 1/1     Running   5m
+NAME                                              READY   STATUS    AGE
+laminar-app-server-xxx                            2/2     Running   5m
+laminar-app-server-consumer-xxx                   1/1     Running   5m
+laminar-clickhouse-0                              1/1     Running   5m
+laminar-frontend-xxx                              1/1     Running   5m
+laminar-postgres-0                                1/1     Running   5m
+laminar-query-engine-xxx                          1/1     Running   5m
+laminar-quickwit-control-plane-xxx                1/1     Running   5m
+laminar-quickwit-indexer-0                        1/1     Running   5m
+laminar-quickwit-janitor-xxx                      1/1     Running   5m
+laminar-quickwit-metastore-xxx                    1/1     Running   5m
+laminar-quickwit-searcher-0                       1/1     Running   5m
+laminar-rabbitmq-0                                1/1     Running   5m
+laminar-redis-xxx                                 1/1     Running   5m
 ```
 
 ## Troubleshooting
@@ -103,7 +101,7 @@ Check if EBS CSI driver is installed and storage class exists:
 
 ```bash
 kubectl get storageclass
-kubectl describe pod <pod-name> -n laminar
+kubectl describe pod <pod-name>
 ```
 
 ### Pods stuck in Init state
@@ -111,8 +109,8 @@ kubectl describe pod <pod-name> -n laminar
 Services are waiting for dependencies. Check which service is not ready:
 
 ```bash
-kubectl logs <pod-name> -n laminar -c wait-for-postgres
-kubectl logs <pod-name> -n laminar -c wait-for-redis
+kubectl logs <pod-name> -c wait-for-postgres
+kubectl logs <pod-name> -c wait-for-redis
 ```
 
 ### Load Balancer not created

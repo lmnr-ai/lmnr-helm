@@ -2,18 +2,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend
+  name: {{ include "laminar.resourceName" "frontend" }}
   labels:
-    app: frontend
+    app: {{ include "laminar.resourceName" "frontend" }}
 spec:
   replicas: {{ .Values.frontend.replicaCount }}
   selector:
     matchLabels:
-      app: frontend
+      app: {{ include "laminar.resourceName" "frontend" }}
   template:
     metadata:
       labels:
-        app: frontend
+        app: {{ include "laminar.resourceName" "frontend" }}
     spec:
       serviceAccountName: {{ include "lmnr.secrets.serviceAccountName" . }}
       {{- if .Values.frontend.waitForDependencies.enabled }}

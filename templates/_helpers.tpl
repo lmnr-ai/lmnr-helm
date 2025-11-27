@@ -66,6 +66,20 @@ Namespace - returns the namespace to use for resources
 {{- end }}
 
 {{/*
+Resource Name - prefixes resource names with "laminar-" unless already prefixed
+Skips prefixing for resources already starting with "lmnr-" or "laminar-"
+Usage: {{ include "laminar.resourceName" "frontend" }}
+*/}}
+{{- define "laminar.resourceName" -}}
+{{- $name := . -}}
+{{- if or (hasPrefix "lmnr-" $name) (hasPrefix "laminar-" $name) -}}
+{{- $name -}}
+{{- else -}}
+{{- printf "laminar-%s" $name -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Node selector - merges service-specific with global defaults
 Usage: {{ include "laminar.nodeSelector" (dict "service" .Values.frontend "global" .Values.global) }}
 */}}
@@ -187,13 +201,13 @@ Generate envFrom for loading secrets from all applicable sources
 */}}
 {{- define "lmnr.secrets.envFrom" -}}
 - secretRef:
-    name: app-secrets
+    name: {{ include "laminar.resourceName" "app-secrets" }}
 {{- if include "lmnr.secrets.awsEnabled" . }}
 - secretRef:
-    name: app-secrets-aws
+    name: {{ include "laminar.resourceName" "app-secrets-aws" }}
 {{- end }}
 {{- if include "lmnr.secrets.vaultEnabled" . }}
 - secretRef:
-    name: app-secrets-vault
+    name: {{ include "laminar.resourceName" "app-secrets-vault" }}
 {{- end }}
 {{- end }}

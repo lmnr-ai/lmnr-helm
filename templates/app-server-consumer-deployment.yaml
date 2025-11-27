@@ -2,9 +2,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: app-server-consumer
+  name: {{ include "laminar.resourceName" "app-server-consumer" }}
   labels:
-    app: app-server-consumer
+    app: {{ include "laminar.resourceName" "app-server-consumer" }}
 spec:
   replicas: {{ .Values.appServerConsumer.replicaCount }}
   strategy:
@@ -14,11 +14,11 @@ spec:
       maxUnavailable: 0
   selector:
     matchLabels:
-      app: app-server-consumer
+      app: {{ include "laminar.resourceName" "app-server-consumer" }}
   template:
     metadata:
       labels:
-        app: app-server-consumer
+        app: {{ include "laminar.resourceName" "app-server-consumer" }}
     spec:
       serviceAccountName: {{ include "lmnr.secrets.serviceAccountName" . }}
       {{- if .Values.appServerConsumer.waitForDependencies.enabled }}

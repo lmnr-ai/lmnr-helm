@@ -2,9 +2,9 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: rabbitmq-service
+  name: {{ include "laminar.resourceName" "rabbitmq-service" }}
   labels:
-    app: rabbitmq
+    app: {{ include "laminar.resourceName" "rabbitmq" }}
 spec:
   type: {{ .Values.rabbitmq.service.type }}
   ports:
@@ -12,13 +12,13 @@ spec:
       protocol: TCP
       port: {{ .Values.rabbitmq.service.amqpPort }}
   selector:
-    app: rabbitmq
+    app: {{ include "laminar.resourceName" "rabbitmq" }}
 ---
 {{- if .Values.rabbitmq.headlessService.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: rabbitmq-headless
+  name: {{ include "laminar.resourceName" "rabbitmq-headless" }}
 spec:
   clusterIP: None
   ports:
@@ -31,7 +31,7 @@ spec:
       protocol: TCP
       targetPort: 25672
   selector:
-    app: rabbitmq
+    app: {{ include "laminar.resourceName" "rabbitmq" }}
   type: ClusterIP
   sessionAffinity: None
 {{- end }}

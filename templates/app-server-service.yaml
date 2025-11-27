@@ -2,10 +2,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: app-server-service
+  name: {{ include "laminar.resourceName" "app-server-service" }}
 spec:
   selector:
-    app: app-server
+    app: {{ include "laminar.resourceName" "app-server" }}
   ports:
     - protocol: TCP
       name: http
@@ -17,14 +17,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: app-server-load-balancer
+  name: {{ include "laminar.resourceName" "app-server-load-balancer" }}
   annotations:
     {{- range $key, $value := .Values.appServer.loadBalancer.annotations }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
 spec:
   selector:
-    app: app-server
+    app: {{ include "laminar.resourceName" "app-server" }}
   ports:
     - protocol: TCP
       name: https

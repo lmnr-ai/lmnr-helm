@@ -2,17 +2,17 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: rabbitmq
+  name: {{ include "laminar.resourceName" "rabbitmq" }}
 spec:
   replicas: {{ .Values.rabbitmq.replicaCount }}
   selector:
     matchLabels:
-      app: "rabbitmq"
-  serviceName: rabbitmq-headless
+      app: {{ include "laminar.resourceName" "rabbitmq" }}
+  serviceName: {{ include "laminar.resourceName" "rabbitmq-headless" }}
   {{- if .Values.rabbitmq.persistence.enabled }}
   volumeClaimTemplates:
     - metadata:
-        name: rabbitmq-data
+        name: {{ include "laminar.resourceName" "rabbitmq-data" }}
       spec:
         storageClassName: {{ .Values.rabbitmq.persistence.storageClass }}
         accessModes:
@@ -23,9 +23,9 @@ spec:
   {{- end }}
   template:
     metadata:
-      name: rabbitmq
+      name: {{ include "laminar.resourceName" "rabbitmq" }}
       labels:
-        app: rabbitmq
+        app: {{ include "laminar.resourceName" "rabbitmq" }}
     spec:
       serviceAccountName: {{ include "lmnr.secrets.serviceAccountName" . }}
       initContainers:
@@ -44,7 +44,7 @@ spec:
       volumes:
         - name: rabbitmq-config
           configMap:
-            name: rabbitmq-config
+            name: {{ include "laminar.resourceName" "rabbitmq-config" }}
             optional: false
             items:
               - key: enabled_plugins
@@ -54,7 +54,7 @@ spec:
         - name: rabbitmq-config-rw
           emptyDir: {}
         {{- if not .Values.rabbitmq.persistence.enabled }}
-        - name: rabbitmq-data
+        - name: {{ include "laminar.resourceName" "rabbitmq-data" }}
           emptyDir: {}
         {{- end }}
         {{- if include "lmnr.secrets.awsEnabled" . }}
@@ -85,7 +85,7 @@ spec:
           volumeMounts:
             - name: rabbitmq-config-rw
               mountPath: "/etc/rabbitmq"
-            - name: rabbitmq-data
+            - name: {{ include "laminar.resourceName" "rabbitmq-data" }}
               mountPath: "/var/lib/rabbitmq/mnesia"
             {{- if include "lmnr.secrets.awsEnabled" . }}
             - name: secrets-store-aws

@@ -2,19 +2,19 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: postgres
+  name: {{ include "laminar.resourceName" "postgres" }}
   labels:
-    app: postgres
+    app: {{ include "laminar.resourceName" "postgres" }}
 spec:
-  serviceName: postgres-headless
+  serviceName: {{ include "laminar.resourceName" "postgres-headless" }}
   replicas: {{ .Values.postgres.replicaCount }}
   selector:
     matchLabels:
-      app: postgres
+      app: {{ include "laminar.resourceName" "postgres" }}
   {{- if .Values.postgres.persistence.enabled }}
   volumeClaimTemplates:
     - metadata:
-        name: postgres-data
+        name: {{ include "laminar.resourceName" "postgres-data" }}
       spec:
         storageClassName: {{ .Values.postgres.persistence.storageClass }}
         accessModes:
@@ -26,7 +26,7 @@ spec:
   template:
     metadata:
       labels:
-        app: postgres
+        app: {{ include "laminar.resourceName" "postgres" }}
     spec:
       serviceAccountName: {{ include "lmnr.secrets.serviceAccountName" . }}
       containers:
@@ -45,7 +45,7 @@ spec:
               value: /var/lib/postgresql/data/pgdata
           volumeMounts:
             {{- if .Values.postgres.persistence.enabled }}
-            - name: postgres-data
+            - name: {{ include "laminar.resourceName" "postgres-data" }}
               mountPath: /var/lib/postgresql/data
             {{- end }}
             {{- if include "lmnr.secrets.awsEnabled" . }}
@@ -82,7 +82,7 @@ spec:
             failureThreshold: 6
       volumes:
         {{- if not .Values.postgres.persistence.enabled }}
-        - name: postgres-data
+        - name: {{ include "laminar.resourceName" "postgres-data" }}
           emptyDir: {}
         {{- end }}
         {{- if include "lmnr.secrets.awsEnabled" . }}

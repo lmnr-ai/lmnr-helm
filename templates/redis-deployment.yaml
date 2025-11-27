@@ -2,18 +2,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: redis
+  name: {{ include "laminar.resourceName" "redis" }}
   labels:
-    app: redis
+    app: {{ include "laminar.resourceName" "redis" }}
 spec:
   replicas: {{ .Values.redis.replicaCount }}
   selector:
     matchLabels:
-      app: redis
+      app: {{ include "laminar.resourceName" "redis" }}
   template:
     metadata:
       labels:
-        app: redis
+        app: {{ include "laminar.resourceName" "redis" }}
     spec:
       serviceAccountName: {{ include "lmnr.secrets.serviceAccountName" . }}
       containers:

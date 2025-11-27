@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: quickwit
+  name: {{ include "laminar.resourceName" "quickwit" }}
   labels:
     app.kubernetes.io/name: quickwit
     app.kubernetes.io/instance: quickwit

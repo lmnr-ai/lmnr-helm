@@ -2,9 +2,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: clickhouse-service
+  name: {{ include "laminar.resourceName" "clickhouse-service" }}
   labels:
-    app: clickhouse
+    app: {{ include "laminar.resourceName" "clickhouse" }}
 spec:
   type: {{ .Values.clickhouse.service.type }}
   ports:
@@ -17,14 +17,14 @@ spec:
       protocol: TCP
       name: native
   selector:
-    app: clickhouse
+    app: {{ include "laminar.resourceName" "clickhouse" }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: clickhouse-headless
+  name: {{ include "laminar.resourceName" "clickhouse-headless" }}
   labels:
-    app: clickhouse
+    app: {{ include "laminar.resourceName" "clickhouse" }}
 spec:
   type: ClusterIP
   clusterIP: None
@@ -38,5 +38,5 @@ spec:
       protocol: TCP
       name: native
   selector:
-    app: clickhouse
+    app: {{ include "laminar.resourceName" "clickhouse" }}
 {{- end }}

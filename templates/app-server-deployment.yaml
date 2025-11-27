@@ -2,18 +2,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: app-server
+  name: {{ include "laminar.resourceName" "app-server" }}
   labels:
-    app: app-server
+    app: {{ include "laminar.resourceName" "app-server" }}
 spec:
   replicas: {{ .Values.appServer.replicaCount }}
   selector:
     matchLabels:
-      app: app-server
+      app: {{ include "laminar.resourceName" "app-server" }}
   template:
     metadata:
       labels:
-        app: app-server
+        app: {{ include "laminar.resourceName" "app-server" }}
     spec:
       serviceAccountName: {{ include "lmnr.secrets.serviceAccountName" . }}
       {{- if .Values.appServer.waitForDependencies.enabled }}
@@ -110,7 +110,7 @@ spec:
       volumes:
         - name: nginx-config
           configMap:
-            name: app-server-nginx-config
+            name: {{ include "laminar.resourceName" "app-server-nginx-config" }}
             items:
             - key: nginx.conf
               path: nginx.conf

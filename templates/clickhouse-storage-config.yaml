@@ -2,9 +2,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: clickhouse-storage-config
+  name: {{ include "laminar.resourceName" "clickhouse-storage-config" }}
   labels:
-    app: clickhouse
+    app: {{ include "laminar.resourceName" "clickhouse" }}
 data:
   storage_config.xml: |
     <clickhouse>

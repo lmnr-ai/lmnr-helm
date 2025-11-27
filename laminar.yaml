@@ -5,8 +5,8 @@
 #
 # Quick Start:
 #   1. Edit this file with your AWS credentials, S3 buckets, and availability zones
-#   2. Install: helm upgrade -i laminar . -f laminar.yaml --namespace laminar --create-namespace
-#   3. Get ALB URL: kubectl get ingress frontend-alb -n laminar -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+#   2. Install: helm upgrade -i laminar . -f laminar.yaml
+#   3. Get ALB URL: kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 #   4. Update NEXTAUTH_URL with ALB URL and upgrade again
 #
 # For advanced configuration options, see:
@@ -16,8 +16,9 @@
 
 global:
   environment: "FULL"
-  # Namespace for all resources (default: laminar)
-  namespace: "laminar"
+  # # Namespace for all resources (default: default)
+  # # Uncomment the below line to use a custom namespace (e.g., "laminar")
+  # namespace: "laminar"
   # # If not set, pods will not have any specific node group affinity
   # # Uncomment the below line to set a specific node group affinity
   # nodeGroupName: ""
@@ -32,36 +33,30 @@ secrets:
     S3_TRACE_PAYLOADS_BUCKET: "an-existing-bucket-for-trace-payloads"
     # This must be filled with the ingress URL after initial deployment
     # Refer to QUICKSTART.md for more details
-    NEXTAUTH_URL: "https://localhost:3000"
-    NEXTAUTH_PUBLIC_URL: "https://localhost:3000"
+
+frontend:
+  env:
+    nextauthUrl: "http://localhost:3000"
+    nextPublicUrl: "http://localhost:3000"
 
 quickwit:
   s3:
-    defaultIndexRootUri: "an-existing-bucket-for-quickwit-indexes"
-    region: "us-east-1"
+    defaultIndexRootUri: "s3://your-bucket-name/indexes"
+    region: "<region>"
 
 clickhouse:
   s3:
     # S3 bucket endpoint (replace with your bucket)
-    endpoint: "https://my-clickhouse-bucket.s3.us-east-1.amazonaws.com/"
+    endpoint: "https://<bucket-name>.s3.<region>.amazonaws.com/"
     # S3 region (replace with your region)
-    region: "us-east-1"
+    region: "<region>"
     # S3 access credentials - can use secrets instead
     accessKeyId: ""
     secretAccessKey: ""
     # Use environment credentials or EC2 instance profile
     useEnvironmentCredentials: false
-    # Local cache configuration for S3 data
-    cache:
-      enabled: true
-      # Local disk path for cache
-      path: "/var/lib/clickhouse/disks/s3_cache/"
-      # Maximum cache size
-      maxSize: "10Gi"
-    # Metadata path for S3 disk
-    metadataPath: "/var/lib/clickhouse/disks/s3_disk/"
 
 storage:
   storageClass:
     zones:
-      - "us-east-1b"
+      - "us-east-1a"

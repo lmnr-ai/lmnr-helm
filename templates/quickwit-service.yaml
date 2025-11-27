@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: quickwit-searcher
+  name: {{ include "laminar.resourceName" "quickwit-searcher" }}
   labels:
     app.kubernetes.io/name: quickwit
     app.kubernetes.io/instance: quickwit
@@ -25,7 +25,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: quickwit-headless
+  name: {{ include "laminar.resourceName" "quickwit-headless" }}
   labels:
     app.kubernetes.io/name: quickwit
     app.kubernetes.io/instance: quickwit
@@ -51,7 +51,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: quickwit-indexer
+  name: {{ include "laminar.resourceName" "quickwit-indexer" }}
   labels:
     app.kubernetes.io/name: quickwit
     app.kubernetes.io/instance: quickwit
@@ -74,7 +74,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: quickwit-metastore
+  name: {{ include "laminar.resourceName" "quickwit-metastore" }}
   labels:
     app.kubernetes.io/name: quickwit
     app.kubernetes.io/instance: quickwit
@@ -97,7 +97,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: quickwit-control-plane
+  name: {{ include "laminar.resourceName" "quickwit-control-plane" }}
   labels:
     app.kubernetes.io/name: quickwit
     app.kubernetes.io/instance: quickwit
@@ -120,7 +120,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: quickwit-janitor
+  name: {{ include "laminar.resourceName" "quickwit-janitor" }}
   labels:
     app.kubernetes.io/name: quickwit
     app.kubernetes.io/instance: quickwit

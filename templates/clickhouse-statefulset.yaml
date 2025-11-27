@@ -2,15 +2,15 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: clickhouse
+  name: {{ include "laminar.resourceName" "clickhouse" }}
   labels:
-    app: clickhouse
+    app: {{ include "laminar.resourceName" "clickhouse" }}
 spec:
-  serviceName: clickhouse-headless
+  serviceName: {{ include "laminar.resourceName" "clickhouse-headless" }}
   replicas: {{ .Values.clickhouse.replicaCount }}
   selector:
     matchLabels:
-      app: clickhouse
+      app: {{ include "laminar.resourceName" "clickhouse" }}
   {{- if and .Values.clickhouse.persistence.enabled (not .Values.clickhouse.s3.enabled) }}
   volumeClaimTemplates:
     - metadata:
@@ -26,7 +26,7 @@ spec:
   template:
     metadata:
       labels:
-        app: clickhouse
+        app: {{ include "laminar.resourceName" "clickhouse" }}
     spec:
       serviceAccountName: {{ include "lmnr.secrets.serviceAccountName" . }}
       containers:
@@ -96,7 +96,7 @@ spec:
       {{- if .Values.clickhouse.s3.enabled }}
         - name: clickhouse-storage-config
           configMap:
-            name: clickhouse-storage-config
+            name: {{ include "laminar.resourceName" "clickhouse-storage-config" }}
             items:
               - key: storage_config.xml
                 path: storage_config.xml

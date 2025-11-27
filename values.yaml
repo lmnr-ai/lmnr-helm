@@ -2,8 +2,9 @@
 global:
   environment: "FULL"
   # Namespace for all resources (default: default)
-  # When installing the chart, use: helm install laminar . --namespace laminar --create-namespace
-  namespace: "laminar"
+  # When installing the chart, you can specify a custom namespace with --namespace flag
+  # If you want a dedicated namespace, use: helm install laminar . --namespace laminar --create-namespace
+  namespace: "default"
   # Your node group name. Example: managed-ng-m6a-xlarge-1-80-gb-01
   nodeGroupName: ""
   # Default node scheduling configuration (can be overridden per service)
@@ -161,7 +162,7 @@ secrets:
     GOOGLE_GENERATIVE_AI_API_KEY: "<GOOGLE_GENERATIVE_AI_API_KEY>"
     LMNR_PROJECT_API_KEY: "<LMNR_PROJECT_API_KEY>"
     # Quickwit secrets
-    QUICKWIT_DATABASE_URL: "postgres://lmnr:lmnr123@postgres-service:5432/postgres"
+    QUICKWIT_DATABASE_URL: "postgres://lmnr:lmnr123@laminar-postgres-service:5432/postgres"
 
 # Frontend configuration
 frontend:
@@ -183,19 +184,19 @@ frontend:
     enabled: true
     services:
       - name: redis
-        host: redis-service
+        host: laminar-redis-service
         port: 6379
       - name: postgres
-        host: postgres-service
+        host: laminar-postgres-service
         port: 5432
       - name: clickhouse
-        host: clickhouse-service
+        host: laminar-clickhouse-service
         port: 8123
     httpChecks:
       - name: app-server
-        url: http://app-server-service:8000/health
+        url: http://laminar-app-server-service:8000/health
       - name: app-server-consumer
-        url: http://app-server-consumer-service:8000/health
+        url: http://laminar-app-server-consumer-service:8000/health
   service:
     type: ClusterIP
     port: 80
@@ -218,14 +219,14 @@ frontend:
       alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
       # external-dns.alpha.kubernetes.io/hostname will be added automatically if externalDns.enabled is true
   env:
-    backendUrl: "http://app-server-service:8000"
-    backendRtUrl: "http://app-server-consumer-service:8000"
+    backendUrl: "http://laminar-app-server-service:8000"
+    backendRtUrl: "http://laminar-app-server-consumer-service:8000"
     # Set these to your actual frontend URL
     # If ingress.hostname is set, you can use "http://<hostname>" or "https://<hostname>"
     # Otherwise, set the ALB DNS name after initial deployment (see QUICKSTART.md)
     nextauthUrl: "https://localhost:3000"
     nextPublicUrl: "https://localhost:3000"
-    redisUrl: "redis://redis-service:6379"
+    redisUrl: "redis://laminar-redis-service:6379"
 
 # App Server configuration
 appServer:
@@ -247,16 +248,16 @@ appServer:
     enabled: true
     services:
       - name: redis
-        host: redis-service
+        host: laminar-redis-service
         port: 6379
       - name: postgres
-        host: postgres-service
+        host: laminar-postgres-service
         port: 5432
       - name: clickhouse
-        host: clickhouse-service
+        host: laminar-clickhouse-service
         port: 8123
       - name: rabbitmq
-        host: rabbitmq-service
+        host: laminar-rabbitmq-service
         port: 5672
   service:
     type: ClusterIP
@@ -279,7 +280,7 @@ appServer:
         memory: "256Mi"
   env:
     port: "8000"
-    agentManagerUrl: "http://agent-manager-service:8901"
+    agentManagerUrl: "http://laminar-agent-manager-service:8901"
     grpcPort: "8001"
     databaseMaxConnections: "64"
     rabbitmqMaxChannelPoolSize: "128"
@@ -289,10 +290,10 @@ appServer:
     grpcPayloadLimit: "26214400"
     aggregateTraces: "true"
     enableTracing: "true"
-    queryEngineUrl: "http://query-engine-service:8903"
-    quickwitSearchUrl: "http://quickwit-searcher:7280"
-    quickwitIngestUrl: "http://quickwit-indexer:7281"
-    redisUrl: "redis://redis-service:6379"
+    queryEngineUrl: "http://laminar-query-engine-service:8903"
+    quickwitSearchUrl: "http://laminar-quickwit-searcher:7280"
+    quickwitIngestUrl: "http://laminar-quickwit-indexer:7281"
+    redisUrl: "redis://laminar-redis-service:6379"
 
 # App Server Consumer configuration
 appServerConsumer:
@@ -314,16 +315,16 @@ appServerConsumer:
     enabled: true
     services:
       - name: redis
-        host: redis-service
+        host: laminar-redis-service
         port: 6379
       - name: postgres
-        host: postgres-service
+        host: laminar-postgres-service
         port: 5432
       - name: clickhouse
-        host: clickhouse-service
+        host: laminar-clickhouse-service
         port: 8123
       - name: rabbitmq
-        host: rabbitmq-service
+        host: laminar-rabbitmq-service
         port: 5672
   service:
     type: ClusterIP
@@ -341,11 +342,11 @@ appServerConsumer:
     numNotificationWorkers: "4"
     numClusteringWorkers: "4"
     rabbitmqMaxChannelPoolSize: "128"
-    redisUrl: "redis://redis-service:6379"
+    redisUrl: "redis://laminar-redis-service:6379"
     aggregateTraces: "true"
     enableTracing: "true"
-    quickwitSearchUrl: "http://quickwit-searcher:7280"
-    quickwitIngestUrl: "http://quickwit-indexer:7281"
+    quickwitSearchUrl: "http://laminar-quickwit-searcher:7280"
+    quickwitIngestUrl: "http://laminar-quickwit-indexer:7281"
 
 # Quickwit configuration
 quickwit:
@@ -392,7 +393,7 @@ quickwit:
       enabled: true
       services:
         - name: postgres
-          host: postgres-service
+          host: laminar-postgres-service
           port: 5432
   indexer:
     replicaCount: 1
@@ -452,7 +453,7 @@ postgres:
   persistence:
     enabled: true
     # Storage class name - if empty, uses default storage class
-    storageClass: "ebs-sc"
+    storageClass: "laminar-ebs-sc"
     size: "20Gi"
   service:
     type: ClusterIP
@@ -478,7 +479,7 @@ clickhouse:
   persistence:
     enabled: true
     # Storage class name - if empty, uses default storage class
-    storageClass: "ebs-sc"
+    storageClass: "laminar-ebs-sc"
     size: "50Gi"
   # S3 storage configuration for separation of storage and compute
   # When enabled, ClickHouse will store data in S3 instead of local disks
@@ -546,7 +547,7 @@ rabbitmq:
   persistence:
     enabled: true
     # Storage class name - if empty, uses default storage class
-    storageClass: "ebs-sc"
+    storageClass: "laminar-ebs-sc"
     size: "50Gi"
   service:
     type: ClusterIP
@@ -559,7 +560,7 @@ rabbitmq:
 # Storage configuration
 storage:
   storageClass:
-    name: "ebs-sc"
+    name: "laminar-ebs-sc"
     provisioner: "ebs.csi.aws.com"
     type: "gp3"  # Options: gp3, gp2, io1, io2, st1, sc1
     reclaimPolicy: "Retain"  # Retain volumes after pod deletion

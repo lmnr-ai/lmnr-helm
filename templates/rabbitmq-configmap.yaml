@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: rabbitmq-config
+  name: {{ include "laminar.resourceName" "rabbitmq-config" }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "laminar.labels" . | nindent 4 }}
@@ -16,7 +16,7 @@ data:
     cluster_formation.peer_discovery_backend = k8s
     cluster_formation.k8s.host = kubernetes.default.svc.cluster.local
     cluster_formation.k8s.address_type = hostname
-    cluster_formation.k8s.service_name = rabbitmq-headless
+    cluster_formation.k8s.service_name = {{ include "laminar.resourceName" "rabbitmq-headless" }}
 
     queue_master_locator=min-masters
 

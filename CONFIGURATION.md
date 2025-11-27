@@ -2,6 +2,8 @@
 
 This guide covers advanced configuration options for the Laminar Helm chart.
 
+> **Note on Namespaces:** All examples in this guide assume the default namespace. If using a custom namespace, add `--namespace <your-namespace>` to `helm` commands and `-n <your-namespace>` to `kubectl` commands.
+
 ## Table of Contents
 
 - [Secrets Management](#secrets-management)
@@ -28,13 +30,16 @@ secrets:
   enabled: true
   data:
     NEXTAUTH_SECRET: "your-secret"
-    NEXTAUTH_URL: "https://localhost:3000"
-    NEXTAUTH_PUBLIC_URL: "https://localhost:3000"
     AWS_ACCESS_KEY_ID: "your-aws-access-key-id"
     AWS_SECRET_ACCESS_KEY: "your-secret-access-key"
     AWS_REGION: "us-east-1"
     S3_TRACE_PAYLOADS_BUCKET: "an-existing-bucket-for-trace-payloads"
     # ... other secrets
+
+frontend:
+  env:
+    nextauthUrl: "https://localhost:3000"
+    nextPublicUrl: "https://localhost:3000"
 ```
 
 Install with:
@@ -212,11 +217,6 @@ frontend:
   env:
     nextauthUrl: "https://app.yourdomain.com"
     nextPublicUrl: "https://app.yourdomain.com"
-
-secrets:
-  data:
-    NEXTAUTH_URL: "https://app.yourdomain.com"
-    NEXTAUTH_PUBLIC_URL: "https://app.yourdomain.com"
 ```
 
 Install with:
@@ -240,11 +240,6 @@ frontend:
   env:
     nextauthUrl: "https://app.yourdomain.com"
     nextPublicUrl: "https://app.yourdomain.com"
-
-secrets:
-  data:
-    NEXTAUTH_URL: "https://app.yourdomain.com"
-    NEXTAUTH_PUBLIC_URL: "https://app.yourdomain.com"
 ```
 
 Install with:
@@ -268,7 +263,7 @@ frontend:
 After deployment, create a CNAME record pointing to the ALB:
 
 ```bash
-kubectl get ingress frontend-alb -n laminar -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 ```
 
 ## Storage Configuration
@@ -396,8 +391,8 @@ clickhouse:
 **Verify S3 storage:**
 
 ```bash
-kubectl exec clickhouse-0 -n laminar -- clickhouse-client --query "SELECT * FROM system.disks"
-kubectl exec clickhouse-0 -n laminar -- clickhouse-client --query "SELECT * FROM system.storage_policies"
+kubectl exec laminar-clickhouse-0 -- clickhouse-client --query "SELECT * FROM system.disks"
+kubectl exec laminar-clickhouse-0 -- clickhouse-client --query "SELECT * FROM system.storage_policies"
 ```
 
 ## Node Placement
