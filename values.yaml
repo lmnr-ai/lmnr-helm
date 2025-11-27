@@ -1,7 +1,16 @@
 # Global configuration
 global:
   environment: "FULL"
-  nodeGroupName: "t3a-xlarge"
+  # Namespace for all resources (default: default)
+  # When installing the chart, you can specify a custom namespace with --namespace flag
+  # If you want a dedicated namespace, use: helm install laminar . --namespace laminar --create-namespace
+  namespace: "default"
+  # Your node group name. Example: managed-ng-m6a-xlarge-1-80-gb-01
+  nodeGroupName: ""
+  # Default node scheduling configuration (can be overridden per service)
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
 
 # Image configuration
 images:
@@ -12,6 +21,9 @@ images:
     tag: "latest"
   appServer:
     name: "app-server"
+    tag: "latest"
+  queryEngine:
+    name: "query-engine"
     tag: "latest"
   redis:
     repository: "valkey/valkey"
@@ -32,7 +44,65 @@ images:
 # Secrets configuration (K8s secrets)
 secrets:
   enabled: true
-  # All secret values - these should be provided via values files or --set flags
+  # Database SSL configuration
+  # Set to true if connecting to an external Postgres instance that requires SSL
+  # Set to false if using the embedded Postgres instance (no SSL)
+  enableDatabaseSSL: false
+  
+  # AWS Secrets Manager configuration
+  # Secrets listed in secretKeys will be fetched from AWS Secrets Manager
+  awsSecretsManager:
+    enabled: false
+    region: "us-east-1"
+    
+    # IAM role for IRSA (IAM Roles for Service Accounts)
+    serviceAccount:
+      create: true
+      name: "lmnr-secrets-reader-sa"
+      # Optional: If provided, annotates SA with eks.amazonaws.com/role-arn
+      # Leave empty if IRSA is already configured
+      roleArn: ""
+    
+    # Secret source configuration (single JSON secret approach)
+    # Option 1: Use clusterName pattern - secret name will be: {clusterName}/lmnr-secrets
+    clusterName: ""
+    # Option 2: Override with explicit secret name (takes precedence over clusterName)
+    secretName: ""
+    
+    # Explicit list of secret keys to fetch from AWS
+    # These keys will be fetched from AWS and NOT use secrets.data values
+    # Example: ["NEXTAUTH_SECRET", "AUTH_GITHUB_ID", "AUTH_GITHUB_SECRET"]
+    secretKeys: []
+  
+  # HashiCorp Vault configuration
+  # Secrets listed in secretKeys will be fetched from Vault
+  vault:
+    enabled: false
+    address: "http://vault:8200"
+    
+    # Kubernetes auth configuration
+    authPath: "auth/kubernetes"
+    role: "lmnr-app"
+    
+    # Service account for Vault authentication
+    serviceAccount:
+      create: true
+      name: "lmnr-vault-sa"
+    
+    # Secret path configuration
+    kvVersion: "v2"  # v1 or v2
+    secretPath: "secret/data/lmnr"  # Path to secrets in Vault (for KV v2)
+    
+    # Explicit list of secret keys to fetch from Vault
+    # These keys will be fetched from Vault and NOT use secrets.data values
+    # Example: ["RABBITMQ_PASSWORD", "CLICKHOUSE_PASSWORD", "POSTGRES_PASSWORD"]
+    secretKeys: []
+  
+  # Full schema of all required secrets
+  # Keys NOT listed in AWS or Vault secretKeys will use these values as defaults
+  # Auto-generated URLs (DATABASE_URL, CLICKHOUSE_URL, RABBITMQ_URL) are created
+  # unless the key is present in AWS or Vault secretKeys
+  # All secret values should be provided via values files or --set flags
   data:
     NEXTAUTH_SECRET: "abc"
     RABBITMQ_ERLANG_COOKIE: "rabbitmq-erlang-cookie"
@@ -46,7 +116,53 @@ secrets:
     SHARED_SECRET_TOKEN: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
     AWS_ACCESS_KEY_ID: "<AWS_ACCESS_KEY_ID>"
     AWS_SECRET_ACCESS_KEY: "<AWS_SECRET_ACCESS_KEY>"
+    AWS_REGION: "us-east-1"
     S3_TRACE_PAYLOADS_BUCKET: "<s3-bucket-name>"
+    S3_EXPORTS_BUCKET: "<s3-exports-bucket-name>"
+    # App Server secrets
+    PYTHON_ONLINE_EVALUATOR_URL: "<PYTHON_ONLINE_EVALUATOR_URL>"
+    CLICKHOUSE_RO_USER: "default"
+    CLICKHOUSE_RO_PASSWORD: "clickhouse123"
+    DATABASE_SSL_ROOT_CERT: "<DATABASE_SSL_ROOT_CERT--MULTILINE_PEM_ENCODED>"
+    # App Server Consumer secrets
+    TRACE_SUMMARIZER_SECRET_KEY: "<TRACE_SUMMARIZER_SECRET_KEY>"
+    TRACE_SUMMARIZER_URL: "<TRACE_SUMMARIZER_URL>"
+    TRACE_EVENT_IDENTIFIER_URL: "<TRACE_EVENT_IDENTIFIER_URL>"
+    SLACK_ENCRYPTION_KEY: "<SLACK_ENCRYPTION_KEY>"
+    CLUSTER_ENDPOINT: "<CLUSTER_ENDPOINT>"
+    CLUSTER_ENDPOINT_KEY: "<CLUSTER_ENDPOINT_KEY>"
+    ONLINE_EVALUATORS_SECRET_KEY: "<ONLINE_EVALUATORS_SECRET_KEY>"
+    # Frontend secrets - Auth providers
+    AUTH_GITHUB_ID: "<AUTH_GITHUB_ID>"
+    AUTH_GITHUB_SECRET: "<AUTH_GITHUB_SECRET>"
+    AUTH_GOOGLE_ID: "<AUTH_GOOGLE_ID>"
+    AUTH_GOOGLE_SECRET: "<AUTH_GOOGLE_SECRET>"
+    AUTH_AZURE_AD_CLIENT_ID: "<AUTH_AZURE_AD_CLIENT_ID>"
+    AUTH_AZURE_AD_CLIENT_SECRET: "<AUTH_AZURE_AD_CLIENT_SECRET>"
+    AUTH_AZURE_AD_TENANT_ID: "<AUTH_AZURE_AD_TENANT_ID>"
+    # Frontend secrets - Integrations
+    STRIPE_SECRET_KEY: "<STRIPE_SECRET_KEY>"
+    STRIPE_WEBHOOK_ENDPOINT_SECRET: "<STRIPE_WEBHOOK_ENDPOINT_SECRET>"
+    RESEND_API_KEY: "<RESEND_API_KEY>"
+    GITHUB_TOKEN: "<GITHUB_TOKEN>"
+    LAMINAR_API_KEY: "<LAMINAR_API_KEY>"
+    SUPABASE_JWT_SECRET: "<SUPABASE_JWT_SECRET>"
+    # Frontend secrets - Worker URLs
+    DATASET_EXPORT_WORKER_URL: "<DATASET_EXPORT_WORKER_URL>"
+    DATASET_EXPORT_SECRET_KEY: "<DATASET_EXPORT_SECRET_KEY>"
+    DATA_EXPORTER_URL: "<DATA_EXPORTER_URL>"
+    DATA_EXPORTER_SECRET_KEY: "<DATA_EXPORTER_SECRET_KEY>"
+    # Frontend secrets - Slack
+    SLACK_CLIENT_ID: "<SLACK_CLIENT_ID>"
+    SLACK_CLIENT_SECRET: "<SLACK_CLIENT_SECRET>"
+    SLACK_SIGNING_SECRET: "<SLACK_SIGNING_SECRET>"
+    SLACK_REDIRECT_URL: "<SLACK_REDIRECT_URL>"
+    # Frontend secrets - Other
+    OPENAI_API_KEY: "<OPENAI_API_KEY>"
+    GOOGLE_GENERATIVE_AI_API_KEY: "<GOOGLE_GENERATIVE_AI_API_KEY>"
+    LMNR_PROJECT_API_KEY: "<LMNR_PROJECT_API_KEY>"
+    # Quickwit secrets
+    QUICKWIT_DATABASE_URL: "postgres://lmnr:lmnr123@laminar-postgres-service:5432/postgres"
 
 # Frontend configuration
 frontend:
@@ -58,7 +174,29 @@ frontend:
       memory: "1Gi"
     limits:
       cpu: "2.0"
-      memory: "4Gi"
+      memory: "2Gi"
+  # Node scheduling configuration
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  # Wait for dependencies before starting
+  waitForDependencies:
+    enabled: true
+    services:
+      - name: redis
+        host: laminar-redis-service
+        port: 6379
+      - name: postgres
+        host: laminar-postgres-service
+        port: 5432
+      - name: clickhouse
+        host: laminar-clickhouse-service
+        port: 8123
+    httpChecks:
+      - name: app-server
+        url: http://laminar-app-server-service:8000/health
+      - name: app-server-consumer
+        url: http://laminar-app-server-consumer-service:8000/health
   service:
     type: ClusterIP
     port: 80
@@ -66,14 +204,29 @@ frontend:
   ingress:
     enabled: true
     className: "alb"
+    # Optional: Set a custom hostname for your ingress
+    # If set, this will be used in the ingress rules and can be used with external-dns
+    # Example: "app.yourdomain.com"
+    hostname: ""
+    # Optional: Enable external-dns integration
+    # Requires external-dns to be installed in your cluster
+    # When enabled with a hostname, external-dns will automatically create DNS records
+    externalDns:
+      enabled: false
     annotations:
       alb.ingress.kubernetes.io/scheme: internet-facing
       alb.ingress.kubernetes.io/target-type: ip
       alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+      # external-dns.alpha.kubernetes.io/hostname will be added automatically if externalDns.enabled is true
   env:
-    backendUrl: "http://app-server-service:8000"
-    nextauthUrl: "<YOUR_NEXT_SERVER_URL>"
-    redisUrl: "redis://redis-service:6379"
+    backendUrl: "http://laminar-app-server-service:8000"
+    backendRtUrl: "http://laminar-app-server-consumer-service:8000"
+    # Set these to your actual frontend URL
+    # If ingress.hostname is set, you can use "http://<hostname>" or "https://<hostname>"
+    # Otherwise, set the ALB DNS name after initial deployment (see QUICKSTART.md)
+    nextauthUrl: "https://localhost:3000"
+    nextPublicUrl: "https://localhost:3000"
+    redisUrl: "redis://laminar-redis-service:6379"
 
 # App Server configuration
 appServer:
@@ -85,7 +238,27 @@ appServer:
       memory: "1Gi"
     limits:
       cpu: "2"
-      memory: "8Gi"
+      memory: "2Gi"
+  # Node scheduling configuration
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  # Wait for dependencies before starting
+  waitForDependencies:
+    enabled: true
+    services:
+      - name: redis
+        host: laminar-redis-service
+        port: 6379
+      - name: postgres
+        host: laminar-postgres-service
+        port: 5432
+      - name: clickhouse
+        host: laminar-clickhouse-service
+        port: 8123
+      - name: rabbitmq
+        host: laminar-rabbitmq-service
+        port: 5672
   service:
     type: ClusterIP
     port: 8000
@@ -107,14 +280,159 @@ appServer:
         memory: "256Mi"
   env:
     port: "8000"
+    agentManagerUrl: "http://laminar-agent-manager-service:8901"
     grpcPort: "8001"
-    databaseMaxConnections: "96"
-    numWorkersPerThread: "8"
-    numBrowserEventsWorkersPerThread: "8"
-    browserEventsMaxBatchSize: "64"
+    databaseMaxConnections: "64"
+    rabbitmqMaxChannelPoolSize: "128"
+    dbWriteSpanBatchSize: "24"
+    maxDbSpanPayloadBytes: "262144"
     httpPayloadLimit: "26214400"
     grpcPayloadLimit: "26214400"
-    redisUrl: "redis://redis-service:6379"
+    aggregateTraces: "true"
+    enableTracing: "true"
+    queryEngineUrl: "http://laminar-query-engine-service:8903"
+    quickwitSearchUrl: "http://laminar-quickwit-searcher:7280"
+    quickwitIngestUrl: "http://laminar-quickwit-indexer:7281"
+    redisUrl: "redis://laminar-redis-service:6379"
+
+# App Server Consumer configuration
+appServerConsumer:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "0.5Gi"
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+  # Node scheduling configuration
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  # Wait for dependencies before starting
+  waitForDependencies:
+    enabled: true
+    services:
+      - name: redis
+        host: laminar-redis-service
+        port: 6379
+      - name: postgres
+        host: laminar-postgres-service
+        port: 5432
+      - name: clickhouse
+        host: laminar-clickhouse-service
+        port: 8123
+      - name: rabbitmq
+        host: laminar-rabbitmq-service
+        port: 5672
+  service:
+    type: ClusterIP
+    port: 8000
+    targetPort: 8000
+  env:
+    port: "8000"
+    consumerPort: "8000"
+    databaseMaxConnections: "64"
+    numSpansWorkers: "48"
+    numBrowserEventsWorkers: "48"
+    numPayloadWorkers: "48"
+    numTraceSummaryWorkers: "16"
+    numEvaluatorsWorkers: "8"
+    numNotificationWorkers: "4"
+    numClusteringWorkers: "4"
+    rabbitmqMaxChannelPoolSize: "128"
+    redisUrl: "redis://laminar-redis-service:6379"
+    aggregateTraces: "true"
+    enableTracing: "true"
+    quickwitSearchUrl: "http://laminar-quickwit-searcher:7280"
+    quickwitIngestUrl: "http://laminar-quickwit-indexer:7281"
+
+# Quickwit configuration
+quickwit:
+  enabled: true
+  version: "v0.8.2"
+  clusterId: "default-quickwit"
+  # Node scheduling configuration
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  # S3 storage configuration
+  s3:
+    defaultIndexRootUri: "s3://lmnr-quickwit/indexes"
+    region: "us-east-1"
+  # Component configurations
+  controlPlane:
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: "0.1"
+        memory: "100Mi"
+      limits:
+        cpu: "1.0"
+        memory: "1Gi"
+  janitor:
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: "0.1"
+        memory: "100Mi"
+      limits:
+        cpu: "1.0"
+        memory: "1Gi"
+  metastore:
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: "0.1"
+        memory: "100Mi"
+      limits:
+        cpu: "1.0"
+        memory: "1Gi"
+    waitForDependencies:
+      enabled: true
+      services:
+        - name: postgres
+          host: laminar-postgres-service
+          port: 5432
+  indexer:
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: "0.1"
+        memory: "100Mi"
+      limits:
+        cpu: "1.0"
+        memory: "4Gi"
+  searcher:
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: "0.1"
+        memory: "100Mi"
+      limits:
+        cpu: "1.0"
+        memory: "2Gi"
+
+# Query Engine configuration
+queryEngine:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: "0.1"
+      memory: "128Mi"
+    limits:
+      cpu: "0.5"
+      memory: "256Mi"
+  # Node scheduling configuration
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  service:
+    type: ClusterIP
+    port: 8903
+    targetPort: 8903
 
 # PostgreSQL configuration
 postgres:
@@ -123,14 +441,19 @@ postgres:
   database: "lmnr"
   resources:
     requests:
-      cpu: "0.5"
-      memory: "1Gi"
+      cpu: "0.1"
+      memory: "128Mi"
     limits:
-      cpu: "2"
-      memory: "4Gi"
+      cpu: "0.5"
+      memory: "2Gi"
+  # Node scheduling configuration
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
   persistence:
     enabled: true
-    storageClass: "ebs-sc"
+    # Storage class name - if empty, uses default storage class
+    storageClass: "laminar-ebs-sc"
     size: "20Gi"
   service:
     type: ClusterIP
@@ -144,15 +467,42 @@ clickhouse:
   database: "lmnr"
   resources:
     requests:
-      cpu: "0.5"
-      memory: "1Gi"
+      cpu: "0.1"
+      memory: "256Mi"
     limits:
-      cpu: "2"
+      cpu: "0.5"
       memory: "4Gi"
+  # Node scheduling configuration
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
   persistence:
     enabled: true
-    storageClass: "ebs-sc"
+    # Storage class name - if empty, uses default storage class
+    storageClass: "laminar-ebs-sc"
     size: "50Gi"
+  # S3 storage configuration for separation of storage and compute
+  # When enabled, ClickHouse will store data in S3 instead of local disks
+  s3:
+    enabled: true
+    # S3 bucket endpoint (e.g., https://my-bucket.s3.us-east-1.amazonaws.com/)
+    endpoint: ""
+    # S3 bucket region
+    region: ""
+    # S3 access credentials - can use secrets instead
+    accessKeyId: ""
+    secretAccessKey: ""
+    # Use environment credentials or EC2 instance profile
+    useEnvironmentCredentials: false
+    # Local cache configuration for S3 data
+    cache:
+      enabled: true
+      # Local disk path for cache
+      path: "/var/lib/clickhouse/disks/s3_cache/"
+      # Maximum cache size (e.g., 10Gi, 50Gi)
+      maxSize: "10Gi"
+    # Metadata path for S3 disk
+    metadataPath: "/var/lib/clickhouse/disks/s3_disk/"
   service:
     type: ClusterIP
     port: 8123
@@ -170,6 +520,10 @@ redis:
     limits:
       cpu: "1"
       memory: "1Gi"
+  # Node scheduling configuration
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
   service:
     type: ClusterIP
     port: 6379
@@ -181,15 +535,20 @@ rabbitmq:
   replicaCount: 1
   resources:
     requests:
-      cpu: "0.5"
-      memory: "1Gi"
+      cpu: "0.1"
+      memory: "256Mi"
     limits:
-      cpu: "4"
+      cpu: "1.0"
       memory: "4Gi"
+  # Node scheduling configuration
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
   persistence:
     enabled: true
-    storageClass: "ebs-sc"
-    size: "5Gi"
+    # Storage class name - if empty, uses default storage class
+    storageClass: "laminar-ebs-sc"
+    size: "50Gi"
   service:
     type: ClusterIP
     amqpPort: 5672
@@ -201,11 +560,13 @@ rabbitmq:
 # Storage configuration
 storage:
   storageClass:
-    name: "ebs-sc"
-    provisioner: "kubernetes.io/aws-ebs"
-    type: "gp3"
-    reclaimPolicy: "Retain"
-    volumeBindingMode: "WaitForFirstConsumer"
+    name: "laminar-ebs-sc"
+    provisioner: "ebs.csi.aws.com"
+    type: "gp3"  # Options: gp3, gp2, io1, io2, st1, sc1
+    reclaimPolicy: "Retain"  # Retain volumes after pod deletion
+    volumeBindingMode: "WaitForFirstConsumer"  # Bind volumes when pod is scheduled
+    # Availability zones where volumes can be created
+    # This restricts persistent volumes to specific AZs
+    # Important: Ensure your nodes are running in these zones
     zones:
       - "us-east-1b"
-      - "us-east-1f" 

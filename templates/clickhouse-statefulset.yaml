@@ -2,16 +2,16 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: clickhouse
+  name: {{ include "laminar.resourceName" "clickhouse" }}
   labels:
-    app: clickhouse
+    app: {{ include "laminar.resourceName" "clickhouse" }}
 spec:
-  serviceName: clickhouse-headless
+  serviceName: {{ include "laminar.resourceName" "clickhouse-headless" }}
   replicas: {{ .Values.clickhouse.replicaCount }}
   selector:
     matchLabels:
-      app: clickhouse
-  {{- if .Values.clickhouse.persistence.enabled }}
+      app: {{ include "laminar.resourceName" "clickhouse" }}
+  {{- if and .Values.clickhouse.persistence.enabled (not .Values.clickhouse.s3.enabled) }}
   volumeClaimTemplates:
     - metadata:
         name: clickhouse-data
@@ -26,8 +26,9 @@ spec:
   template:
     metadata:
       labels:
-        app: clickhouse
+        app: {{ include "laminar.resourceName" "clickhouse" }}
     spec:
+      serviceAccountName: {{ include "lmnr.secrets.serviceAccountName" . }}
       containers:
         - name: clickhouse
           image: {{ .Values.images.clickhouse.repository }}:{{ .Values.images.clickhouse.tag }}
@@ -38,25 +39,36 @@ spec:
               name: native
           resources:
             {{- toYaml .Values.clickhouse.resources | nindent 12 }}
+          envFrom:
+            {{- include "lmnr.secrets.envFrom" . | nindent 12 }}
           env:
             - name: CLICKHOUSE_DB
               value: {{ .Values.clickhouse.database }}
-            - name: CLICKHOUSE_USER
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: CLICKHOUSE_USER
-            - name: CLICKHOUSE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: CLICKHOUSE_PASSWORD
             - name: CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT
               value: "1"
           volumeMounts:
-            {{- if .Values.clickhouse.persistence.enabled }}
+            {{- if not .Values.clickhouse.s3.enabled }}
             - name: clickhouse-data
               mountPath: /var/lib/clickhouse
+            {{- end }}
+            {{- if .Values.clickhouse.s3.enabled }}
+            - name: clickhouse-storage-config
+              mountPath: /etc/clickhouse-server/config.d/storage_config.xml
+              subPath: storage_config.xml
+            {{- if .Values.clickhouse.s3.cache.enabled }}
+            - name: clickhouse-s3-cache
+              mountPath: {{ .Values.clickhouse.s3.cache.path }}
+            {{- end }}
+            {{- end }}
+            {{- if include "lmnr.secrets.awsEnabled" . }}
+            - name: secrets-store-aws
+              mountPath: "/mnt/secrets-store-aws"
+              readOnly: true
+            {{- end }}
+            {{- if include "lmnr.secrets.vaultEnabled" . }}
+            - name: secrets-store-vault
+              mountPath: "/mnt/secrets-store-vault"
+              readOnly: true
             {{- end }}
           livenessProbe:
             httpGet:
@@ -76,9 +88,41 @@ spec:
             timeoutSeconds: 5
             successThreshold: 1
             failureThreshold: 3
-      {{- if not .Values.clickhouse.persistence.enabled }}
       volumes:
+        {{- if not .Values.clickhouse.persistence.enabled }}
         - name: clickhouse-data
           emptyDir: {}
       {{- end }}
-{{- end }} 
+      {{- if .Values.clickhouse.s3.enabled }}
+        - name: clickhouse-storage-config
+          configMap:
+            name: {{ include "laminar.resourceName" "clickhouse-storage-config" }}
+            items:
+              - key: storage_config.xml
+                path: storage_config.xml
+        {{- if .Values.clickhouse.s3.cache.enabled }}
+        - name: clickhouse-s3-cache
+          emptyDir:
+            sizeLimit: {{ .Values.clickhouse.s3.cache.maxSize }}
+        {{- end }}
+      {{- end }}
+        {{- if include "lmnr.secrets.awsEnabled" . }}
+        - name: secrets-store-aws
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: lmnr-secrets-aws
+        {{- end }}
+        {{- if include "lmnr.secrets.vaultEnabled" . }}
+        - name: secrets-store-vault
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: lmnr-secrets-vault
+        {{- end }}
+      {{- include "laminar.nodeSelector" (dict "service" .Values.clickhouse "global" .Values.global) | nindent 6 }}
+      {{- include "laminar.affinity" (dict "service" .Values.clickhouse "global" .Values.global) | nindent 6 }}
+      {{- include "laminar.tolerations" (dict "service" .Values.clickhouse "global" .Values.global) | nindent 6 }}
+{{- end }}

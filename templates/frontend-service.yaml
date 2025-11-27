@@ -2,14 +2,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: frontend-service
+  name: {{ include "laminar.resourceName" "frontend-service" }}
 spec:
   selector:
-    app: frontend
+    app: {{ include "laminar.resourceName" "frontend" }}
   ports:
     - protocol: TCP
       name: http
       port: {{ .Values.frontend.service.port }}
       targetPort: {{ .Values.frontend.service.targetPort }}
   type: {{ .Values.frontend.service.type }}
-{{- end }} 
+{{- end }}

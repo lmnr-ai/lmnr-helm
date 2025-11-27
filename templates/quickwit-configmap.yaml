@@ -1,0 +1,21 @@
+{{- if .Values.quickwit.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "laminar.resourceName" "quickwit" }}
+  labels:
+    app.kubernetes.io/name: quickwit
+    app.kubernetes.io/instance: quickwit
+    app.kubernetes.io/version: {{ .Values.quickwit.version | quote }}
+data:
+  node.yaml: |-
+    data_dir: /quickwit/qwdata
+    default_index_root_uri: {{ .Values.quickwit.s3.defaultIndexRootUri }}
+    gossip_listen_port: 7282
+    listen_address: 0.0.0.0
+    storage:
+      s3:
+        region: {{ .Values.quickwit.s3.region }}
+    metastore_uri: ${QW_METASTORE_URI}
+    version: 0.8
+{{- end }}

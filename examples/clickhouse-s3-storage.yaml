@@ -1,0 +1,44 @@
+# ClickHouse with S3-backed storage (Separation of Storage and Compute)
+# This example configures ClickHouse to store data in S3 instead of local disks
+# Benefits:
+#   - Lower storage costs (S3 vs EBS)
+#   - Independent scaling of storage and compute
+#   - S3's built-in durability and replication
+#
+# Prerequisites:
+#   1. Create an S3 bucket
+#   2. Configure IAM permissions for S3 access (see CONFIGURATION.md)
+#   3. For production, use IAM roles (useEnvironmentCredentials: true)
+
+clickhouse:
+  enabled: true
+  # Disable local persistence when using S3
+  persistence:
+    enabled: false
+
+  # Enable S3 storage configuration
+  s3:
+    enabled: true
+    # S3 bucket endpoint (replace with your bucket)
+    endpoint: "https://my-clickhouse-bucket.s3.us-east-1.amazonaws.com/"
+    # S3 region
+    region: "us-east-1"
+
+    # Option 1: Use explicit credentials (not recommended for production)
+    accessKeyId: "YOUR_ACCESS_KEY_ID"
+    secretAccessKey: "YOUR_SECRET_ACCESS_KEY"
+    useEnvironmentCredentials: false
+
+    # Option 2: Use IAM role / environment credentials (recommended for production)
+    # accessKeyId: ""
+    # secretAccessKey: ""
+    # useEnvironmentCredentials: true
+
+    # Local cache configuration for frequently accessed data
+    cache:
+      enabled: true
+      path: "/var/lib/clickhouse/disks/s3_cache/"
+      maxSize: "50Gi"  # Adjust based on your working set size
+
+    # Metadata path
+    metadataPath: "/var/lib/clickhouse/disks/s3_disk/"

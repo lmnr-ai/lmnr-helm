@@ -1,0 +1,62 @@
+# Laminar Helm Chart - Minimal Configuration Template
+#
+# This file contains the minimal required configuration to get Laminar running.
+# It overrides the defaults in values.yaml - you only need to specify what you want to change.
+#
+# Quick Start:
+#   1. Edit this file with your AWS credentials, S3 buckets, and availability zones
+#   2. Install: helm upgrade -i laminar . -f laminar.yaml
+#   3. Get ALB URL: kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+#   4. Update NEXTAUTH_URL with ALB URL and upgrade again
+#
+# For advanced configuration options, see:
+#   - values.yaml (for all available options)
+#   - CONFIGURATION.md (for detailed guides)
+#   - examples/ directory (for example configurations)
+
+global:
+  environment: "FULL"
+  # # Namespace for all resources (default: default)
+  # # Uncomment the below line to use a custom namespace (e.g., "laminar")
+  # namespace: "laminar"
+  # # If not set, pods will not have any specific node group affinity
+  # # Uncomment the below line to set a specific node group affinity
+  # nodeGroupName: ""
+
+secrets:
+  enabled: true
+  data:
+    NEXTAUTH_SECRET: "your-secret"
+    AWS_ACCESS_KEY_ID: "your-aws-access-key-id"
+    AWS_SECRET_ACCESS_KEY: "your-secret-access-key"
+    AWS_REGION: "us-east-1"
+    S3_TRACE_PAYLOADS_BUCKET: "an-existing-bucket-for-trace-payloads"
+    # This must be filled with the ingress URL after initial deployment
+    # Refer to QUICKSTART.md for more details
+
+frontend:
+  env:
+    nextauthUrl: "http://localhost:3000"
+    nextPublicUrl: "http://localhost:3000"
+
+quickwit:
+  s3:
+    defaultIndexRootUri: "s3://your-bucket-name/indexes"
+    region: "<region>"
+
+clickhouse:
+  s3:
+    # S3 bucket endpoint (replace with your bucket)
+    endpoint: "https://<bucket-name>.s3.<region>.amazonaws.com/"
+    # S3 region (replace with your region)
+    region: "<region>"
+    # S3 access credentials - can use secrets instead
+    accessKeyId: ""
+    secretAccessKey: ""
+    # Use environment credentials or EC2 instance profile
+    useEnvironmentCredentials: false
+
+storage:
+  storageClass:
+    zones:
+      - "us-east-1a"

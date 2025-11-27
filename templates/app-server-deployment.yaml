@@ -2,19 +2,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: app-server
+  name: {{ include "laminar.resourceName" "app-server" }}
   labels:
-    app: app-server
+    app: {{ include "laminar.resourceName" "app-server" }}
 spec:
   replicas: {{ .Values.appServer.replicaCount }}
   selector:
     matchLabels:
-      app: app-server
+      app: {{ include "laminar.resourceName" "app-server" }}
   template:
     metadata:
       labels:
-        app: app-server
+        app: {{ include "laminar.resourceName" "app-server" }}
     spec:
+      serviceAccountName: {{ include "lmnr.secrets.serviceAccountName" . }}
+      {{- if .Values.appServer.waitForDependencies.enabled }}
+      initContainers:
+        {{- range .Values.appServer.waitForDependencies.services }}
+        - name: wait-for-{{ .name }}
+          image: busybox:latest
+          command: ['sh', '-c', 'until nc -z {{ .host }} {{ .port }}; do echo "waiting for {{ .name }}..."; sleep 2; done; echo "{{ .name }} is ready"']
+        {{- end }}
+      {{- end }}
       containers:
         - name: app-server
           image: {{ .Values.images.repository }}/{{ .Values.images.appServer.name }}:{{ .Values.images.appServer.tag }}
@@ -24,6 +33,8 @@ spec:
             - containerPort: 8001
           resources:
             {{- toYaml .Values.appServer.resources | nindent 12 }}
+          envFrom:
+            {{- include "lmnr.secrets.envFrom" . | nindent 12 }}
           livenessProbe:
             httpGet:
               path: /health
@@ -39,18 +50,22 @@ spec:
             periodSeconds: 5
             failureThreshold: 1
           env:
+            - name: OPERATION_MODE
+              value: "producer"
             - name: PORT
               value: {{ .Values.appServer.env.port | quote }}
             - name: GRPC_PORT
               value: {{ .Values.appServer.env.grpcPort | quote }}
+            - name: AGENT_MANAGER_URL
+              value: {{ .Values.appServer.env.agentManagerUrl }}
             - name: DATABASE_MAX_CONNECTIONS
               value: {{ .Values.appServer.env.databaseMaxConnections | quote }}
-            - name: NUM_WORKERS_PER_THREAD
-              value: {{ .Values.appServer.env.numWorkersPerThread | quote }}
-            - name: NUM_BROWSER_EVENTS_WORKERS_PER_THREAD
-              value: {{ .Values.appServer.env.numBrowserEventsWorkersPerThread | quote }}
-            - name: BROWSER_EVENTS_MAX_BATCH_SIZE
-              value: {{ .Values.appServer.env.browserEventsMaxBatchSize | quote }}
+            - name: RABBITMQ_MAX_CHANNEL_POOL_SIZE
+              value: {{ .Values.appServer.env.rabbitmqMaxChannelPoolSize | quote }}
+            - name: DB_WRITE_SPAN_BATCH_SIZE
+              value: {{ .Values.appServer.env.dbWriteSpanBatchSize | quote }}
+            - name: MAX_DB_SPAN_PAYLOAD_BYTES
+              value: {{ .Values.appServer.env.maxDbSpanPayloadBytes | quote }}
             - name: REDIS_URL
               value: {{ .Values.appServer.env.redisUrl }}
             - name: ENVIRONMENT
@@ -59,51 +74,17 @@ spec:
               value: {{ .Values.appServer.env.httpPayloadLimit | quote }}
             - name: GRPC_PAYLOAD_LIMIT
               value: {{ .Values.appServer.env.grpcPayloadLimit | quote }}
-            - name: RABBITMQ_URL
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: RABBITMQ_URL
-            - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: DATABASE_URL
-            - name: CLICKHOUSE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: CLICKHOUSE_URL
-            - name: CLICKHOUSE_USER
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: CLICKHOUSE_USER
-            - name: CLICKHOUSE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: CLICKHOUSE_PASSWORD
-            - name: AEAD_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AEAD_SECRET_KEY
-            - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AWS_ACCESS_KEY_ID
-            - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: AWS_SECRET_ACCESS_KEY
-            - name: S3_TRACE_PAYLOADS_BUCKET
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: S3_TRACE_PAYLOADS_BUCKET
+            - name: AGGREGATE_TRACES
+              value: {{ .Values.appServer.env.aggregateTraces | quote }}
+            - name: ENABLE_TRACING
+              value: {{ .Values.appServer.env.enableTracing | quote }}
+            - name: QUERY_ENGINE_URL
+              value: {{ .Values.appServer.env.queryEngineUrl }}
+            - name: QUICKWIT_SEARCH_URL
+              value: {{ .Values.appServer.env.quickwitSearchUrl }}
+            - name: QUICKWIT_INGEST_URL
+              value: {{ .Values.appServer.env.quickwitIngestUrl }}
+            # All secrets loaded via envFrom from app-secrets, app-secrets-aws, app-secrets-vault
         - name: nginx
           image: {{ .Values.images.nginx.repository }}:{{ .Values.images.nginx.tag }}
           ports:
@@ -129,17 +110,11 @@ spec:
       volumes:
         - name: nginx-config
           configMap:
-            name: app-server-nginx-config
+            name: {{ include "laminar.resourceName" "app-server-nginx-config" }}
             items:
             - key: nginx.conf
               path: nginx.conf
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: alpha.eksctl.io/nodegroup-name
-                operator: In
-                values:
-                - {{ .Values.global.nodeGroupName }}
-{{- end }} 
+      {{- include "laminar.nodeSelector" (dict "service" .Values.appServer "global" .Values.global) | nindent 6 }}
+      {{- include "laminar.affinity" (dict "service" .Values.appServer "global" .Values.global) | nindent 6 }}
+      {{- include "laminar.tolerations" (dict "service" .Values.appServer "global" .Values.global) | nindent 6 }}
+{{- end }}

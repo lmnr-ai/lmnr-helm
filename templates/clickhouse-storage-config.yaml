@@ -1,0 +1,58 @@
+{{- if and .Values.clickhouse.enabled .Values.clickhouse.s3.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "laminar.resourceName" "clickhouse-storage-config" }}
+  labels:
+    app: {{ include "laminar.resourceName" "clickhouse" }}
+data:
+  storage_config.xml: |
+    <clickhouse>
+      <storage_configuration>
+        <disks>
+          <s3_disk>
+            <type>s3</type>
+            <endpoint>{{ .Values.clickhouse.s3.endpoint }}</endpoint>
+            {{- if .Values.clickhouse.s3.region }}
+            <region>{{ .Values.clickhouse.s3.region }}</region>
+            {{- end }}
+            {{- if .Values.clickhouse.s3.useEnvironmentCredentials }}
+            <use_environment_credentials>true</use_environment_credentials>
+            {{- else }}
+            {{- if .Values.clickhouse.s3.accessKeyId }}
+            <access_key_id>{{ .Values.clickhouse.s3.accessKeyId }}</access_key_id>
+            {{- end }}
+            {{- if .Values.clickhouse.s3.secretAccessKey }}
+            <secret_access_key>{{ .Values.clickhouse.s3.secretAccessKey }}</secret_access_key>
+            {{- end }}
+            {{- end }}
+            <metadata_path>{{ .Values.clickhouse.s3.metadataPath }}</metadata_path>
+          </s3_disk>
+          {{- if .Values.clickhouse.s3.cache.enabled }}
+          <s3_cache>
+            <type>cache</type>
+            <disk>s3_disk</disk>
+            <path>{{ .Values.clickhouse.s3.cache.path }}</path>
+            <max_size>{{ .Values.clickhouse.s3.cache.maxSize }}</max_size>
+          </s3_cache>
+          {{- end }}
+        </disks>
+        <policies>
+          <s3_main>
+            <volumes>
+              <main>
+                {{- if .Values.clickhouse.s3.cache.enabled }}
+                <disk>s3_cache</disk>
+                {{- else }}
+                <disk>s3_disk</disk>
+                {{- end }}
+              </main>
+            </volumes>
+          </s3_main>
+        </policies>
+      </storage_configuration>
+      <merge_tree>
+        <storage_policy>s3_main</storage_policy>
+      </merge_tree>
+    </clickhouse>
+{{- end }}
