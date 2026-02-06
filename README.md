@@ -27,6 +27,9 @@ ALB_URL=$(kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBal
 helm upgrade -i laminar . -f laminar.yaml \
   --set frontend.env.nextauthUrl="http://$ALB_URL" \
   --set frontend.env.nextPublicUrl="http://$ALB_URL"
+
+# 5. Get the LMNR_BASE_URL (to send traces to)
+LMNR_BASE_URL=$(kubectl get svc laminar-app-server-load-balancer -o jsonpath='{.status.loadBalancer.ingress[0].hostname}') && echo $LMNR_BASE_URL
 ```
 
 See [QUICKSTART.md](./QUICKSTART.md) for detailed installation steps.
@@ -68,7 +71,7 @@ See [QUICKSTART.md](./QUICKSTART.md) for detailed installation steps.
 ## Prerequisites
 
 - Kubernetes cluster (EKS recommended)
-- Helm 3.x
+- Helm >=3.x
 - [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html)
 - [EBS CSI Driver](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html)
 
@@ -114,10 +117,11 @@ storage:
 
 For production deployments, additionally configure:
 
-1. **Secure passwords** for PostgreSQL, ClickHouse, and RabbitMQ (in secrets.data)
-2. **External secret management** (AWS Secrets Manager or HashiCorp Vault)
-3. **HTTPS** with an ACM certificate
-4. **Custom domain** with external-dns
+1. **OAuth Configuration** for logging in to the UI platform. Google and Github are supported.
+2. **Secure passwords** for PostgreSQL, ClickHouse, and RabbitMQ (in secrets.data)
+3. **External secret management** (AWS Secrets Manager or HashiCorp Vault)
+4. **HTTPS** with an ACM certificate
+5. **Custom domain** with external-dns
 
 See [CONFIGURATION.md](./CONFIGURATION.md) for complete configuration reference.
 
