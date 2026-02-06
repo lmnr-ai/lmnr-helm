@@ -49,6 +49,12 @@ Install with:
 helm upgrade -i laminar . -f laminar.yaml
 ```
 
+After updating secrets, restart dependent deployments
+
+```bash
+kubectl rollout restart deployment laminar-frontend
+```
+
 ### AWS Secrets Manager
 
 Fetch secrets from AWS Secrets Manager using the Secrets Store CSI Driver.
