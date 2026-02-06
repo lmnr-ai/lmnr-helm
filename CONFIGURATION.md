@@ -7,6 +7,7 @@ This guide covers advanced configuration options for the Laminar Helm chart.
 ## Table of Contents
 
 - [Secrets Management](#secrets-management)
+- [OAuth setup](#oauth-setup)
 - [Ingress and DNS](#ingress-and-dns)
 - [Storage Configuration](#storage-configuration)
 - [ClickHouse S3 Storage](#clickhouse-s3-storage)
@@ -201,6 +202,87 @@ Install with:
 ```bash
 helm upgrade -i laminar . -f laminar.yaml
 ```
+
+## OAuth setup
+
+Laminar supports OAuth authentication with GitHub, Google, and Azure AD. Configure by adding provider credentials to your `laminar.yaml`.
+
+### GitHub OAuth
+
+Create an OAuth App at https://github.com/settings/developers with callback URL: `https://app.yourdomain.com/api/auth/callback/github`
+
+Copy the **Client ID** and **Client Secret** to your `laminar.yaml`:
+
+```yaml
+secrets:
+  data:
+    AUTH_GITHUB_ID: "your-github-client-id"
+    AUTH_GITHUB_SECRET: "your-github-client-secret"
+```
+
+### Google OAuth
+
+Create an OAuth Client at https://console.cloud.google.com/apis/credentials with redirect URI: `https://app.yourdomain.com/api/auth/callback/google`
+
+Copy the **Client ID** and **Client Secret** to your `laminar.yaml`:
+
+```yaml
+secrets:
+  data:
+    AUTH_GOOGLE_ID: "your-google-client-id"
+    AUTH_GOOGLE_SECRET: "your-google-client-secret"
+```
+
+### Azure AD OAuth
+
+Create an App Registration at https://portal.azure.com with redirect URI: `https://app.yourdomain.com/api/auth/callback/azure-ad`
+
+Copy the **Application (client) ID**, **Client Secret**, and **Directory (tenant) ID** to your `laminar.yaml`:
+
+```yaml
+secrets:
+  data:
+    AUTH_AZURE_AD_CLIENT_ID: "your-azure-client-id"
+    AUTH_AZURE_AD_CLIENT_SECRET: "your-azure-client-secret"
+    AUTH_AZURE_AD_TENANT_ID: "your-azure-tenant-id"
+```
+
+### Complete Example
+
+Configure one or more OAuth providers in your `laminar.yaml`:
+
+```yaml
+secrets:
+  enabled: true
+  data:
+    NEXTAUTH_SECRET: "your-nextauth-secret"
+    AWS_ACCESS_KEY_ID: "your-aws-access-key"
+    AWS_SECRET_ACCESS_KEY: "your-aws-secret-key"
+    AWS_REGION: "us-east-1"
+    S3_TRACE_PAYLOADS_BUCKET: "your-s3-bucket"
+    
+    # OAuth Providers (optional, configure as needed)
+    AUTH_GITHUB_ID: "your-github-client-id"
+    AUTH_GITHUB_SECRET: "your-github-client-secret"
+    AUTH_GOOGLE_ID: "your-google-client-id"
+    AUTH_GOOGLE_SECRET: "your-google-client-secret"
+    AUTH_AZURE_AD_CLIENT_ID: "your-azure-client-id"
+    AUTH_AZURE_AD_CLIENT_SECRET: "your-azure-client-secret"
+    AUTH_AZURE_AD_TENANT_ID: "your-azure-tenant-id"
+
+frontend:
+  env:
+    nextauthUrl: "https://app.yourdomain.com"
+    nextPublicUrl: "https://app.yourdomain.com"
+```
+
+Install or upgrade:
+
+```bash
+helm upgrade -i laminar . -f laminar.yaml
+```
+
+**Note:** Ensure callback/redirect URLs match your `nextauthUrl` exactly. Omit provider credentials to disable that provider
 
 ## Ingress and DNS
 

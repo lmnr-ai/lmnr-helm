@@ -37,6 +37,8 @@ Wait for the ALB to be provisioned (1-2 minutes), then get the URL:
 kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 ```
 
+Note: the URL will be available nearly immediately, but the load balancer takes a few minutes to become available.
+
 ### Step 4: Configure Frontend URLs
 
 Update `laminar.yaml` with the ALB URL or upgrade directly:
@@ -52,6 +54,15 @@ helm upgrade -i laminar . -f laminar.yaml \
 ### Step 5: Access the Application
 
 Open your browser and navigate to the ALB URL.
+
+### Step 6: Configure the SDK to point at the app-server NLB URL
+
+```bash
+LMNR_BASE_URL=$(kubectl get svc laminar-app-server-load-balancer -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')\
+    && echo "http://$LMNR_BASE_URL" # or https
+```
+
+You can now use this URL as the `baseUrl` in the SDK when initializing `Laminar` and/or `LaminarClient`.
 
 ## Using a Custom Domain (Optional)
 
