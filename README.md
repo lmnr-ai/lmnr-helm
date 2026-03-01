@@ -6,13 +6,22 @@ Deploy Laminar on Kubernetes with a single command.
 
 - **Frontend** - Web application with ALB ingress
 - **App Server** - Backend API with NLB for gRPC/HTTP
-- **PostgreSQL** - Primary database (StatefulSet with persistence)
-- **ClickHouse** - Analytics database (StatefulSet with persistence)
+- **PostgreSQL** - Database for metadata (StatefulSet with persistence)
+- **ClickHouse** - Primary database for user data (StatefulSet with persistence)
 - **Redis** - Cache and session store
 - **RabbitMQ** - Message queue (StatefulSet with persistence)
 - **Quickwit** - Full-text search engine
 
 ## Quick Start
+
+First, either clone this repository and `cd` into the directory or add it to helm directly.
+
+```bash
+helm repo add laminar https://github.com/lmnr-ai/lmnr-helm
+helm repo update
+```
+
+Then, follow the steps below to install Laminar.
 
 ```bash
 # 1. Customize laminar.yaml with your AWS credentials and S3 buckets
