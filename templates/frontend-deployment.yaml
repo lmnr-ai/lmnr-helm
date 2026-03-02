@@ -52,6 +52,10 @@ spec:
               value: {{ .Values.frontend.env.nextPublicUrl }}
             - name: REDIS_URL
               value: {{ .Values.frontend.env.redisUrl }}
+            - name: QUICKWIT_SEARCH_URL
+              value: {{ .Values.frontend.env.quickwitSearchUrl }}
+            - name: QUICKWIT_INGEST_URL
+              value: {{ .Values.frontend.env.quickwitIngestUrl }}
             # All secrets loaded via envFrom from app-secrets, app-secrets-aws, app-secrets-vault
       {{- include "laminar.nodeSelector" (dict "service" .Values.frontend "global" .Values.global) | nindent 6 }}
       {{- include "laminar.affinity" (dict "service" .Values.frontend "global" .Values.global) | nindent 6 }}

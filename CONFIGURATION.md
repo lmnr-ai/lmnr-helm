@@ -34,7 +34,6 @@ secrets:
     AWS_ACCESS_KEY_ID: "your-aws-access-key-id"
     AWS_SECRET_ACCESS_KEY: "your-secret-access-key"
     AWS_REGION: "us-east-1"
-    S3_TRACE_PAYLOADS_BUCKET: "an-existing-bucket-for-trace-payloads"
     # ... other secrets
 
 frontend:
@@ -200,7 +199,6 @@ secrets:
   # Other configs from K8s
   data:
     AWS_REGION: "us-east-1"
-    S3_TRACE_PAYLOADS_BUCKET: "my-bucket"
 ```
 
 Install with:
@@ -265,7 +263,6 @@ secrets:
     AWS_ACCESS_KEY_ID: "your-aws-access-key"
     AWS_SECRET_ACCESS_KEY: "your-aws-secret-key"
     AWS_REGION: "us-east-1"
-    S3_TRACE_PAYLOADS_BUCKET: "your-s3-bucket"
     
     # OAuth Providers (optional, configure as needed)
     AUTH_GITHUB_ID: "your-github-client-id"
@@ -557,3 +554,62 @@ Use examples as additional override files:
 ```bash
 helm upgrade -i laminar . -f laminar.yaml -f examples/mixed-storage-classes.yaml
 ```
+
+
+## ClickHouse Logging
+
+By default, ClickHouse logging is **disabled** (`level: none`) to reduce storage overhead and disk I/O. ClickHouse's default logging level is `trace`, which is [extremely verbose](https://clickhouse.com/docs/knowledgebase/why_default_logging_verbose) and can consume significant disk space and affect performance.
+
+### Enabling Logging
+
+To enable logging for debugging or monitoring:
+
+1. Edit `templates/clickhouse-configmap.yaml`
+2. Change the logger level from `none` to a desired level:
+   ```xml
+   <logger>
+     <level>warning</level>  <!-- Change from 'none' to 'warning', 'error', or 'information' -->
+   </logger>
+   ```
+3. Apply the changes:
+   ```bash
+   helm upgrade laminar-dataplane . --namespace laminar --reuse-values
+   kubectl rollout restart statefulset laminar-clickhouse -n laminar
+   ```
+
+### Available Log Levels
+
+From least to most verbose:
+
+- `none` - Logging disabled (default)
+- `fatal` - Only fatal errors
+- `critical` - Critical errors
+- `error` - All errors
+- `warning` - Warnings and errors (recommended for production)
+- `notice` - Important notices
+- `information` - General informational messages
+- `debug` - Debug information
+- `trace` - Very detailed tracing (not recommended - extremely verbose)
+
+**Recommendation:** Use `warning` or `error` for production environments. Avoid `trace` and `debug` levels unless actively troubleshooting specific issues.
+
+### System Tables
+
+ClickHouse also logs various operational data to system tables (query logs, metrics, etc.). These are controlled separately from the logger level. If you need these, you can add configurations like:
+
+```xml
+<clickhouse>
+  <query_log>
+    <database>system</database>
+    <table>query_log</table>
+    <partition_by>toYYYYMM(event_date)</partition_by>
+    <ttl>event_date + INTERVAL 48 HOUR</ttl>
+    <flush_interval_milliseconds>7500</flush_interval_milliseconds>
+  </query_log>
+</clickhouse>
+```
+
+We recommend setting short rotation periods on all of the tables,
+if you enable logging at all.
+
+For more information, see the [ClickHouse logging documentation](https://clickhouse.com/docs/knowledgebase/why_default_logging_verbose).

@@ -109,7 +109,6 @@ secrets:
   data:
     AWS_ACCESS_KEY_ID: "your-key"
     AWS_SECRET_ACCESS_KEY: "your-secret"
-    S3_TRACE_PAYLOADS_BUCKET: "your-bucket"
     NEXTAUTH_SECRET: "random-secret-string"
 
 clickhouse:
