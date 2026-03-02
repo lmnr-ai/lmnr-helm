@@ -39,7 +39,7 @@ images:
     tag: "15"
   clickhouse:
     repository: "clickhouse/clickhouse-server"
-    tag: "latest"
+    tag: "25.10"
 
 # Secrets configuration (K8s secrets)
 secrets:
@@ -48,13 +48,13 @@ secrets:
   # Set to true if connecting to an external Postgres instance that requires SSL
   # Set to false if using the embedded Postgres instance (no SSL)
   enableDatabaseSSL: false
-  
+
   # AWS Secrets Manager configuration
   # Secrets listed in secretKeys will be fetched from AWS Secrets Manager
   awsSecretsManager:
     enabled: false
     region: "us-east-1"
-    
+
     # IAM role for IRSA (IAM Roles for Service Accounts)
     serviceAccount:
       create: true
@@ -62,42 +62,42 @@ secrets:
       # Optional: If provided, annotates SA with eks.amazonaws.com/role-arn
       # Leave empty if IRSA is already configured
       roleArn: ""
-    
+
     # Secret source configuration (single JSON secret approach)
     # Option 1: Use clusterName pattern - secret name will be: {clusterName}/lmnr-secrets
     clusterName: ""
     # Option 2: Override with explicit secret name (takes precedence over clusterName)
     secretName: ""
-    
+
     # Explicit list of secret keys to fetch from AWS
     # These keys will be fetched from AWS and NOT use secrets.data values
     # Example: ["NEXTAUTH_SECRET", "AUTH_GITHUB_ID", "AUTH_GITHUB_SECRET"]
     secretKeys: []
-  
+
   # HashiCorp Vault configuration
   # Secrets listed in secretKeys will be fetched from Vault
   vault:
     enabled: false
     address: "http://vault:8200"
-    
+
     # Kubernetes auth configuration
     authPath: "auth/kubernetes"
     role: "lmnr-app"
-    
+
     # Service account for Vault authentication
     serviceAccount:
       create: true
       name: "lmnr-vault-sa"
-    
+
     # Secret path configuration
-    kvVersion: "v2"  # v1 or v2
-    secretPath: "secret/data/lmnr"  # Path to secrets in Vault (for KV v2)
-    
+    kvVersion: "v2" # v1 or v2
+    secretPath: "secret/data/lmnr" # Path to secrets in Vault (for KV v2)
+
     # Explicit list of secret keys to fetch from Vault
     # These keys will be fetched from Vault and NOT use secrets.data values
     # Example: ["RABBITMQ_PASSWORD", "CLICKHOUSE_PASSWORD", "POSTGRES_PASSWORD"]
     secretKeys: []
-  
+
   # Full schema of all required secrets
   # Keys NOT listed in AWS or Vault secretKeys will use these values as defaults
   # Auto-generated URLs (DATABASE_URL, CLICKHOUSE_URL, RABBITMQ_URL) are created
@@ -117,50 +117,42 @@ secrets:
     AWS_ACCESS_KEY_ID: "<AWS_ACCESS_KEY_ID>"
     AWS_SECRET_ACCESS_KEY: "<AWS_SECRET_ACCESS_KEY>"
     AWS_REGION: "us-east-1"
-    S3_TRACE_PAYLOADS_BUCKET: "<s3-bucket-name>"
     S3_EXPORTS_BUCKET: "<s3-exports-bucket-name>"
+    GOOGLE_GENERATIVE_AI_API_KEY: "<GOOGLE_GENERATIVE_AI_API_KEY>"
     # App Server secrets
-    PYTHON_ONLINE_EVALUATOR_URL: "<PYTHON_ONLINE_EVALUATOR_URL>"
     CLICKHOUSE_RO_USER: "default"
     CLICKHOUSE_RO_PASSWORD: "clickhouse123"
     DATABASE_SSL_ROOT_CERT: "<DATABASE_SSL_ROOT_CERT--MULTILINE_PEM_ENCODED>"
     # App Server Consumer secrets
-    TRACE_SUMMARIZER_SECRET_KEY: "<TRACE_SUMMARIZER_SECRET_KEY>"
-    TRACE_SUMMARIZER_URL: "<TRACE_SUMMARIZER_URL>"
-    TRACE_EVENT_IDENTIFIER_URL: "<TRACE_EVENT_IDENTIFIER_URL>"
-    SLACK_ENCRYPTION_KEY: "<SLACK_ENCRYPTION_KEY>"
-    CLUSTER_ENDPOINT: "<CLUSTER_ENDPOINT>"
-    CLUSTER_ENDPOINT_KEY: "<CLUSTER_ENDPOINT_KEY>"
-    ONLINE_EVALUATORS_SECRET_KEY: "<ONLINE_EVALUATORS_SECRET_KEY>"
+    SLACK_ENCRYPTION_KEY: ""
+    CLUSTER_ENDPOINT: ""
+    CLUSTER_ENDPOINT_KEY: ""
     # Frontend secrets - Auth providers
-    AUTH_GITHUB_ID: "<AUTH_GITHUB_ID>"
-    AUTH_GITHUB_SECRET: "<AUTH_GITHUB_SECRET>"
-    AUTH_GOOGLE_ID: "<AUTH_GOOGLE_ID>"
-    AUTH_GOOGLE_SECRET: "<AUTH_GOOGLE_SECRET>"
-    AUTH_AZURE_AD_CLIENT_ID: "<AUTH_AZURE_AD_CLIENT_ID>"
-    AUTH_AZURE_AD_CLIENT_SECRET: "<AUTH_AZURE_AD_CLIENT_SECRET>"
-    AUTH_AZURE_AD_TENANT_ID: "<AUTH_AZURE_AD_TENANT_ID>"
+    AUTH_GITHUB_ID: ""
+    AUTH_GITHUB_SECRET: ""
+    AUTH_GOOGLE_ID: ""
+    AUTH_GOOGLE_SECRET: ""
+    AUTH_AZURE_AD_CLIENT_ID: ""
+    AUTH_AZURE_AD_CLIENT_SECRET: ""
+    AUTH_AZURE_AD_TENANT_ID: ""
     # Frontend secrets - Integrations
-    STRIPE_SECRET_KEY: "<STRIPE_SECRET_KEY>"
-    STRIPE_WEBHOOK_ENDPOINT_SECRET: "<STRIPE_WEBHOOK_ENDPOINT_SECRET>"
-    RESEND_API_KEY: "<RESEND_API_KEY>"
-    GITHUB_TOKEN: "<GITHUB_TOKEN>"
-    LAMINAR_API_KEY: "<LAMINAR_API_KEY>"
-    SUPABASE_JWT_SECRET: "<SUPABASE_JWT_SECRET>"
+    STRIPE_SECRET_KEY: ""
+    STRIPE_WEBHOOK_ENDPOINT_SECRET: ""
+    RESEND_API_KEY: ""
+    GITHUB_TOKEN: ""
+    LMNR_PROJECT_API_KEY: ""
     # Frontend secrets - Worker URLs
-    DATASET_EXPORT_WORKER_URL: "<DATASET_EXPORT_WORKER_URL>"
-    DATASET_EXPORT_SECRET_KEY: "<DATASET_EXPORT_SECRET_KEY>"
-    DATA_EXPORTER_URL: "<DATA_EXPORTER_URL>"
-    DATA_EXPORTER_SECRET_KEY: "<DATA_EXPORTER_SECRET_KEY>"
+    DATASET_EXPORT_WORKER_URL: ""
+    DATASET_EXPORT_SECRET_KEY: ""
+    DATA_EXPORTER_URL: ""
+    DATA_EXPORTER_SECRET_KEY: ""
     # Frontend secrets - Slack
-    SLACK_CLIENT_ID: "<SLACK_CLIENT_ID>"
-    SLACK_CLIENT_SECRET: "<SLACK_CLIENT_SECRET>"
-    SLACK_SIGNING_SECRET: "<SLACK_SIGNING_SECRET>"
-    SLACK_REDIRECT_URL: "<SLACK_REDIRECT_URL>"
+    SLACK_CLIENT_ID: ""
+    SLACK_CLIENT_SECRET: ""
+    SLACK_SIGNING_SECRET: ""
+    SLACK_REDIRECT_URL: ""
     # Frontend secrets - Other
-    OPENAI_API_KEY: "<OPENAI_API_KEY>"
-    GOOGLE_GENERATIVE_AI_API_KEY: "<GOOGLE_GENERATIVE_AI_API_KEY>"
-    LMNR_PROJECT_API_KEY: "<LMNR_PROJECT_API_KEY>"
+    OPENAI_API_KEY: ""
     # Quickwit secrets
     QUICKWIT_DATABASE_URL: "postgres://lmnr:lmnr123@laminar-postgres-service:5432/postgres"
 
@@ -227,6 +219,7 @@ frontend:
     nextauthUrl: "https://localhost:3000"
     nextPublicUrl: "https://localhost:3000"
     redisUrl: "redis://laminar-redis-service:6379"
+    quickwitSearchUrl: "http://laminar-quickwit-searcher:7280"
 
 # App Server configuration
 appServer:
@@ -562,9 +555,9 @@ storage:
   storageClass:
     name: "laminar-ebs-sc"
     provisioner: "ebs.csi.aws.com"
-    type: "gp3"  # Options: gp3, gp2, io1, io2, st1, sc1
-    reclaimPolicy: "Retain"  # Retain volumes after pod deletion
-    volumeBindingMode: "WaitForFirstConsumer"  # Bind volumes when pod is scheduled
+    type: "gp3" # Options: gp3, gp2, io1, io2, st1, sc1
+    reclaimPolicy: "Retain" # Retain volumes after pod deletion
+    volumeBindingMode: "WaitForFirstConsumer" # Bind volumes when pod is scheduled
     # Availability zones where volumes can be created
     # This restricts persistent volumes to specific AZs
     # Important: Ensure your nodes are running in these zones
