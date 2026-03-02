@@ -39,7 +39,7 @@ images:
     tag: "15"
   clickhouse:
     repository: "clickhouse/clickhouse-server"
-    tag: "latest"
+    tag: "25.10"
 
 # Secrets configuration (K8s secrets)
 secrets:
