@@ -32,51 +32,58 @@ helm upgrade -i laminar . -f laminar.yaml
 
 ### Step 3: Get the Load Balancer URL
 
-Wait for the ALB to be provisioned (1-2 minutes), then get the URL:
+Wait for the load balancer to be provisioned (1-2 minutes), then get the URL:
 
+**For AWS (ALB):**
 ```bash
 kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 ```
+Note: The URL will be available nearly immediately, but the load balancer takes a few minutes to become available.
 
-Note: the URL will be available nearly immediately, but the load balancer takes a few minutes to become available.
+**For GCP (GKE LoadBalancer Service):**
+```bash
+kubectl get svc laminar-frontend-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+```
 
 ### Step 4: Configure Frontend URLs
 
-Update `laminar.yaml` with the ALB URL or upgrade directly:
+Update `laminar.yaml` with the URL/IP or upgrade directly:
 
+**For AWS:**
 ```bash
-ALB_URL=$(kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-
+URL=$(kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 helm upgrade -i laminar . -f laminar.yaml \
-  --set frontend.env.nextauthUrl="http://$ALB_URL" \
-  --set frontend.env.nextPublicUrl="http://$ALB_URL"
+  --set frontend.env.nextauthUrl="http://$URL" \
+  --set frontend.env.nextPublicUrl="http://$URL"
+```
+
+**For GCP:**
+```bash
+IP=$(kubectl get svc laminar-frontend-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+helm upgrade -i laminar . -f laminar.yaml \
+  --set frontend.env.nextauthUrl="http://$IP" \
+  --set frontend.env.nextPublicUrl="http://$IP"
 ```
 
 ### Step 5: Access the Application
 
-Open your browser and navigate to the ALB URL.
+Open your browser and navigate to the URL or IP retrieved in Step 4.
 
-### Step 6: Configure the SDK to point at the app-server NLB URL
+### Step 6: Configure the SDK to point at the app-server URL
 
+**For AWS:**
 ```bash
 LMNR_BASE_URL=$(kubectl get svc laminar-app-server-load-balancer -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')\
     && echo "http://$LMNR_BASE_URL" # or https
 ```
 
-You can now use this URL as the `baseUrl` in the SDK when initializing `Laminar` and/or `LaminarClient`.
-
-## Using a Custom Domain (Optional)
-
-If you have a custom domain, skip Step 3-4 and install directly:
-
+**For GCP:**
 ```bash
-helm upgrade -i laminar . -f laminar.yaml \
-  --set frontend.ingress.hostname="app.yourdomain.com" \
-  --set frontend.env.nextauthUrl="https://app.yourdomain.com" \
-  --set frontend.env.nextPublicUrl="https://app.yourdomain.com"
+LMNR_BASE_URL=$(kubectl get svc laminar-app-server-load-balancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}')\
+    && echo "http://$LMNR_BASE_URL" # or https
 ```
 
-Then create a CNAME record pointing your domain to the ALB hostname.
+You can now use this URL as the `baseUrl` in the SDK when initializing `Laminar` and/or `LaminarClient`.
 
 ## Verify Installation
 
@@ -109,7 +116,7 @@ laminar-redis-xxx                                 1/1     Running   5m
 
 ### Pods stuck in Pending
 
-Check if EBS CSI driver is installed and storage class exists:
+Check if the CSI driver is installed and storage class exists:
 
 ```bash
 kubectl get storageclass
@@ -129,14 +136,14 @@ kubectl logs <pod-name> -c wait-for-redis
 
 Verify the correct `cloudProvider` is set in `laminar.yaml`. 
 
-For AWS, verify the Load Balancer Controller is installed:
+**For AWS**, verify the Load Balancer Controller is installed:
 ```bash
 kubectl get deployment -n kube-system aws-load-balancer-controller
 ```
 
-For GCP, check the Ingress events:
+**For GCP**, verify the service status:
 ```bash
-kubectl describe ingress laminar-frontend-alb
+kubectl describe svc laminar-frontend-service
 ```
 
 ## Next Steps

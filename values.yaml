@@ -226,6 +226,14 @@ frontend:
     nextPublicUrl: "https://localhost:3000"
     redisUrl: "redis://laminar-redis-service:6379"
     quickwitSearchUrl: "http://laminar-quickwit-searcher:7280"
+  # First launch runs all migrations to prepare databases, which can take several minutes.
+  # Larger initial delays are set to account for this.
+  readinessProbe:
+    initialDelaySeconds: 150
+    periodSeconds: 10
+  livenessProbe:
+    initialDelaySeconds: 150
+    periodSeconds: 20
 
 # App Server configuration
 appServer:
@@ -264,11 +272,13 @@ appServer:
     targetPort: 8000
   loadBalancer:
     enabled: true
-    annotations:
-      service.beta.kubernetes.io/aws-load-balancer-type: external
-      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
-      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
-      service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+    # Annotations for the load balancer. If empty, defaults for global.cloudProvider will be used.
+    annotations: {}
+      # For AWS (NLB):
+      # service.beta.kubernetes.io/aws-load-balancer-type: external
+      # service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
+      # service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+      # service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
   nginx:
     resources:
       requests:
@@ -574,5 +584,4 @@ storage:
     # Availability zones where volumes can be created. Required for AWS EBS.
     # On GKE, you can often leave this empty to use default regional/zonal placement.
     # Important: Ensure your nodes are running in these zones.
-    zones:
-      - "us-east-1b"
+    zones: []

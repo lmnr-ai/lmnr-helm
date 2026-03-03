@@ -365,9 +365,17 @@ frontend:
 
 After deployment, create a CNAME record pointing to the ALB:
 
+**For AWS:**
 ```bash
 kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 ```
+
+
+**For AWS:**
+```bash
+kubectl get svc laminar-frontend-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+```
+
 
 ## Storage Configuration
 
