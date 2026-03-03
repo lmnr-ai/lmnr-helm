@@ -6,6 +6,7 @@ This guide covers advanced configuration options for the Laminar Helm chart.
 
 ## Table of Contents
 
+- [Cloud Provider](#cloud-provider)
 - [Secrets Management](#secrets-management)
 - [OAuth setup](#oauth-setup)
 - [Ingress and DNS](#ingress-and-dns)
@@ -13,6 +14,23 @@ This guide covers advanced configuration options for the Laminar Helm chart.
 - [ClickHouse S3 Storage](#clickhouse-s3-storage)
 - [Node Placement](#node-placement)
 - [Resource Limits](#resource-limits)
+
+## Cloud Provider
+
+This chart supports multiple cloud providers. This setting determines the default Ingress class, storage provisioners, and platform-specific annotations.
+
+Set the provider in your `laminar.yaml`:
+
+```yaml
+global:
+  # Supported values: "aws" (default), "gcp"
+  cloudProvider: "gcp"
+```
+
+### Supported Providers
+
+- **AWS**: Uses AWS Load Balancer Controller (`alb` Ingress class) and EBS CSI Driver.
+- **GCP**: Uses GCE Ingress (`gce` Ingress class) and GCE Persistent Disk CSI Driver.
 
 ## Secrets Management
 

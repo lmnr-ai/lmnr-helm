@@ -24,7 +24,7 @@ helm repo update
 Then, follow the steps below to install Laminar.
 
 ```bash
-# 1. Customize laminar.yaml with your AWS credentials and S3 buckets
+# 1. Customize laminar.yaml with your cloud provider ("aws" or "gcp"), credentials, and storage buckets
 
 # 2. Install
 helm upgrade -i laminar . -f laminar.yaml
@@ -79,10 +79,10 @@ See [QUICKSTART.md](./QUICKSTART.md) for detailed installation steps.
 
 ## Prerequisites
 
-- Kubernetes cluster (EKS recommended)
+- Kubernetes cluster (EKS or GKE recommended)
 - Helm >=3.x
-- [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html)
-- [EBS CSI Driver](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html)
+- **AWS**: [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html) and [EBS CSI Driver](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html)
+- **GCP**: Built-in GCE Ingress controller and GCE Persistent Disk CSI Driver
 
 > **Note on Namespaces:** By default, all resources are created in the `default` namespace. Advanced users who prefer a custom namespace (e.g., `laminar`) should add `--namespace laminar --create-namespace` to `helm` commands and `-n laminar` to `kubectl` commands.
 
@@ -99,10 +99,11 @@ Helm merges both files, with `laminar.yaml` taking precedence.
 
 Edit `laminar.yaml` and set:
 
-1. **AWS credentials and S3 buckets** for trace storage
-2. **ClickHouse S3 bucket** endpoint and region
-3. **Availability zones** for EBS volumes
-4. **Frontend URLs** (can be set after initial deployment)
+1. **Cloud Provider**: Set `global.cloudProvider` to `aws` or `gcp`
+2. **Cloud credentials and S3 buckets** for trace storage
+3. **ClickHouse S3 bucket** endpoint and region
+4. Availability zones (Required for AWS EBS volumes)
+5. **Frontend URLs** (can be set after initial deployment)
 
 ```yaml
 secrets:
@@ -118,7 +119,7 @@ clickhouse:
 
 storage:
   zones:
-    - "us-east-1b"
+    - "us-east-1b" # Required for AWS EBS, can be empty for GCP
 ```
 
 ### Production Configuration

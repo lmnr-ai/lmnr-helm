@@ -16,7 +16,7 @@ spec:
     - metadata:
         name: {{ include "laminar.resourceName" "postgres-data" }}
       spec:
-        storageClassName: {{ .Values.postgres.persistence.storageClass }}
+        storageClassName: {{ .Values.postgres.persistence.storageClass | default (include "laminar.resourceName" .Values.storage.storageClass.name) }}
         accessModes:
           - ReadWriteOnce
         resources:

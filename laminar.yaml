@@ -15,6 +15,8 @@
 #   - examples/ directory (for example configurations)
 
 global:
+  # Cloud provider: "aws" or "gcp"
+  cloudProvider: "aws"
   environment: "FULL"
   # # Namespace for all resources (default: default)
   # # Uncomment the below line to use a custom namespace (e.g., "laminar")
@@ -58,5 +60,7 @@ clickhouse:
 
 storage:
   storageClass:
+    # Availability zones for the storage class. Required for AWS EBS.
+    # For GCP, you can often leave this empty or comment it out.
     zones:
       - "us-east-1a"

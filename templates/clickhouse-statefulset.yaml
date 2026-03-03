@@ -16,7 +16,7 @@ spec:
     - metadata:
         name: clickhouse-data
       spec:
-        storageClassName: {{ .Values.clickhouse.persistence.storageClass }}
+        storageClassName: {{ .Values.clickhouse.persistence.storageClass | default (include "laminar.resourceName" .Values.storage.storageClass.name) }}
         accessModes:
           - ReadWriteOnce
         resources:

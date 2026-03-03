@@ -4,10 +4,10 @@ Get Laminar running on your Kubernetes cluster in minutes.
 
 ## Prerequisites
 
-- Kubernetes cluster (EKS recommended)
+- Kubernetes cluster (EKS or GKE recommended)
 - Helm 3.x
-- [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html) installed
-- [EBS CSI Driver](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html) installed
+- **AWS**: [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html) and [EBS CSI Driver](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html) installed
+- **GCP**: GCE Ingress and Persistent Disk CSI Driver (usually pre-installed on GKE)
 
 > **Note on Namespaces:** By default, all resources are created in the `default` namespace. If you prefer using a custom namespace (e.g., `laminar`), add `--namespace laminar --create-namespace` to all `helm` commands and `-n laminar` to all `kubectl` commands in this guide.
 
@@ -17,9 +17,10 @@ Get Laminar running on your Kubernetes cluster in minutes.
 
 Copy and edit `laminar.yaml` with your settings:
 
-- Set AWS credentials and S3 bucket names
+- Set `global.cloudProvider` to `aws` or `gcp`
+- Set your cloud credentials and storage bucket names
 - Set ClickHouse S3 bucket endpoint and region
-- Set your availability zone(s)
+- Set your availability zone(s) (primarily required for AWS EBS)
 
 ### Step 2: Install with Customized Settings
 
@@ -126,10 +127,16 @@ kubectl logs <pod-name> -c wait-for-redis
 
 ### Load Balancer not created
 
-Verify AWS Load Balancer Controller is installed:
+Verify the correct `cloudProvider` is set in `laminar.yaml`. 
 
+For AWS, verify the Load Balancer Controller is installed:
 ```bash
 kubectl get deployment -n kube-system aws-load-balancer-controller
+```
+
+For GCP, check the Ingress events:
+```bash
+kubectl describe ingress laminar-frontend-alb
 ```
 
 ## Next Steps
