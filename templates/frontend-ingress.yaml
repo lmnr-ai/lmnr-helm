@@ -1,5 +1,5 @@
 {{- $cloudProvider := .Values.global.cloudProvider | default "aws" -}}
-{{- if and .Values.frontend.enabled .Values.frontend.ingress.enabled (ne $cloudProvider "gcp") }}
+{{- if and .Values.frontend.enabled .Values.frontend.ingress.enabled (eq $cloudProvider "aws") }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -10,29 +10,17 @@ metadata:
     {{ $key }}: {{ $value | quote }}
     {{- end }}
     {{- else }}
-    {{- if eq $cloudProvider "aws" }}
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
-    {{- else if eq $cloudProvider "gcp" }}
-    kubernetes.io/ingress.class: "gce"
-    kubernetes.io/ingress.allow-http: "true"
-    {{- end }}
     {{- end }}
     {{- if and .Values.frontend.ingress.externalDns.enabled .Values.frontend.ingress.hostname }}
     external-dns.alpha.kubernetes.io/hostname: {{ .Values.frontend.ingress.hostname }}
     {{- end }}
 spec:
-  {{- if eq $cloudProvider "gcp" }}
-  defaultBackend:
-    service:
-      name: {{ include "laminar.resourceName" "frontend-service" }}
-      port:
-        number: {{ .Values.frontend.service.port }}
-  {{- end }}
   {{- if .Values.frontend.ingress.className }}
   ingressClassName: {{ .Values.frontend.ingress.className }}
-  {{- else if eq $cloudProvider "aws" }}
+  {{- else }}
   ingressClassName: alb
   {{- end }}
   rules:
