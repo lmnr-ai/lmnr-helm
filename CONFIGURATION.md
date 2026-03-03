@@ -269,6 +269,18 @@ secrets:
     AUTH_AZURE_AD_TENANT_ID: "your-azure-tenant-id"
 ```
 
+### Okta OIDC Auth
+
+Get your Okta **Client ID** and **Client Secret** as well as **OIDC issuer**. In `laminar.yaml`
+
+```yaml
+secrets:
+  data:
+    AUTH_OKTA_CLIENT_ID: "your-okta-client-id"
+    AUTH_OKTA_CLIENT_SECRET: "your-okta-client-secret"
+    AUTH_OKTA_ISSUER: "https://your-okta-domain.com/oauth2/default"
+```
+
 ### Complete Example
 
 Configure one or more OAuth providers in your `laminar.yaml`:
@@ -284,12 +296,15 @@ secrets:
     
     # OAuth Providers (optional, configure as needed)
     AUTH_GITHUB_ID: "your-github-client-id"
-    AUTH_GITHUB_SECRET: "your-github-client-secret"
+    AUTH_GITHUB_SECRET: j"your-github-client-secret"
     AUTH_GOOGLE_ID: "your-google-client-id"
     AUTH_GOOGLE_SECRET: "your-google-client-secret"
     AUTH_AZURE_AD_CLIENT_ID: "your-azure-client-id"
     AUTH_AZURE_AD_CLIENT_SECRET: "your-azure-client-secret"
     AUTH_AZURE_AD_TENANT_ID: "your-azure-tenant-id"
+    AUTH_OKTA_CLIENT_ID: "your-okta-client-id"
+    AUTH_OKTA_CLIENT_SECRET: "your-okta-client-secret"
+    AUTH_OKTA_ISSUER: "https://your-okta-domain.com/oauth2/default"
 
 frontend:
   env:
@@ -329,6 +344,9 @@ helm upgrade -i laminar . -f laminar.yaml
 ```
 
 ### HTTPS with ACM Certificate
+
+
+**AWS example**
 
 Add to your `laminar.yaml`:
 
@@ -370,12 +388,10 @@ After deployment, create a CNAME record pointing to the ALB:
 kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 ```
 
-
-**For AWS:**
+**For GCP:**
 ```bash
 kubectl get svc laminar-frontend-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
-
 
 ## Storage Configuration
 
