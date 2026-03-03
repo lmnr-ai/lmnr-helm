@@ -296,7 +296,7 @@ secrets:
     
     # OAuth Providers (optional, configure as needed)
     AUTH_GITHUB_ID: "your-github-client-id"
-    AUTH_GITHUB_SECRET: j"your-github-client-secret"
+    AUTH_GITHUB_SECRET: "your-github-client-secret"
     AUTH_GOOGLE_ID: "your-google-client-id"
     AUTH_GOOGLE_SECRET: "your-google-client-secret"
     AUTH_AZURE_AD_CLIENT_ID: "your-azure-client-id"
