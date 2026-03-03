@@ -19,8 +19,17 @@ kind: Service
 metadata:
   name: {{ include "laminar.resourceName" "app-server-load-balancer" }}
   annotations:
+    {{- if .Values.appServer.loadBalancer.annotations }}
     {{- range $key, $value := .Values.appServer.loadBalancer.annotations }}
     {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    {{- else }}
+    {{- if eq (default "aws" .Values.global.cloudProvider) "aws" }}
+    service.beta.kubernetes.io/aws-load-balancer-type: external
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+    {{- end }}
     {{- end }}
 spec:
   selector:

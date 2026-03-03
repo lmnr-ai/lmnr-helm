@@ -11,5 +11,10 @@ spec:
       name: http
       port: {{ .Values.frontend.service.port }}
       targetPort: {{ .Values.frontend.service.targetPort }}
+  {{- $cloudProvider := default "aws" .Values.global.cloudProvider -}}
+  {{- if eq $cloudProvider "gcp" }}
+  type: LoadBalancer
+  {{- else }}
   type: {{ .Values.frontend.service.type }}
+  {{- end }}
 {{- end }}

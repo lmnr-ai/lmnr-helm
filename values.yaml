@@ -1,5 +1,7 @@
 # Global configuration
 global:
+  # Cloud provider: "aws" or "gcp"
+  cloudProvider: "aws"
   environment: "FULL"
   # Namespace for all resources (default: default)
   # When installing the chart, you can specify a custom namespace with --namespace flag
@@ -195,7 +197,8 @@ frontend:
     targetPort: 3000
   ingress:
     enabled: true
-    className: "alb"
+    # If left empty, will be set based on global.cloudProvider (aws -> alb, gcp -> gce)
+    className: ""
     # Optional: Set a custom hostname for your ingress
     # If set, this will be used in the ingress rules and can be used with external-dns
     # Example: "app.yourdomain.com"
@@ -205,11 +208,14 @@ frontend:
     # When enabled with a hostname, external-dns will automatically create DNS records
     externalDns:
       enabled: false
-    annotations:
-      alb.ingress.kubernetes.io/scheme: internet-facing
-      alb.ingress.kubernetes.io/target-type: ip
-      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
-      # external-dns.alpha.kubernetes.io/hostname will be added automatically if externalDns.enabled is true
+    # Annotations for the ingress. If empty, defaults for global.cloudProvider will be used.
+    annotations: {}
+      # For AWS (ALB):
+      # alb.ingress.kubernetes.io/scheme: internet-facing
+      # alb.ingress.kubernetes.io/target-type: ip
+      # alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+      # For GCP (GCE):
+      # kubernetes.io/ingress.allow-http: "true"
   env:
     backendUrl: "http://laminar-app-server-service:8000"
     backendRtUrl: "http://laminar-app-server-consumer-service:8000"
@@ -220,6 +226,14 @@ frontend:
     nextPublicUrl: "https://localhost:3000"
     redisUrl: "redis://laminar-redis-service:6379"
     quickwitSearchUrl: "http://laminar-quickwit-searcher:7280"
+  # First launch runs all migrations to prepare databases, which can take several minutes.
+  # Larger initial delays are set to account for this.
+  readinessProbe:
+    initialDelaySeconds: 150
+    periodSeconds: 10
+  livenessProbe:
+    initialDelaySeconds: 150
+    periodSeconds: 20
 
 # App Server configuration
 appServer:
@@ -258,11 +272,13 @@ appServer:
     targetPort: 8000
   loadBalancer:
     enabled: true
-    annotations:
-      service.beta.kubernetes.io/aws-load-balancer-type: external
-      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
-      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
-      service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+    # Annotations for the load balancer. If empty, defaults for global.cloudProvider will be used.
+    annotations: {}
+      # For AWS (NLB):
+      # service.beta.kubernetes.io/aws-load-balancer-type: external
+      # service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
+      # service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+      # service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
   nginx:
     resources:
       requests:
@@ -446,7 +462,7 @@ postgres:
   persistence:
     enabled: true
     # Storage class name - if empty, uses default storage class
-    storageClass: "laminar-ebs-sc"
+    storageClass: ""
     size: "20Gi"
   service:
     type: ClusterIP
@@ -472,7 +488,7 @@ clickhouse:
   persistence:
     enabled: true
     # Storage class name - if empty, uses default storage class
-    storageClass: "laminar-ebs-sc"
+    storageClass: ""
     size: "50Gi"
   # S3 storage configuration for separation of storage and compute
   # When enabled, ClickHouse will store data in S3 instead of local disks
@@ -540,7 +556,7 @@ rabbitmq:
   persistence:
     enabled: true
     # Storage class name - if empty, uses default storage class
-    storageClass: "laminar-ebs-sc"
+    storageClass: ""
     size: "50Gi"
   service:
     type: ClusterIP
@@ -553,13 +569,19 @@ rabbitmq:
 # Storage configuration
 storage:
   storageClass:
-    name: "laminar-ebs-sc"
-    provisioner: "ebs.csi.aws.com"
-    type: "gp3" # Options: gp3, gp2, io1, io2, st1, sc1
+    # Name of the storage class created by this chart
+    name: "laminar-sc"
+    # If left empty, will be set based on global.cloudProvider:
+    #   - aws: ebs.csi.aws.com
+    #   - gcp: pd.csi.storage.gke.io
+    provisioner: ""
+    # If left empty, will be set based on global.cloudProvider:
+    #   - aws: gp3
+    #   - gcp: pd-balanced
+    type: ""
     reclaimPolicy: "Retain" # Retain volumes after pod deletion
     volumeBindingMode: "WaitForFirstConsumer" # Bind volumes when pod is scheduled
-    # Availability zones where volumes can be created
-    # This restricts persistent volumes to specific AZs
-    # Important: Ensure your nodes are running in these zones
-    zones:
-      - "us-east-1b"
+    # Availability zones where volumes can be created. Required for AWS EBS.
+    # On GKE, you can often leave this empty to use default regional/zonal placement.
+    # Important: Ensure your nodes are running in these zones.
+    zones: []

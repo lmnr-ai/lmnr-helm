@@ -14,7 +14,7 @@ spec:
     - metadata:
         name: {{ include "laminar.resourceName" "rabbitmq-data" }}
       spec:
-        storageClassName: {{ .Values.rabbitmq.persistence.storageClass }}
+        storageClassName: {{ .Values.rabbitmq.persistence.storageClass | default (include "laminar.resourceName" .Values.storage.storageClass.name) }}
         accessModes:
           - ReadWriteOnce
         resources:
