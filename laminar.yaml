@@ -46,6 +46,15 @@ quickwit:
     defaultIndexRootUri: "s3://your-bucket-name/indexes"
     region: "<region>"
 
+appServerConsumer:
+  env:
+    signalsLlmProvider: "gemini" # or bedrock
+    # model name for gemini, or Inference Profile ID for bedrock
+    # defaults to smaller models: gemini-3-flash and haiku-4.5
+    #
+    # uncomment or overwrite to set to custom model
+    # signalsLlmModel: "gemini-3-flash"
+
 clickhouse:
   s3:
     # S3 bucket endpoint (replace with your bucket)

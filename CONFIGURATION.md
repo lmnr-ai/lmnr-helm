@@ -320,6 +320,40 @@ helm upgrade -i laminar . -f laminar.yaml
 
 **Note:** Ensure callback/redirect URLs match your `nextauthUrl` exactly. Omit provider credentials to disable that provider
 
+## LLM Provider
+
+For signals, in app-server-consumer and frontend, LLM provider is set explicitly via environment variables.
+In frontend, the resolution is based on API keys.
+
+### app-server-consumer configuration
+
+In your `laminar.yaml` or another file that overrides values, do:
+
+```yaml
+appServerConsumer:
+  env:
+    signalsLlmProvider: "gemini" # or bedrock
+    # model name for gemini, or Inference Profile ID for bedrock
+    signalsLlmModel: "gemini-3-flash"
+```
+
+### Frontend configuration
+
+By default, if `GOOGLE_GENERATIVE_AI_API_KEY` environment variable is set via secret, use gemini.
+Otherwise, for bedrock the following must be set:
+
+```yaml
+frontend:
+  env:
+    bedrockEnabled: "true"
+
+secrets:
+  data:
+    AWS_ACCESS_KEY_ID: "your-aws-access-key-id"
+    AWS_SECRET_ACCESS_KEY: "your-secret-access-key"
+    AWS_REGION: "us-east-1" # or another aws region
+```
+
 ## Ingress and DNS
 
 ### Custom Domain with External-DNS
