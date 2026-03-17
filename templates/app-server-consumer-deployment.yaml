@@ -66,24 +66,38 @@ spec:
               value: {{ .Values.appServerConsumer.env.numSpansWorkers | quote }}
             - name: NUM_BROWSER_EVENTS_WORKERS
               value: {{ .Values.appServerConsumer.env.numBrowserEventsWorkers | quote }}
-            - name: NUM_PAYLOAD_WORKERS
-              value: {{ .Values.appServerConsumer.env.numPayloadWorkers | quote }}
-            - name: NUM_TRACE_SUMMARY_WORKERS
-              value: {{ .Values.appServerConsumer.env.numTraceSummaryWorkers | quote }}
-            - name: NUM_EVALUATORS_WORKERS
-              value: {{ .Values.appServerConsumer.env.numEvaluatorsWorkers | quote }}
             - name: NUM_NOTIFICATION_WORKERS
               value: {{ .Values.appServerConsumer.env.numNotificationWorkers | quote }}
             - name: NUM_CLUSTERING_WORKERS
               value: {{ .Values.appServerConsumer.env.numClusteringWorkers | quote }}
+            - name: NUM_SEMANTIC_EVENT_WORKERS
+              value: {{ .Values.appServerConsumer.env.numSemanticEventWorkers | quote }}
+            - name: NUM_SPANS_INDEXER_WORKERS
+              value: {{ .Values.appServerConsumer.env.numSpansIndexerWorkers | quote }}
+            - name: SPANS_INDEXER_QUEUE_PREFETCH_COUNT
+              value: {{ .Values.appServerConsumer.env.numSpansIndexerWorkers | quote }}
+            - name: NUM_SIGNAL_JOB_SUBMISSION_BATCH_WORKERS
+              value: {{ .Values.appServerConsumer.env.numSignalJobSubmissionBatchWorkers | quote }}
+            - name: NUM_SIGNAL_JOB_PENDING_BATCH_WORKERS
+              value: {{ .Values.appServerConsumer.env.numSignalJobPendingBatchWorkers | quote }}
+            - name: SIGNAL_JOB_PENDING_BATCH_SIZE
+              value: {{ .Values.appServerConsumer.env.signalJobPendingBatchSize | quote }}
+            - name: SIGNAL_JOB_MAX_ALLOWED_STEPS
+              value: {{ .Values.appServerConsumer.env.signalJobMaxAllowedSteps | quote }}
+            - name: NUM_SIGNAL_JOB_REALTIME_WORKERS
+              value: {{ .Values.appServerConsumer.env.numSignalJobRealtimeWorkers | quote }}
+            - name: NUM_REPORTS_WORKERS
+              value: {{ .Values.appServerConsumer.env.numReportsWorkers | quote }}
+            - name: SIGNALS_LLM_PROVIDER
+              value: {{ .Values.appServerConsumer.env.signalsLlmProvider | quote }}
+            - name: SIGNALS_LLM_MODEL
+              value: {{ .Values.appServerConsumer.env.signalsLlmModel | quote }}
             - name: RABBITMQ_MAX_CHANNEL_POOL_SIZE
               value: {{ .Values.appServerConsumer.env.rabbitmqMaxChannelPoolSize | quote }}
             - name: REDIS_URL
               value: {{ .Values.appServerConsumer.env.redisUrl }}
             - name: ENVIRONMENT
               value: {{ .Values.global.environment }}
-            - name: AGGREGATE_TRACES
-              value: {{ .Values.appServerConsumer.env.aggregateTraces | quote }}
             - name: ENABLE_TRACING
               value: {{ .Values.appServerConsumer.env.enableTracing | quote }}
             - name: QUICKWIT_SEARCH_URL

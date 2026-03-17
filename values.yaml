@@ -233,6 +233,7 @@ frontend:
     nextPublicUrl: "https://localhost:3000"
     redisUrl: "redis://laminar-redis-service:6379"
     quickwitSearchUrl: "http://laminar-quickwit-searcher:7280"
+    bedrockEnabled: "false"
   # First launch runs all migrations to prepare databases, which can take several minutes.
   # Larger initial delays are set to account for this.
   readinessProbe:
@@ -350,17 +351,32 @@ appServerConsumer:
     port: "8000"
     consumerPort: "8000"
     databaseMaxConnections: "64"
-    numSpansWorkers: "48"
-    numBrowserEventsWorkers: "48"
-    numPayloadWorkers: "48"
-    numTraceSummaryWorkers: "16"
-    numEvaluatorsWorkers: "8"
+    numSpansWorkers: "8"
+    numSpansIndexerWorkers: "8"
+    numBrowserEventsWorkers: "8"
     numNotificationWorkers: "4"
-    numClusteringWorkers: "4"
+    numClusteringWorkers: "8"
+    numSemanticEventWorkers: "1"
+    numSignalJobSumbissionBatchWorkers: "8"
+    numSignalJobPendingBatchWorkers: "8"
+    signalJobPendingBatchSize: "64"
+    signalJobMaxAllowedSteps: "10"
+    signalJobWaitingQueueTtlMs: "300000"
+    numSignalJobRealtimeWorkers: "4"
+    numReportsWorkers: "2"
+    spansIndexerQueuePrefetchCount: "1"
     rabbitmqMaxChannelPoolSize: "128"
+    signalsLlmProvider: "gemini"
+    # uncommnent or override to set to a custom value
+    # commented out, so that providers other than gemini don't default to gemini model
+    # signalsLlmModel: "gemini-3-flash"
+
+    # if the provider supports batch API, we prefer that. Can be overriden
+    # globally by this control
+    signalsAlwaysUseRealtime: "false"
     redisUrl: "redis://laminar-redis-service:6379"
-    aggregateTraces: "true"
-    enableTracing: "true"
+    enableTracing: "false"
+    enableReports: "false"
     quickwitSearchUrl: "http://laminar-quickwit-searcher:7280"
     quickwitIngestUrl: "http://laminar-quickwit-indexer:7281"
 
