@@ -84,6 +84,10 @@ spec:
               value: {{ .Values.appServerConsumer.env.signalJobPendingBatchSize | quote }}
             - name: SIGNAL_JOB_MAX_ALLOWED_STEPS
               value: {{ .Values.appServerConsumer.env.signalJobMaxAllowedSteps | quote }}
+            - name: SIGNAL_JOB_WAITING_QUEUE_TTL_MS
+              value: {{ .Values.appServerConsumer.env.signalJobWaitingQueueTtlMs | quote }}
+            - name: ENABLE_REPORTS
+              value: {{ .Values.appServerConsumer.env.enableReports | quote }}
             - name: NUM_SIGNAL_JOB_REALTIME_WORKERS
               value: {{ .Values.appServerConsumer.env.numSignalJobRealtimeWorkers | quote }}
             - name: NUM_REPORTS_WORKERS
