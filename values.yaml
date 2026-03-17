@@ -357,7 +357,7 @@ appServerConsumer:
     numNotificationWorkers: "4"
     numClusteringWorkers: "8"
     numSemanticEventWorkers: "1"
-    numSignalJobSumbissionBatchWorkers: "8"
+    numSignalJobSubmissionBatchWorkers: "8"
     numSignalJobPendingBatchWorkers: "8"
     signalJobPendingBatchSize: "64"
     signalJobMaxAllowedSteps: "10"

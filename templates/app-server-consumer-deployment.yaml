@@ -75,7 +75,7 @@ spec:
             - name: NUM_SPANS_INDEXER_WORKERS
               value: {{ .Values.appServerConsumer.env.numSpansIndexerWorkers | quote }}
             - name: SPANS_INDEXER_QUEUE_PREFETCH_COUNT
-              value: {{ .Values.appServerConsumer.env.numSpansIndexerWorkers | quote }}
+              value: {{ .Values.appServerConsumer.env.spansIndexerQueuePrefetchCount | quote }}
             - name: NUM_SIGNAL_JOB_SUBMISSION_BATCH_WORKERS
               value: {{ .Values.appServerConsumer.env.numSignalJobSubmissionBatchWorkers | quote }}
             - name: NUM_SIGNAL_JOB_PENDING_BATCH_WORKERS
@@ -92,6 +92,8 @@ spec:
               value: {{ .Values.appServerConsumer.env.signalsLlmProvider | quote }}
             - name: SIGNALS_LLM_MODEL
               value: {{ .Values.appServerConsumer.env.signalsLlmModel | quote }}
+            - name: SIGNALS_ALWAYS_USE_REALTIME
+              value: {{ .Values.appServerConsumer.env.signalsAlwaysUseRealtime | quote }}
             - name: RABBITMQ_MAX_CHANNEL_POOL_SIZE
               value: {{ .Values.appServerConsumer.env.rabbitmqMaxChannelPoolSize | quote }}
             - name: REDIS_URL
