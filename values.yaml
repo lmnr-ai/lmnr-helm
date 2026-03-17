@@ -367,10 +367,8 @@ appServerConsumer:
     spansIndexerQueuePrefetchCount: "1"
     rabbitmqMaxChannelPoolSize: "128"
     signalsLlmProvider: "gemini"
-    # uncommnent or override to set to a custom value
-    # commented out, so that providers other than gemini don't default to gemini model
-    # signalsLlmModel: "gemini-3-flash"
-
+    # override to set to a custom value otherwise defaults to smaller models
+    signalsLlmModel: ""
     # if the provider supports batch API, we prefer that. Can be overriden
     # globally by this control
     signalsAlwaysUseRealtime: "false"
