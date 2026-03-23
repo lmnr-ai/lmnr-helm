@@ -17,7 +17,7 @@ Deploy Laminar on Kubernetes with a single command.
 First, either clone this repository and `cd` into the directory or add it to helm directly.
 
 ```bash
-helm repo add laminar https://github.com/lmnr-ai/lmnr-helm
+helm repo add laminar https://lmnr-ai.github.io/lmnr-helm
 helm repo update
 ```
 
