@@ -13,6 +13,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Configure git
+        run: |
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "GitHub Actions"
+
       - name: Verify chart version matches release tag
         run: |
           CHART_VERSION=$(grep -m 1 '^version:' charts/laminar/Chart.yaml | sed 's/version:[[:space:]]*//')
