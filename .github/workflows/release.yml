@@ -15,7 +15,7 @@ jobs:
 
       - name: Verify chart version matches release tag
         run: |
-          CHART_VERSION=$(grep -m 1 '^version:' Chart.yaml | sed 's/version:[[:space:]]*//')
+          CHART_VERSION=$(grep -m 1 '^version:' charts/laminar/Chart.yaml | sed 's/version:[[:space:]]*//')
           RELEASE_TAG="${{ github.event.release.tag_name }}"
 
           # Strip leading 'v' from tag if present (e.g. v1.2.3 -> 1.2.3)
