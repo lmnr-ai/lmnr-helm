@@ -281,6 +281,18 @@ secrets:
     AUTH_OKTA_ISSUER: "https://your-okta-domain.com/oauth2/default"
 ```
 
+### Keycloak OIDC Auth
+
+Get your Keycloak **ID** and **Secret** as well as **issuer** (including realm). In `laminar.yaml`
+
+```yaml
+secrets:
+  data:
+    AUTH_KEYCLOAK_ID: "your-keycloak-id"
+    AUTH_KEYCLOAK_SECRET: "your-keycloak-secret"
+    AUTH_KEYCLOAK_ISSUER: "https://your-keycloak-domain.com/realms/My_Realm"
+```
+
 ### Complete Example
 
 Configure one or more OAuth providers in your `laminar.yaml`:
@@ -305,6 +317,9 @@ secrets:
     AUTH_OKTA_CLIENT_ID: "your-okta-client-id"
     AUTH_OKTA_CLIENT_SECRET: "your-okta-client-secret"
     AUTH_OKTA_ISSUER: "https://your-okta-domain.com/oauth2/default"
+    AUTH_KEYCLOAK_ID: "your-keycloak-id"
+    AUTH_KEYCLOAK_SECRET: "your-keycloak-secret"
+    AUTH_KEYCLOAK_ISSUER: "https://your-keycloak-domain.com/realms/My_Realm"
 
 frontend:
   env:
