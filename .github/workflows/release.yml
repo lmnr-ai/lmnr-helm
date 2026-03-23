@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Verify chart version matches release tag
         run: |
@@ -27,5 +29,7 @@ jobs:
           echo "✅ Version match confirmed: $CHART_VERSION"
 
       - uses: helm/chart-releaser-action@v1.7.0
+        with:
+          chars_dir: .
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
