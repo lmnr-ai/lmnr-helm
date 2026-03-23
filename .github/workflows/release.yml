@@ -1,0 +1,31 @@
+# .github/workflows/release.yml
+name: Release Charts
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Verify chart version matches release tag
+        run: |
+          CHART_VERSION=$(grep -m 1 '^version:' Chart.yaml | sed 's/version:[[:space:]]*//')
+          RELEASE_TAG="${{ github.event.release.tag_name }}"
+
+          # Strip leading 'v' from tag if present (e.g. v1.2.3 -> 1.2.3)
+          RELEASE_TAG="${RELEASE_TAG#v}"
+
+          if [ "$CHART_VERSION" != "$RELEASE_TAG" ]; then
+            echo "❌ Version mismatch: Chart.yaml has '$CHART_VERSION' but release tag is '$RELEASE_TAG'"
+            exit 1
+          fi
+
+          echo "✅ Version match confirmed: $CHART_VERSION"
+
+      - uses: helm/chart-releaser-action@v1.7.0
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
