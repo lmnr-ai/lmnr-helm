@@ -19,6 +19,7 @@ You **MUST** include these URLs in your external secret store with the correct c
 | `aws-partial-secrets.yaml` | Sensitive secrets from AWS, rest from K8s |
 | `vault-all-secrets.yaml` | All secrets from HashiCorp Vault |
 | `mixed-aws-vault.yaml` | Mix of AWS, Vault, and K8s secrets |
+| `extra-env.yaml` | Reference pre-existing K8s Secrets via `extraEnv` + `secretKeyRef` |
 
 ## Usage
 
