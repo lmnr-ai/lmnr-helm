@@ -128,7 +128,7 @@ For production deployments, additionally configure:
 
 1. **OAuth Configuration** for logging in to the UI platform. Google and Github are supported.
 2. **Secure passwords** for PostgreSQL, ClickHouse, and RabbitMQ (in secrets.data)
-3. **External secret management** (AWS Secrets Manager or HashiCorp Vault)
+3. **External secret management** (AWS Secrets Manager, HashiCorp Vault, or `extraEnv` with `secretKeyRef` for pre-existing K8s Secrets)
 4. **HTTPS** with an ACM certificate
 5. **Custom domain** with external-dns
 

@@ -84,7 +84,9 @@ spec:
               value: {{ .Values.appServer.env.quickwitSearchUrl }}
             - name: QUICKWIT_INGEST_URL
               value: {{ .Values.appServer.env.quickwitIngestUrl }}
-            # All secrets loaded via envFrom from app-secrets, app-secrets-aws, app-secrets-vault
+            {{- with .Values.appServer.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
         - name: nginx
           image: {{ .Values.images.nginx.repository }}:{{ .Values.images.nginx.tag }}
           ports:

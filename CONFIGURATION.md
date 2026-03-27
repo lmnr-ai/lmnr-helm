@@ -8,6 +8,7 @@ This guide covers advanced configuration options for the Laminar Helm chart.
 
 - [Cloud Provider](#cloud-provider)
 - [Secrets Management](#secrets-management)
+- [Extra Environment Variables](#extra-environment-variables)
 - [OAuth setup](#oauth-setup)
 - [Ingress and DNS](#ingress-and-dns)
 - [Storage Configuration](#storage-configuration)
@@ -225,6 +226,54 @@ Install with:
 helm upgrade -i laminar . -f laminar.yaml
 ```
 
+## Extra Environment Variables
+
+The `extraEnv` field lets you inject additional environment variables into any of the main deployments (`frontend`, `appServer`, `appServerConsumer`). It accepts a list of standard [Kubernetes env var definitions](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#envvar-v1-core), supporting:
+
+- **Plain values** via `value:`
+- **Kubernetes Secret references** via `valueFrom.secretKeyRef`
+- **ConfigMap references** via `valueFrom.configMapKeyRef`
+- **Pod field references** via `valueFrom.fieldRef`
+
+This is especially useful when you manage secrets externally (e.g., via sealed-secrets, external-secrets-operator, or a Keycloak operator) and need to reference pre-existing Kubernetes Secrets.
+
+`extraEnv` entries take precedence over values injected by `envFrom` (i.e., over `secrets.data`), so they can be used to selectively override individual keys without changing the chart's secrets configuration.
+
+### Example: Reference an existing Kubernetes Secret
+
+```yaml
+frontend:
+  extraEnv:
+    - name: AUTH_KEYCLOAK_ID
+      valueFrom:
+        secretKeyRef:
+          name: keycloak-realm
+          key: client-id
+    - name: AUTH_KEYCLOAK_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: keycloak-realm
+          key: client-secret
+    - name: AUTH_KEYCLOAK_ISSUER
+      value: "https://keycloak.example.com/realms/my-realm"
+```
+
+### Example: Add custom env vars to the app server
+
+```yaml
+appServer:
+  extraEnv:
+    - name: MY_CUSTOM_VAR
+      value: "some-value"
+    - name: DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: my-db-credentials
+          key: password
+```
+
+See also: [`examples/secrets/extra-env.yaml`](./examples/secrets/extra-env.yaml)
+
 ## OAuth setup
 
 Laminar supports OAuth authentication with GitHub, Google, and Azure AD. Configure by adding provider credentials to your `laminar.yaml`.
@@ -285,6 +334,8 @@ secrets:
 
 Get your Keycloak **ID** and **Secret** as well as **issuer** (including realm). In `laminar.yaml`
 
+**Option 1: Inline values**
+
 ```yaml
 secrets:
   data:
@@ -292,6 +343,31 @@ secrets:
     AUTH_KEYCLOAK_SECRET: "your-keycloak-secret"
     AUTH_KEYCLOAK_ISSUER: "https://your-keycloak-domain.com/realms/My_Realm"
 ```
+
+**Option 2: Reference a pre-existing Kubernetes Secret**
+
+If your Keycloak credentials are already stored in a Kubernetes Secret (e.g., created by the Keycloak operator, sealed-secrets, or external-secrets-operator), use `extraEnv` with `secretKeyRef`:
+
+```yaml
+frontend:
+  extraEnv:
+    - name: AUTH_KEYCLOAK_ID
+      valueFrom:
+        secretKeyRef:
+          name: keycloak-realm
+          key: client-id
+    - name: AUTH_KEYCLOAK_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: keycloak-realm
+          key: client-secret
+    - name: AUTH_KEYCLOAK_ISSUER
+      value: "https://your-keycloak-domain.com/realms/My_Realm"
+```
+
+These `extraEnv` entries override any matching keys from `secrets.data`. See [Extra Environment Variables](#extra-environment-variables) for details.
+
+See also: [`examples/secrets/extra-env.yaml`](./examples/secrets/extra-env.yaml)
 
 ### Complete Example
 

@@ -246,6 +246,20 @@ frontend:
   livenessProbe:
     initialDelaySeconds: 150
     periodSeconds: 20
+  # Additional environment variables for the frontend container.
+  # Supports all Kubernetes env var formats including valueFrom.secretKeyRef
+  # to reference pre-existing Kubernetes secrets.
+  # These take precedence over values injected via envFrom (secrets.data).
+  # Example - read from an existing K8s secret:
+  #   extraEnv:
+  #     - name: AUTH_KEYCLOAK_ID
+  #       valueFrom:
+  #         secretKeyRef:
+  #           name: keycloak-realm
+  #           key: client-id
+  #     - name: AUTH_KEYCLOAK_ISSUER
+  #       value: "https://keycloak.example.com/realms/my-realm"
+  extraEnv: []
 
 # App Server configuration
 appServer:
@@ -315,6 +329,10 @@ appServer:
     quickwitSearchUrl: "http://laminar-quickwit-searcher:7280"
     quickwitIngestUrl: "http://laminar-quickwit-indexer:7281"
     redisUrl: "redis://laminar-redis-service:6379"
+  # Additional environment variables for the app-server container.
+  # Supports all Kubernetes env var formats including valueFrom.secretKeyRef.
+  # These take precedence over values injected via envFrom (secrets.data).
+  extraEnv: []
 
 # App Server Consumer configuration
 appServerConsumer:
@@ -381,6 +399,10 @@ appServerConsumer:
     enableReports: "false"
     quickwitSearchUrl: "http://laminar-quickwit-searcher:7280"
     quickwitIngestUrl: "http://laminar-quickwit-indexer:7281"
+  # Additional environment variables for the app-server-consumer container.
+  # Supports all Kubernetes env var formats including valueFrom.secretKeyRef.
+  # These take precedence over values injected via envFrom (secrets.data).
+  extraEnv: []
 
 # Quickwit configuration
 quickwit:
