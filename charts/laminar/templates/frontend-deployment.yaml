@@ -70,7 +70,9 @@ spec:
               value: {{ .Values.frontend.env.quickwitSearchUrl }}
             - name: BEDROCK_ENABLED
               value: {{ .Values.frontend.env.bedrockEnabled | quote }}
-            # All secrets loaded via envFrom from app-secrets, app-secrets-aws, app-secrets-vault
+            {{- with .Values.frontend.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
       {{- include "laminar.nodeSelector" (dict "service" .Values.frontend "global" .Values.global) | nindent 6 }}
       {{- include "laminar.affinity" (dict "service" .Values.frontend "global" .Values.global) | nindent 6 }}
       {{- include "laminar.tolerations" (dict "service" .Values.frontend "global" .Values.global) | nindent 6 }}

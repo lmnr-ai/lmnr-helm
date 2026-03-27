@@ -110,7 +110,9 @@ spec:
               value: {{ .Values.appServerConsumer.env.quickwitSearchUrl }}
             - name: QUICKWIT_INGEST_URL
               value: {{ .Values.appServerConsumer.env.quickwitIngestUrl }}
-            # All secrets loaded via envFrom from app-secrets, app-secrets-aws, app-secrets-vault
+            {{- with .Values.appServerConsumer.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
       {{- include "laminar.nodeSelector" (dict "service" .Values.appServerConsumer "global" .Values.global) | nindent 6 }}
       {{- include "laminar.affinity" (dict "service" .Values.appServerConsumer "global" .Values.global) | nindent 6 }}
       {{- include "laminar.tolerations" (dict "service" .Values.appServerConsumer "global" .Values.global) | nindent 6 }}
