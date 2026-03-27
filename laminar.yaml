@@ -40,6 +40,23 @@ frontend:
   env:
     nextauthUrl: "http://localhost:3000"
     nextPublicUrl: "http://localhost:3000"
+  # Extra environment variables — use to reference pre-existing K8s Secrets
+  # or inject additional config. These override matching keys from secrets.data.
+  # extraEnv:
+  #   # Read from an existing Kubernetes Secret
+  #   - name: AUTH_KEYCLOAK_ID
+  #     valueFrom:
+  #       secretKeyRef:
+  #         name: keycloak-realm
+  #         key: client-id
+  #   - name: AUTH_KEYCLOAK_SECRET
+  #     valueFrom:
+  #       secretKeyRef:
+  #         name: keycloak-realm
+  #         key: client-secret
+  #   # Plain string value
+  #   - name: AUTH_KEYCLOAK_ISSUER
+  #     value: "https://keycloak.example.com/realms/my-realm"
 
 quickwit:
   s3:
@@ -54,6 +71,13 @@ appServerConsumer:
     #
     # uncomment or overwrite to set to custom model
     # signalsLlmModel: "gemini-3-flash"
+  # Extra environment variables for app-server-consumer (same format as frontend.extraEnv)
+  # extraEnv:
+  #   - name: CUSTOM_VAR
+  #     valueFrom:
+  #       secretKeyRef:
+  #         name: my-secret
+  #         key: my-key
 
 clickhouse:
   s3:
