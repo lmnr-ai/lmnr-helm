@@ -15,19 +15,23 @@ Get Laminar running on your Kubernetes cluster in minutes.
 
 ### Step 1: Customize Configuration
 
-Copy and edit `laminar.yaml` with your settings:
+Edit `laminar.yaml` and replace **all** placeholder values with your actual settings:
 
 - Set `global.cloudProvider` to `aws` or `gcp`
-- Set your cloud credentials and storage bucket names
-- Set ClickHouse S3 bucket endpoint and region
-- Set your availability zone(s) (primarily required for AWS EBS)
+- Set your cloud credentials (AWS keys, Gemini API key)
+- Set `AEAD_SECRET_KEY` — generate with `openssl rand -hex 32` (used to encrypt project API keys and model API keys)
+- Replace `<bucket-name>` and `<region>` in `clickhouse.s3` with your real S3 bucket and region
+- Replace `your-bucket-name` and `<region>` in `quickwit.s3` with your real S3 bucket and region
+- Set your availability zone(s) in `storage.storageClass.zones` (required for AWS EBS)
+
+> **Important:** Angle-bracket placeholders like `<region>` will be interpreted as XML tags in the ClickHouse config and cause pods to crash. Make sure every placeholder is replaced with a real value.
 
 ### Step 2: Install with Customized Settings
 
 Install Laminar with your customized configuration:
 
 ```bash
-helm upgrade -i laminar . -f laminar.yaml
+helm upgrade -i laminar ./charts/laminar -f laminar.yaml
 ```
 
 ### Step 3: Get the Load Balancer URL
@@ -52,7 +56,7 @@ Update `laminar.yaml` with the URL/IP or upgrade directly:
 **For AWS:**
 ```bash
 URL=$(kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-helm upgrade -i laminar . -f laminar.yaml \
+helm upgrade -i laminar ./charts/laminar -f laminar.yaml \
   --set frontend.env.nextauthUrl="http://$URL" \
   --set frontend.env.nextPublicUrl="http://$URL"
 ```
@@ -60,7 +64,7 @@ helm upgrade -i laminar . -f laminar.yaml \
 **For GCP:**
 ```bash
 IP=$(kubectl get svc laminar-frontend-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-helm upgrade -i laminar . -f laminar.yaml \
+helm upgrade -i laminar ./charts/laminar -f laminar.yaml \
   --set frontend.env.nextauthUrl="http://$IP" \
   --set frontend.env.nextPublicUrl="http://$IP"
 ```
@@ -69,7 +73,9 @@ helm upgrade -i laminar . -f laminar.yaml \
 
 Open your browser and navigate to the URL or IP retrieved in Step 4.
 
-### Step 6: Configure the SDK to point at the app-server URL
+### Step 6: Configure the SDK
+
+Get the app-server load balancer URL — this is the `baseUrl` your SDK will send traces to.
 
 **For AWS:**
 ```bash
@@ -83,7 +89,7 @@ LMNR_BASE_URL=$(kubectl get svc laminar-app-server-load-balancer -o jsonpath='{.
     && echo "http://$LMNR_BASE_URL" # or https
 ```
 
-You can now use this URL as the `baseUrl` in the SDK when initializing `Laminar` and/or `LaminarClient`.
+You now should use this URL as the `baseUrl` in the SDK when initializing `Laminar` and/or `LaminarClient`.
 
 ## Verify Installation
 

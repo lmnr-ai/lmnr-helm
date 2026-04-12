@@ -24,21 +24,27 @@ helm repo update
 Then, follow the steps below to install Laminar.
 
 ```bash
-# 1. Customize laminar.yaml with your cloud provider ("aws" or "gcp"), credentials, and storage buckets
+# 1. Edit laminar.yaml — replace ALL placeholder values (e.g. <region>, <bucket-name>)
+#    with your actual cloud provider, credentials, S3 buckets, and availability zones.
+#    See "Minimal Configuration" below for details.
 
 # 2. Install
-helm upgrade -i laminar . -f laminar.yaml
+helm upgrade -i laminar ./charts/laminar -f laminar.yaml
 
 # 3. Get ALB URL (wait 1-2 minutes for provisioning)
 ALB_URL=$(kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
 # 4. Configure frontend URLs
-helm upgrade -i laminar . -f laminar.yaml \
+helm upgrade -i laminar ./charts/laminar -f laminar.yaml \
   --set frontend.env.nextauthUrl="http://$ALB_URL" \
   --set frontend.env.nextPublicUrl="http://$ALB_URL"
 
 # 5. Get the LMNR_BASE_URL (to send traces to)
 LMNR_BASE_URL=$(kubectl get svc laminar-app-server-load-balancer -o jsonpath='{.status.loadBalancer.ingress[0].hostname}') && echo $LMNR_BASE_URL
+
+# 6. Initialize the SDK with your self-hosted base URL
+#    TypeScript: Laminar.initialize({ baseUrl: "http://$LMNR_BASE_URL" })
+#    Python:     Laminar.initialize(base_url="http://$LMNR_BASE_URL")
 ```
 
 See [QUICKSTART.md](./QUICKSTART.md) for detailed installation steps.
@@ -97,13 +103,17 @@ Helm merges both files, with `laminar.yaml` taking precedence.
 
 ### Minimal Configuration
 
-Edit `laminar.yaml` and set:
+Edit `laminar.yaml` and replace **all** placeholder values (`<region>`, `<bucket-name>`, etc.) with your actual values:
 
 1. **Cloud Provider**: Set `global.cloudProvider` to `aws` or `gcp`
 2. **Cloud credentials and S3 buckets** for trace storage
-3. **ClickHouse S3 bucket** endpoint and region
-4. Availability zones (Required for AWS EBS volumes)
-5. **Frontend URLs** (can be set after initial deployment)
+3. **`AEAD_SECRET_KEY`** — generate with `openssl rand -hex 32`. Used to encrypt project API keys and model API keys for the playground.
+4. **ClickHouse S3 bucket** endpoint and region — replace `<bucket-name>` and `<region>` with real values
+5. **Quickwit S3 bucket** — replace `your-bucket-name` and `<region>` with real values
+6. **Availability zones** (required for AWS EBS volumes)
+7. **Frontend URLs** (can be set after initial deployment)
+
+> **Important:** Angle-bracket placeholders like `<region>` will produce invalid XML in the ClickHouse config and cause CrashLoopBackOff errors if left unchanged.
 
 ```yaml
 secrets:
@@ -111,15 +121,22 @@ secrets:
     AWS_ACCESS_KEY_ID: "your-key"
     AWS_SECRET_ACCESS_KEY: "your-secret"
     NEXTAUTH_SECRET: "random-secret-string"
+    AEAD_SECRET_KEY: "generate with: openssl rand -hex 32"
 
 clickhouse:
   s3:
     endpoint: "https://your-bucket.s3.us-east-1.amazonaws.com/"
     region: "us-east-1"
 
+quickwit:
+  s3:
+    defaultIndexRootUri: "s3://your-bucket/indexes"
+    region: "us-east-1"
+
 storage:
-  zones:
-    - "us-east-1b" # Required for AWS EBS, can be empty for GCP
+  storageClass:
+    zones:
+      - "us-east-1b" # Required for AWS EBS, can be empty for GCP
 ```
 
 ### Production Configuration
@@ -165,7 +182,7 @@ kubectl exec -it laminar-clickhouse-0 -- clickhouse-client
 ### Upgrade
 
 ```bash
-helm upgrade -i laminar . -f laminar.yaml
+helm upgrade -i laminar ./charts/laminar -f laminar.yaml
 ```
 
 ### Uninstall
