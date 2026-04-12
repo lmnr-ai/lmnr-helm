@@ -27,7 +27,7 @@ Then, follow the steps below to install Laminar.
 # 1. Customize laminar.yaml with your cloud provider ("aws" or "gcp"), credentials, and storage buckets
 
 # 2. Install
-helm upgrade -i laminar . -f laminar.yaml
+helm upgrade -i laminar ./charts/laminar -f laminar.yaml
 
 # 3. Get ALB URL (wait 1-2 minutes for provisioning)
 ALB_URL=$(kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
