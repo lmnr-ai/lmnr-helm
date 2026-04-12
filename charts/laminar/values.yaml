@@ -559,6 +559,14 @@ clickhouse:
       maxSize: "10Gi"
     # Metadata path for S3 disk
     metadataPath: "/var/lib/clickhouse/disks/s3_disk/"
+  readinessProbe:
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    failureThreshold: 3
+  livenessProbe:
+    initialDelaySeconds: 120
+    periodSeconds: 30
+    failureThreshold: 5
   service:
     type: ClusterIP
     port: 8123

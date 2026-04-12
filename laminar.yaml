@@ -4,8 +4,8 @@
 # It overrides the defaults in values.yaml - you only need to specify what you want to change.
 #
 # Quick Start:
-#   1. Edit this file with your AWS credentials, Gemini API key, S3 buckets, and availability zones
-#   2. Install: helm upgrade -i laminar . -f laminar.yaml
+#   1. Edit this file — replace ALL placeholder values (<region>, <bucket-name>, etc.) with real values
+#   2. Install: helm upgrade -i laminar ./charts/laminar -f laminar.yaml
 #   3. Get ALB URL: kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 #   4. Update NEXTAUTH_URL with ALB URL and upgrade again
 #
@@ -32,8 +32,9 @@ secrets:
     AWS_ACCESS_KEY_ID: "your-aws-access-key-id"
     AWS_SECRET_ACCESS_KEY: "your-secret-access-key"
     AWS_REGION: "us-east-1"
-    GOOGLE_GENERATIVE_AI_API_KEY: "AIzaSy..." # your Gemini key
-    # This must be filled with the ingress URL after initial deployment
+    GOOGLE_GENERATIVE_AI_API_KEY: "AIzaSy..." # your Gemini api key
+    AEAD_SECRET_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" # aead secret used to encrypt Laminar project api keys and model API keys for playground
+    # Check out charts/laminar/values.yaml for full list of secrets
     # Refer to QUICKSTART.md for more details
 
 frontend:

@@ -74,20 +74,20 @@ spec:
             httpGet:
               path: /ping
               port: {{ .Values.clickhouse.service.port }}
-            initialDelaySeconds: 30
-            periodSeconds: 30
+            initialDelaySeconds: {{ .Values.clickhouse.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.clickhouse.livenessProbe.periodSeconds }}
             timeoutSeconds: 5
             successThreshold: 1
-            failureThreshold: 3
+            failureThreshold: {{ .Values.clickhouse.livenessProbe.failureThreshold }}
           readinessProbe:
             httpGet:
               path: /ping
               port: {{ .Values.clickhouse.service.port }}
-            initialDelaySeconds: 5
-            periodSeconds: 10
+            initialDelaySeconds: {{ .Values.clickhouse.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.clickhouse.readinessProbe.periodSeconds }}
             timeoutSeconds: 5
             successThreshold: 1
-            failureThreshold: 3
+            failureThreshold: {{ .Values.clickhouse.readinessProbe.failureThreshold }}
       volumes:
         {{- if not .Values.clickhouse.persistence.enabled }}
         - name: clickhouse-data

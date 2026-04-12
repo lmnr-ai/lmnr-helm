@@ -24,7 +24,9 @@ helm repo update
 Then, follow the steps below to install Laminar.
 
 ```bash
-# 1. Customize laminar.yaml with your cloud provider ("aws" or "gcp"), credentials, and storage buckets
+# 1. Edit laminar.yaml — replace ALL placeholder values (e.g. <region>, <bucket-name>)
+#    with your actual cloud provider, credentials, S3 buckets, and availability zones.
+#    See "Minimal Configuration" below for details.
 
 # 2. Install
 helm upgrade -i laminar ./charts/laminar -f laminar.yaml
@@ -33,7 +35,7 @@ helm upgrade -i laminar ./charts/laminar -f laminar.yaml
 ALB_URL=$(kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
 # 4. Configure frontend URLs
-helm upgrade -i laminar . -f laminar.yaml \
+helm upgrade -i laminar ./charts/laminar -f laminar.yaml \
   --set frontend.env.nextauthUrl="http://$ALB_URL" \
   --set frontend.env.nextPublicUrl="http://$ALB_URL"
 
@@ -97,13 +99,16 @@ Helm merges both files, with `laminar.yaml` taking precedence.
 
 ### Minimal Configuration
 
-Edit `laminar.yaml` and set:
+Edit `laminar.yaml` and replace **all** placeholder values (`<region>`, `<bucket-name>`, etc.) with your actual values:
 
 1. **Cloud Provider**: Set `global.cloudProvider` to `aws` or `gcp`
 2. **Cloud credentials and S3 buckets** for trace storage
-3. **ClickHouse S3 bucket** endpoint and region
-4. Availability zones (Required for AWS EBS volumes)
-5. **Frontend URLs** (can be set after initial deployment)
+3. **ClickHouse S3 bucket** endpoint and region — replace `<bucket-name>` and `<region>` with real values
+4. **Quickwit S3 bucket** — replace `your-bucket-name` and `<region>` with real values
+5. **Availability zones** (required for AWS EBS volumes)
+6. **Frontend URLs** (can be set after initial deployment)
+
+> **Important:** Angle-bracket placeholders like `<region>` will produce invalid XML in the ClickHouse config and cause CrashLoopBackOff errors if left unchanged.
 
 ```yaml
 secrets:
@@ -117,9 +122,15 @@ clickhouse:
     endpoint: "https://your-bucket.s3.us-east-1.amazonaws.com/"
     region: "us-east-1"
 
+quickwit:
+  s3:
+    defaultIndexRootUri: "s3://your-bucket/indexes"
+    region: "us-east-1"
+
 storage:
-  zones:
-    - "us-east-1b" # Required for AWS EBS, can be empty for GCP
+  storageClass:
+    zones:
+      - "us-east-1b" # Required for AWS EBS, can be empty for GCP
 ```
 
 ### Production Configuration
@@ -165,7 +176,7 @@ kubectl exec -it laminar-clickhouse-0 -- clickhouse-client
 ### Upgrade
 
 ```bash
-helm upgrade -i laminar . -f laminar.yaml
+helm upgrade -i laminar ./charts/laminar -f laminar.yaml
 ```
 
 ### Uninstall
