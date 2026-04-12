@@ -33,7 +33,7 @@ secrets:
     AWS_SECRET_ACCESS_KEY: "your-secret-access-key"
     AWS_REGION: "us-east-1"
     GOOGLE_GENERATIVE_AI_API_KEY: "AIzaSy..." # your Gemini api key
-    AEAD_SECRET_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" # aead secret used to encrypt Laminar project api keys and model API keys for playground
+    AEAD_SECRET_KEY: "your-aead-secret (can be generated with `openssl rand -hex 32`)" # aead secret used to encrypt Laminar project api keys and model API keys for playground
     # Check out charts/laminar/values.yaml for full list of secrets
     # Refer to QUICKSTART.md for more details
 
