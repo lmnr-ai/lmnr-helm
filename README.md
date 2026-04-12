@@ -107,10 +107,11 @@ Edit `laminar.yaml` and replace **all** placeholder values (`<region>`, `<bucket
 
 1. **Cloud Provider**: Set `global.cloudProvider` to `aws` or `gcp`
 2. **Cloud credentials and S3 buckets** for trace storage
-3. **ClickHouse S3 bucket** endpoint and region — replace `<bucket-name>` and `<region>` with real values
-4. **Quickwit S3 bucket** — replace `your-bucket-name` and `<region>` with real values
-5. **Availability zones** (required for AWS EBS volumes)
-6. **Frontend URLs** (can be set after initial deployment)
+3. **`AEAD_SECRET_KEY`** — generate with `openssl rand -hex 32`. Used to encrypt project API keys and model API keys for the playground.
+4. **ClickHouse S3 bucket** endpoint and region — replace `<bucket-name>` and `<region>` with real values
+5. **Quickwit S3 bucket** — replace `your-bucket-name` and `<region>` with real values
+6. **Availability zones** (required for AWS EBS volumes)
+7. **Frontend URLs** (can be set after initial deployment)
 
 > **Important:** Angle-bracket placeholders like `<region>` will produce invalid XML in the ClickHouse config and cause CrashLoopBackOff errors if left unchanged.
 
@@ -120,6 +121,7 @@ secrets:
     AWS_ACCESS_KEY_ID: "your-key"
     AWS_SECRET_ACCESS_KEY: "your-secret"
     NEXTAUTH_SECRET: "random-secret-string"
+    AEAD_SECRET_KEY: "generate with: openssl rand -hex 32"
 
 clickhouse:
   s3:

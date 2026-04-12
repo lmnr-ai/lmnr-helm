@@ -19,6 +19,7 @@ Edit `laminar.yaml` and replace **all** placeholder values with your actual sett
 
 - Set `global.cloudProvider` to `aws` or `gcp`
 - Set your cloud credentials (AWS keys, Gemini API key)
+- Set `AEAD_SECRET_KEY` — generate with `openssl rand -hex 32` (used to encrypt project API keys and model API keys)
 - Replace `<bucket-name>` and `<region>` in `clickhouse.s3` with your real S3 bucket and region
 - Replace `your-bucket-name` and `<region>` in `quickwit.s3` with your real S3 bucket and region
 - Set your availability zone(s) in `storage.storageClass.zones` (required for AWS EBS)
