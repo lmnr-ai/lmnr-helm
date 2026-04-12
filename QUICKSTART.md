@@ -72,7 +72,9 @@ helm upgrade -i laminar ./charts/laminar -f laminar.yaml \
 
 Open your browser and navigate to the URL or IP retrieved in Step 4.
 
-### Step 6: Configure the SDK to point at the app-server URL
+### Step 6: Configure the SDK
+
+Get the app-server load balancer URL — this is the `baseUrl` your SDK will send traces to.
 
 **For AWS:**
 ```bash
@@ -86,7 +88,7 @@ LMNR_BASE_URL=$(kubectl get svc laminar-app-server-load-balancer -o jsonpath='{.
     && echo "http://$LMNR_BASE_URL" # or https
 ```
 
-You can now use this URL as the `baseUrl` in the SDK when initializing `Laminar` and/or `LaminarClient`.
+You now should use this URL as the `baseUrl` in the SDK when initializing `Laminar` and/or `LaminarClient`.
 
 ## Verify Installation
 

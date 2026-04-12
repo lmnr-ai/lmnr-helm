@@ -41,6 +41,10 @@ helm upgrade -i laminar ./charts/laminar -f laminar.yaml \
 
 # 5. Get the LMNR_BASE_URL (to send traces to)
 LMNR_BASE_URL=$(kubectl get svc laminar-app-server-load-balancer -o jsonpath='{.status.loadBalancer.ingress[0].hostname}') && echo $LMNR_BASE_URL
+
+# 6. Initialize the SDK with your self-hosted base URL
+#    TypeScript: Laminar.initialize({ baseUrl: "http://$LMNR_BASE_URL" })
+#    Python:     Laminar.initialize(base_url="http://$LMNR_BASE_URL")
 ```
 
 See [QUICKSTART.md](./QUICKSTART.md) for detailed installation steps.
