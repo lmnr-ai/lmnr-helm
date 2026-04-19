@@ -1,5 +1,6 @@
 {{- $cloudProvider := .Values.global.cloudProvider | default "aws" -}}
-{{- if and .Values.frontend.enabled .Values.frontend.ingress.enabled .Values.frontend.ingress.hostname }}
+{{- $hasHostname := .Values.frontend.ingress.hostname -}}
+{{- if and .Values.frontend.enabled .Values.frontend.ingress.enabled (or (eq $cloudProvider "aws") $hasHostname) }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -14,8 +15,8 @@ metadata:
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
     {{- end }}
-    {{- if .Values.frontend.ingress.externalDns.enabled }}
-    external-dns.alpha.kubernetes.io/hostname: {{ .Values.frontend.ingress.hostname }}
+    {{- if and $hasHostname .Values.frontend.ingress.externalDns.enabled }}
+    external-dns.alpha.kubernetes.io/hostname: {{ $hasHostname }}
     {{- end }}
     {{- if and .Values.frontend.ingress.tls.enabled .Values.frontend.ingress.tls.clusterIssuer }}
     cert-manager.io/cluster-issuer: {{ .Values.frontend.ingress.tls.clusterIssuer }}
@@ -26,15 +27,19 @@ spec:
   {{- else if eq $cloudProvider "aws" }}
   ingressClassName: alb
   {{- end }}
-  {{- if .Values.frontend.ingress.tls.enabled }}
+  {{- if and $hasHostname .Values.frontend.ingress.tls.enabled }}
   tls:
     - hosts:
-        - {{ .Values.frontend.ingress.hostname }}
+        - {{ $hasHostname }}
       secretName: {{ .Values.frontend.ingress.tls.secretName }}
   {{- end }}
   rules:
-    - host: {{ .Values.frontend.ingress.hostname }}
+    {{- if $hasHostname }}
+    - host: {{ $hasHostname }}
       http:
+    {{- else }}
+    - http:
+    {{- end }}
         paths:
           - path: /
             pathType: Prefix

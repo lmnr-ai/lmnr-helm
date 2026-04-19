@@ -35,5 +35,5 @@ spec:
               service:
                 name: {{ include "laminar.resourceName" "app-server-service" }}
                 port:
-                  number: {{ .Values.appServer.service.port }}
+                  number: 8080
 {{- end }}

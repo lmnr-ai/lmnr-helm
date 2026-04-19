@@ -11,6 +11,12 @@ spec:
       name: http
       port: {{ .Values.appServer.service.port }}
       targetPort: {{ .Values.appServer.service.targetPort }}
+    {{- if .Values.appServer.ingress.hostname }}
+    - protocol: TCP
+      name: nginx
+      port: 8080
+      targetPort: 8080
+    {{- end }}
   type: {{ .Values.appServer.service.type }}
 ---
 {{- if .Values.appServer.loadBalancer.enabled }}

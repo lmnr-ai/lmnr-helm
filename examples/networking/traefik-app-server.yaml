@@ -1,8 +1,8 @@
 # Traefik routes for the Laminar app server.
 #
 # Port 443 (HTTP trace ingestion):
-#   HTTPS IngressRoute → laminar-app-server-service:8000
-#   nginx inside the pod filters to /v1/* and /health only.
+#   HTTPS IngressRoute → laminar-app-server-service:8080 (nginx sidecar)
+#   nginx filters traffic to /v1/* and /health only, then proxies to the Rust server on 8000.
 #
 # Port 8443 (gRPC trace ingestion):
 #   TCP IngressRoute → laminar-app-server-service:8001 (plaintext gRPC passthrough)
@@ -33,7 +33,7 @@ spec:
       kind: Rule
       services:
         - name: laminar-app-server-service
-          port: 8000
+          port: 8080
   tls:
     secretName: laminar-app-server-tls
 ---
