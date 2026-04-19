@@ -1,0 +1,51 @@
+# external-dns Helm values for Google Cloud DNS.
+#
+# external-dns watches Services and Ingresses annotated with:
+#   external-dns.alpha.kubernetes.io/hostname: "yourdomain.com"
+# and automatically creates/updates DNS A records in Google Cloud DNS.
+#
+# Prerequisites:
+#   1. A GCP service account with roles/dns.admin:
+#        gcloud iam service-accounts create external-dns --project=YOUR_PROJECT
+#        gcloud projects add-iam-policy-binding YOUR_PROJECT \
+#          --member "serviceAccount:external-dns@YOUR_PROJECT.iam.gserviceaccount.com" \
+#          --role "roles/dns.admin"
+#
+#   2. A credentials JSON key:
+#        gcloud iam service-accounts keys create /tmp/external-dns-key.json \
+#          --iam-account external-dns@YOUR_PROJECT.iam.gserviceaccount.com
+#
+#   3. A Kubernetes secret from that key:
+#        kubectl create secret generic external-dns-gcp \
+#          --namespace external-dns --create-namespace \
+#          --from-file=credentials.json=/tmp/external-dns-key.json
+#
+# Install with:
+#   helm repo add external-dns https://kubernetes-sigs.github.io/external-dns/
+#   helm upgrade -i external-dns external-dns/external-dns \
+#     --namespace external-dns \
+#     -f external-dns-gcp.yaml
+#
+# Edit YOUR_PROJECT before installing.
+
+provider:
+  name: google
+
+google:
+  project: YOUR_PROJECT   # e.g. my-gcp-project
+
+env:
+  - name: GOOGLE_APPLICATION_CREDENTIALS
+    value: /etc/secrets/service-account/credentials.json
+
+extraVolumes:
+  - name: google-credentials
+    secret:
+      secretName: external-dns-gcp
+
+extraVolumeMounts:
+  - name: google-credentials
+    mountPath: /etc/secrets/service-account
+
+policy: sync
+txtOwnerId: laminar-cluster

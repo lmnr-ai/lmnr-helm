@@ -31,6 +31,9 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
     {{- end }}
     {{- end }}
+    {{- if .Values.appServer.loadBalancer.hostname }}
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.appServer.loadBalancer.hostname | quote }}
+    {{- end }}
 spec:
   selector:
     app: {{ include "laminar.resourceName" "app-server" }}

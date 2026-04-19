@@ -6,6 +6,19 @@ Example configurations for common deployment scenarios.
 
 ## Available Examples
 
+### Networking (`networking/`)
+
+Ingress controllers, TLS, DNS, and cert-manager configurations for exposing Laminar externally.
+
+- `traefik-install.yaml` — Traefik Helm values (includes port 8443 entrypoint for gRPC)
+- `traefik-frontend.yaml` — HTTPS IngressRoute for the frontend with cert-manager
+- `traefik-app-server.yaml` — HTTPS IngressRoute (port 443) + TCP passthrough (port 8443) for the app server
+- `cert-manager-clusterissuer.yaml` — Let's Encrypt ClusterIssuer
+- `external-dns-gcp.yaml` — external-dns for Google Cloud DNS
+- `external-dns-route53.yaml` — external-dns for AWS Route53
+
+See [networking/README.md](./networking/README.md) for setup instructions and [NETWORKING.md](../NETWORKING.md) for architecture explanation.
+
 ### ClickHouse with S3 Storage (`clickhouse-s3-storage.yaml`)
 
 Store ClickHouse data in S3 instead of local EBS volumes.

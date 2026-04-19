@@ -38,13 +38,12 @@ helm upgrade -i laminar ./charts/laminar -f laminar.yaml
 
 Wait for the load balancer to be provisioned (1-2 minutes), then get the URL:
 
-**For AWS (ALB):**
+**For AWS:**
 ```bash
-kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+kubectl get ingress laminar-frontend-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 ```
-Note: The URL will be available nearly immediately, but the load balancer takes a few minutes to become available.
 
-**For GCP (GKE LoadBalancer Service):**
+**For GCP (no custom hostname):**
 ```bash
 kubectl get svc laminar-frontend-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
@@ -55,7 +54,7 @@ Update `laminar.yaml` with the URL/IP or upgrade directly:
 
 **For AWS:**
 ```bash
-URL=$(kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+URL=$(kubectl get ingress laminar-frontend-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 helm upgrade -i laminar ./charts/laminar -f laminar.yaml \
   --set frontend.env.nextauthUrl="http://$URL" \
   --set frontend.env.nextPublicUrl="http://$URL"
@@ -154,5 +153,7 @@ kubectl describe svc laminar-frontend-service
 
 ## Next Steps
 
-- See [CONFIGURATION.md](./CONFIGURATION.md) for production settings, secrets management, and S3 storage
+- **HTTPS / TLS** — see [CONFIGURATION.md — Ingress and DNS](./CONFIGURATION.md#ingress-and-dns) for cert-manager (automatic), ACM (AWS), or importing your own certificate
+- **GCS storage for ClickHouse on GCP** — see [CONFIGURATION.md — ClickHouse S3 Storage](./CONFIGURATION.md#clickhouse-s3-storage)
+- See [CONFIGURATION.md](./CONFIGURATION.md) for all production settings, secrets management, and storage
 - See [DEPENDENCIES.md](./DEPENDENCIES.md) for understanding service startup order

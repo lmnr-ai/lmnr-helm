@@ -32,7 +32,7 @@ Then, follow the steps below to install Laminar.
 helm upgrade -i laminar ./charts/laminar -f laminar.yaml
 
 # 3. Get ALB URL (wait 1-2 minutes for provisioning)
-ALB_URL=$(kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+ALB_URL=$(kubectl get ingress laminar-frontend-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
 # 4. Configure frontend URLs
 helm upgrade -i laminar ./charts/laminar -f laminar.yaml \
@@ -146,8 +146,9 @@ For production deployments, additionally configure:
 1. **OAuth Configuration** for logging in to the UI platform. Google and Github are supported.
 2. **Secure passwords** for PostgreSQL, ClickHouse, and RabbitMQ (in secrets.data)
 3. **External secret management** (AWS Secrets Manager, HashiCorp Vault, or `extraEnv` with `secretKeyRef` for pre-existing K8s Secrets)
-4. **HTTPS** with an ACM certificate
-5. **Custom domain** with external-dns
+4. **HTTPS / TLS** — via cert-manager (automatic Let's Encrypt), AWS ACM, or a pre-existing certificate imported as a Kubernetes secret
+5. **Custom domain** with external-dns or manual DNS
+6. **GCS storage for ClickHouse** on GCP — requires HMAC credentials (not environment credentials)
 
 See [CONFIGURATION.md](./CONFIGURATION.md) for complete configuration reference.
 
@@ -199,6 +200,8 @@ kubectl delete pvc -l app=laminar-rabbitmq
 ## Documentation
 
 - [QUICKSTART.md](./QUICKSTART.md) - Quickstart tutorial
+- [NETWORKING.md](./NETWORKING.md) - Networking architecture, TLS, DNS, and ingress setup
 - [CONFIGURATION.md](./CONFIGURATION.md) - All configuration options
 - [DEPENDENCIES.md](./DEPENDENCIES.md) - How service startup order works
 - [examples/](./examples/) - Example configurations
+- [examples/networking/](./examples/networking/) - Traefik, cert-manager, and external-dns configurations

@@ -447,6 +447,8 @@ secrets:
 
 ## Ingress and DNS
 
+> For a full explanation of Laminar's network architecture — how the frontend and app server are exposed, when to use an ingress controller vs a LoadBalancer Service, and how TLS works on each provider — see [NETWORKING.md](./NETWORKING.md) and [examples/networking/](./examples/networking/).
+
 ### Custom Domain with External-DNS
 
 Add to your `laminar.yaml`:
@@ -510,13 +512,115 @@ After deployment, create a CNAME record pointing to the ALB:
 
 **For AWS:**
 ```bash
-kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+kubectl get ingress laminar-frontend-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 ```
 
 **For GCP:**
 ```bash
-kubectl get svc laminar-frontend-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+kubectl get ingress laminar-frontend-ingress -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
+
+### HTTPS with cert-manager (automatic certificates)
+
+cert-manager automatically provisions and renews free Let's Encrypt certificates. This works on any provider with an ingress controller (Traefik, nginx, etc.).
+
+**1. Install cert-manager:**
+```bash
+helm repo add jetstack https://charts.jetstack.io && helm repo update
+helm upgrade -i cert-manager jetstack/cert-manager \
+  --namespace cert-manager --create-namespace \
+  --set crds.enabled=true
+```
+
+**2. Create a ClusterIssuer** (apply with `kubectl apply -f`):
+```yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: your-email@example.com   # replace with your email
+    privateKeySecretRef:
+      name: letsencrypt-account-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: traefik  # match your ingress controller
+```
+
+> The hostname must be publicly DNS-resolvable before deploying, so Let's Encrypt can complete the HTTP-01 challenge.
+
+**3. Add to your `laminar.yaml`:**
+```yaml
+global:
+  cloudProvider: "gcp"
+
+frontend:
+  ingress:
+    hostname: "app.yourdomain.com"
+    className: "traefik"
+    tls:
+      enabled: true
+      clusterIssuer: "letsencrypt"
+      secretName: "laminar-frontend-tls"
+  env:
+    nextauthUrl: "https://app.yourdomain.com"
+    nextPublicUrl: "https://app.yourdomain.com"
+```
+
+> **Note:** When `frontend.ingress.hostname` is set on GCP, the frontend Service automatically uses `ClusterIP` instead of `LoadBalancer` — the Ingress handles external exposure.
+
+### HTTPS with a pre-existing certificate
+
+If you already have a certificate (from a paid CA, ACM export, or wildcard cert), import it as a Kubernetes TLS secret. Concatenate the certificate body and CA bundle into a full chain first:
+
+```bash
+cat cert.pem ca-bundle.pem > fullchain.pem
+
+kubectl create secret tls laminar-frontend-tls \
+  --cert=fullchain.pem --key=private-key.pem
+
+kubectl create secret tls laminar-app-server-tls \
+  --cert=fullchain.pem --key=private-key.pem
+```
+
+Then reference it in `laminar.yaml` without a `clusterIssuer`:
+
+```yaml
+frontend:
+  ingress:
+    hostname: "app.yourdomain.com"
+    className: "traefik"
+    tls:
+      enabled: true
+      secretName: "laminar-frontend-tls"
+      clusterIssuer: ""  # leave empty — cert-manager not needed
+```
+
+### App Server Ingress (GCP and other providers)
+
+> **AWS users:** You most likely do **not** need this. The `appServer.loadBalancer` (NLB) already exposes the app server externally on port 443. See [HTTPS with ACM Certificate](#https-with-acm-certificate) for the AWS setup. Use this only if you explicitly prefer an ALB over NLB, or for gRPC-free HTTP-only setups.
+
+For GCP, add an Ingress for the app server alongside the frontend. This is useful when you need to ingest traces from external services (e.g. runtime pods in other clusters).
+
+Add to your `laminar.yaml`:
+
+```yaml
+appServer:
+  ingress:
+    hostname: "api.yourdomain.com"
+    className: "traefik"   # your ingress controller class
+    externalDns:
+      enabled: true        # optional: requires external-dns
+    tls:
+      enabled: true
+      clusterIssuer: "letsencrypt"
+      secretName: "laminar-app-server-tls"
+```
+
+> **Note:** gRPC traffic (port 8443) is not handled by the Ingress. On AWS, the NLB (`appServer.loadBalancer`) handles gRPC regardless of whether you also use the Ingress.
 
 ## Storage Configuration
 
@@ -645,6 +749,38 @@ clickhouse:
 ```bash
 kubectl exec laminar-clickhouse-0 -- clickhouse-client --query "SELECT * FROM system.disks"
 kubectl exec laminar-clickhouse-0 -- clickhouse-client --query "SELECT * FROM system.storage_policies"
+```
+
+### ClickHouse on GCS (GCP)
+
+GCS supports an S3-compatible API but requires **HMAC credentials** — `useEnvironmentCredentials` does not work because the GKE metadata server returns OAuth2 tokens, which GCS's S3 API does not accept.
+
+**1. Create a service account and generate HMAC keys:**
+```bash
+gcloud iam service-accounts create clickhouse-gcs --project=YOUR_PROJECT
+
+gsutil iam ch \
+  serviceAccount:clickhouse-gcs@YOUR_PROJECT.iam.gserviceaccount.com:objectAdmin \
+  gs://YOUR_BUCKET_NAME
+
+gcloud storage hmac create clickhouse-gcs@YOUR_PROJECT.iam.gserviceaccount.com \
+  --project=YOUR_PROJECT
+# Note the Access ID and Secret printed — you'll need them below
+```
+
+**2. Add to your `laminar.yaml`:**
+```yaml
+clickhouse:
+  s3:
+    enabled: true
+    endpoint: "https://storage.googleapis.com/YOUR_BUCKET_NAME/"
+    region: ""  # not needed for GCS
+    accessKeyId: "GOOG1E..."       # HMAC Access ID from above
+    secretAccessKey: "..."         # HMAC Secret from above
+    useEnvironmentCredentials: false
+    cache:
+      enabled: true
+      maxSize: "10Gi"
 ```
 
 ## Node Placement

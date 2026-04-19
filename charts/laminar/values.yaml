@@ -219,6 +219,12 @@ frontend:
     # When enabled with a hostname, external-dns will automatically create DNS records
     externalDns:
       enabled: false
+    # Optional: TLS configuration via cert-manager
+    # Requires cert-manager to be installed in your cluster
+    tls:
+      enabled: false
+      secretName: "laminar-frontend-tls"
+      clusterIssuer: "letsencrypt"
     # Annotations for the ingress. If empty, defaults for global.cloudProvider will be used.
     annotations: {}
       # For AWS (ALB):
@@ -298,6 +304,10 @@ appServer:
     targetPort: 8000
   loadBalancer:
     enabled: true
+    # Optional: hostname for external-dns to create a DNS record pointing to this LoadBalancer.
+    # When set, external-dns will manage the DNS record automatically.
+    # Example: "api.yourdomain.com"
+    hostname: ""
     # Annotations for the load balancer. If empty, defaults for global.cloudProvider will be used.
     annotations: {}
       # For AWS (NLB):
@@ -305,6 +315,25 @@ appServer:
       # service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
       # service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
       # service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+  # Optional: Ingress for the app server (L7 HTTP routing with external-dns and cert-manager TLS)
+  # AWS users: you most likely do NOT need this — loadBalancer above already exposes
+  # the app server externally via NLB. Use this only for GCP or if you prefer ALB over NLB.
+  ingress:
+    # Optional: Set a custom hostname to enable the ingress
+    hostname: ""
+    # ingressClassName is required when hostname is set (e.g. "traefik", "gce", "alb")
+    className: ""
+    # Optional: Enable external-dns integration
+    externalDns:
+      enabled: false
+    # Optional: TLS configuration via cert-manager
+    # Requires cert-manager to be installed in your cluster
+    tls:
+      enabled: false
+      secretName: "laminar-app-server-tls"
+      clusterIssuer: "letsencrypt"
+    # Additional annotations for the ingress
+    annotations: {}
   nginx:
     resources:
       requests:
@@ -542,10 +571,12 @@ clickhouse:
   s3:
     enabled: true
     # S3 bucket endpoint (e.g., https://my-bucket.s3.us-east-1.amazonaws.com/)
+    # For GCS, use https://storage.googleapis.com/my-bucket
     endpoint: ""
-    # S3 bucket region
+    # S3 bucket region. AWS only
     region: ""
     # S3 access credentials - can use secrets instead
+    # For GCP, these are Service account HMAC key and Service account HMAC secret respectively
     accessKeyId: ""
     secretAccessKey: ""
     # Use environment credentials or EC2 instance profile

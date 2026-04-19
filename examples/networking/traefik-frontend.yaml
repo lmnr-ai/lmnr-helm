@@ -1,0 +1,72 @@
+# Traefik IngressRoute for the Laminar frontend.
+# Handles HTTP → HTTPS redirect and HTTPS termination via cert-manager.
+#
+# Prerequisites:
+#   - Traefik installed with traefik-install.yaml
+#   - cert-manager installed with cert-manager-clusterissuer.yaml applied
+#   - DNS A record for the hostname pointing to Traefik's external IP
+#
+# Edit HOSTNAME before applying.
+
+---
+# HTTPS route
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: laminar-frontend-https
+  namespace: default
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`HOSTNAME`)   # e.g. app.yourdomain.com
+      kind: Rule
+      services:
+        - name: laminar-frontend-service
+          port: 80
+  tls:
+    secretName: laminar-frontend-tls
+---
+# HTTP → HTTPS redirect
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: laminar-frontend-http-redirect
+  namespace: default
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`HOSTNAME`)   # e.g. app.yourdomain.com
+      kind: Rule
+      middlewares:
+        - name: redirect-to-https
+      services:
+        - name: laminar-frontend-service
+          port: 80
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-to-https
+  namespace: default
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+# cert-manager Certificate resource — cert-manager creates and renews the TLS secret
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: laminar-frontend-tls
+  namespace: default
+spec:
+  secretName: laminar-frontend-tls
+  issuerRef:
+    name: letsencrypt
+    kind: ClusterIssuer
+  dnsNames:
+    - HOSTNAME   # e.g. app.yourdomain.com
