@@ -13,6 +13,10 @@
 #   - Traefik installed with traefik-install.yaml (includes the 'grpc' TCP entrypoint)
 #   - cert-manager installed with cert-manager-clusterissuer.yaml applied
 #   - DNS A record for API_HOSTNAME pointing to Traefik's external IP
+#   - appServer.ingress.hostname set in your Laminar values (even if not using a standard
+#     Kubernetes Ingress). This is required for ports 8080 (nginx) and 8001 (gRPC) to be
+#     added to the laminar-app-server-service ClusterIP Service. Without it, these routes
+#     will have no backend to connect to.
 #
 # Edit API_HOSTNAME before applying.
 

@@ -49,5 +49,7 @@ helm upgrade -i laminar ../../charts/laminar -f ../../laminar.yaml
 | External port | Routes to | Protocol |
 |---|---|---|
 | `443` (frontend) | `laminar-frontend-service:80` | HTTPS → HTTP |
-| `443` (app server) | `laminar-app-server-load-balancer:443` or directly `laminar-app-server-service:8000` | HTTPS → HTTP via nginx |
-| `8443` (app server) | `laminar-app-server-service:8001` | TCP passthrough (gRPC plaintext) |
+| `443` (app server) | `laminar-app-server-service:8080` (nginx sidecar) | HTTPS → HTTP; nginx filters to `/v1/*` and `/health` |
+| `8443` (app server) | `laminar-app-server-service:8001` (gRPC) | TCP passthrough (gRPC plaintext) |
+
+> **Important:** Ports `8080` and `8001` are only added to `laminar-app-server-service` when `appServer.ingress.hostname` is set in your values. If you are using Traefik's `IngressRoute` CRD instead of a standard Kubernetes `Ingress`, you must still set `appServer.ingress.hostname` in your Laminar values so these ports are exposed on the ClusterIP Service. Without it, both the HTTPS and gRPC Traefik routes will fail to connect.

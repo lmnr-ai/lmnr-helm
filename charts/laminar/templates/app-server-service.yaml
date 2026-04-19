@@ -16,6 +16,10 @@ spec:
       name: nginx
       port: 8080
       targetPort: 8080
+    - protocol: TCP
+      name: grpc
+      port: 8001
+      targetPort: 8001
     {{- end }}
   type: {{ .Values.appServer.service.type }}
 ---
