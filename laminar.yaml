@@ -6,8 +6,8 @@
 # Quick Start:
 #   1. Edit this file — replace ALL placeholder values (<region>, <bucket-name>, etc.) with real values
 #   2. Install: helm upgrade -i laminar ./charts/laminar -f laminar.yaml
-#   3. Get ALB URL: kubectl get ingress laminar-frontend-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
-#   4. Update NEXTAUTH_URL with ALB URL and upgrade again
+#   3. Get ingress URL: kubectl get ingress laminar-frontend-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+#   4. Update NEXTAUTH_URL with ingress URL and upgrade again
 #
 # For advanced configuration options, see:
 #   - values.yaml (for all available options)
