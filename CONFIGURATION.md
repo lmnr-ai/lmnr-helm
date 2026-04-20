@@ -768,7 +768,7 @@ gcloud storage hmac create clickhouse-gcs@YOUR_PROJECT.iam.gserviceaccount.com \
 # Note the Access ID and Secret printed — you'll need them below
 ```
 
-**2. Add to your `laminar.yaml`:**
+**2a. Inline credentials in `laminar.yaml` (simple, but credentials in values):**
 ```yaml
 clickhouse:
   s3:
@@ -781,6 +781,41 @@ clickhouse:
     cache:
       enabled: true
       maxSize: "10Gi"
+```
+
+**2b. Load credentials from a Kubernetes Secret (recommended):**
+
+Create the secret once:
+```bash
+kubectl create secret generic clickhouse-gcs-credentials \
+  --from-literal=access-key-id=GOOG1E... \
+  --from-literal=secret-access-key=...
+```
+
+Then reference it in `laminar.yaml`:
+```yaml
+clickhouse:
+  s3:
+    enabled: true
+    endpoint: "https://storage.googleapis.com/YOUR_BUCKET_NAME/"
+    region: ""
+    accessKeyIdFrom: "GCS_HMAC_KEY"        # env var name to read the key from
+    secretAccessKeyFrom: "GCS_HMAC_SECRET"  # env var name to read the secret from
+    useEnvironmentCredentials: false
+    cache:
+      enabled: true
+      maxSize: "10Gi"
+  extraEnv:
+    - name: GCS_HMAC_KEY
+      valueFrom:
+        secretKeyRef:
+          name: clickhouse-gcs-credentials
+          key: access-key-id
+    - name: GCS_HMAC_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: clickhouse-gcs-credentials
+          key: secret-access-key
 ```
 
 ## Node Placement

@@ -49,10 +49,14 @@ data:
             {{- if .Values.clickhouse.s3.useEnvironmentCredentials }}
             <use_environment_credentials>true</use_environment_credentials>
             {{- else }}
-            {{- if .Values.clickhouse.s3.accessKeyId }}
+            {{- if .Values.clickhouse.s3.accessKeyIdFrom }}
+            <access_key_id from_env="{{ .Values.clickhouse.s3.accessKeyIdFrom }}"></access_key_id>
+            {{- else if .Values.clickhouse.s3.accessKeyId }}
             <access_key_id>{{ .Values.clickhouse.s3.accessKeyId }}</access_key_id>
             {{- end }}
-            {{- if .Values.clickhouse.s3.secretAccessKey }}
+            {{- if .Values.clickhouse.s3.secretAccessKeyFrom }}
+            <secret_access_key from_env="{{ .Values.clickhouse.s3.secretAccessKeyFrom }}"></secret_access_key>
+            {{- else if .Values.clickhouse.s3.secretAccessKey }}
             <secret_access_key>{{ .Values.clickhouse.s3.secretAccessKey }}</secret_access_key>
             {{- end }}
             {{- end }}

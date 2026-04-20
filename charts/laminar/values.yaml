@@ -575,10 +575,14 @@ clickhouse:
     endpoint: ""
     # S3 bucket region. AWS only
     region: ""
-    # S3 access credentials - can use secrets instead
+    # S3 access credentials - set directly or via environment variables from a Kubernetes secret
     # For GCP, these are Service account HMAC key and Service account HMAC secret respectively
     accessKeyId: ""
     secretAccessKey: ""
+    # Load accessKeyId/secretAccessKey from environment variable names (e.g. from extraEnv).
+    # Takes precedence over accessKeyId/secretAccessKey when set.
+    accessKeyIdFrom: ""
+    secretAccessKeyFrom: ""
     # Use environment credentials or EC2 instance profile
     useEnvironmentCredentials: false
     # Local cache configuration for S3 data
@@ -590,6 +594,19 @@ clickhouse:
       maxSize: "10Gi"
     # Metadata path for S3 disk
     metadataPath: "/var/lib/clickhouse/disks/s3_disk/"
+  # Extra environment variables to inject into the ClickHouse container.
+  # Useful for loading S3 credentials from Kubernetes secrets via secretKeyRef.
+  extraEnv: []
+  # - name: GCS_HMAC_KEY
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: clickhouse-gcs-credentials
+  #       key: access-key-id
+  # - name: GCS_HMAC_SECRET
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: clickhouse-gcs-credentials
+  #       key: secret-access-key
   readinessProbe:
     initialDelaySeconds: 10
     periodSeconds: 10
