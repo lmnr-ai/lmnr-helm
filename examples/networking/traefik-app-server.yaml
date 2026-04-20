@@ -1,0 +1,74 @@
+# Traefik routes for the Laminar app server.
+#
+# Port 443 (HTTP trace ingestion):
+#   HTTPS IngressRoute → laminar-app-server-service:8080 (nginx sidecar)
+#   nginx filters traffic to /v1/* and /health only, then proxies to the Rust server on 8000.
+#
+# Port 8443 (gRPC trace ingestion):
+#   TCP IngressRoute → laminar-app-server-service:8001 (plaintext gRPC passthrough)
+#   TLS is NOT terminated here — gRPC clients must connect with plaintext
+#   (use port 8443 and disable TLS in the SDK, or handle TLS at the client side).
+#
+# Prerequisites:
+#   - Traefik installed with traefik-install.yaml (includes the 'grpc' TCP entrypoint)
+#   - cert-manager installed with cert-manager-clusterissuer.yaml applied
+#   - DNS A record for API_HOSTNAME pointing to Traefik's external IP
+#   - appServer.ingress.hostname set in your Laminar values (even if not using a standard
+#     Kubernetes Ingress). This is required for ports 8080 (nginx) and 8001 (gRPC) to be
+#     added to the laminar-app-server-service ClusterIP Service. Without it, these routes
+#     will have no backend to connect to.
+#
+# Edit API_HOSTNAME before applying.
+
+---
+# HTTPS route for HTTP trace ingestion (port 443)
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: laminar-app-server-https
+  namespace: default
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`API_HOSTNAME`)   # e.g. api.yourdomain.com
+      kind: Rule
+      services:
+        - name: laminar-app-server-service
+          port: 8080
+  tls:
+    secretName: laminar-app-server-tls
+---
+# TCP passthrough route for gRPC (port 8443)
+# gRPC clients connect with plaintext on port 8443.
+# If your clients require TLS gRPC, add a tls block here and configure
+# the client to trust the same certificate.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: laminar-app-server-grpc
+  namespace: default
+spec:
+  entryPoints:
+    - grpc   # the TCP entrypoint on port 8443 defined in traefik-install.yaml
+  routes:
+    - match: HostSNI(`*`)   # match all — TCP passthrough, no SNI routing needed
+      services:
+        - name: laminar-app-server-service
+          port: 8001
+---
+# cert-manager Certificate for the app server
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: laminar-app-server-tls
+  namespace: default
+spec:
+  secretName: laminar-app-server-tls
+  issuerRef:
+    name: letsencrypt
+    kind: ClusterIssuer
+  dnsNames:
+    - API_HOSTNAME   # e.g. api.yourdomain.com

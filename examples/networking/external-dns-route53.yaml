@@ -1,0 +1,35 @@
+# external-dns Helm values for AWS Route53.
+#
+# external-dns watches Services and Ingresses annotated with:
+#   external-dns.alpha.kubernetes.io/hostname: "yourdomain.com"
+# and automatically creates/updates DNS records in Route53.
+#
+# Prerequisites:
+#   IAM policy attached to the node role or an IRSA service account with:
+#     {
+#       "Effect": "Allow",
+#       "Action": ["route53:ChangeResourceRecordSets", "route53:ListHostedZones",
+#                  "route53:ListResourceRecordSets"],
+#       "Resource": ["*"]
+#     }
+#
+# Install with:
+#   helm repo add external-dns https://kubernetes-sigs.github.io/external-dns/
+#   helm upgrade -i external-dns external-dns/external-dns \
+#     --namespace external-dns --create-namespace \
+#     -f external-dns-route53.yaml
+
+provider:
+  name: aws
+
+env:
+  - name: AWS_DEFAULT_REGION
+    value: us-east-1   # your Route53 region
+
+policy: sync
+txtOwnerId: laminar-cluster
+
+# If using IRSA, annotate the service account instead of using env vars:
+# serviceAccount:
+#   annotations:
+#     eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/external-dns-role

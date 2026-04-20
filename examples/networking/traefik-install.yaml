@@ -1,0 +1,35 @@
+# Traefik Helm values for Laminar
+# Install with:
+#   helm upgrade -i traefik traefik/traefik \
+#     --namespace traefik --create-namespace \
+#     -f traefik-install.yaml
+
+service:
+  type: LoadBalancer
+
+# Expose port 8443 as an additional TCP entrypoint for gRPC
+ports:
+  web:
+    port: 80
+    expose:
+      default: true
+  websecure:
+    port: 443
+    expose:
+      default: true
+    tls:
+      enabled: true
+  grpc:
+    port: 8443
+    expose:
+      default: true
+    # TCP entrypoint — no TLS termination, passes gRPC plaintext through
+    protocol: TCP
+
+# Allow Traefik to read IngressRoute resources across all namespaces
+providers:
+  kubernetesCRD:
+    allowCrossNamespace: true
+  kubernetesIngress:
+    publishedService:
+      enabled: true

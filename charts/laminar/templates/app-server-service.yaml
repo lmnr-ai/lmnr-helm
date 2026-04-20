@@ -11,6 +11,16 @@ spec:
       name: http
       port: {{ .Values.appServer.service.port }}
       targetPort: {{ .Values.appServer.service.targetPort }}
+    {{- if .Values.appServer.ingress.hostname }}
+    - protocol: TCP
+      name: nginx
+      port: 8080
+      targetPort: 8080
+    - protocol: TCP
+      name: grpc
+      port: 8001
+      targetPort: 8001
+    {{- end }}
   type: {{ .Values.appServer.service.type }}
 ---
 {{- if .Values.appServer.loadBalancer.enabled }}
@@ -30,6 +40,9 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
     service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
     {{- end }}
+    {{- end }}
+    {{- if .Values.appServer.loadBalancer.hostname }}
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.appServer.loadBalancer.hostname | quote }}
     {{- end }}
 spec:
   selector:
