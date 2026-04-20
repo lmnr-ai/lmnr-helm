@@ -10,9 +10,9 @@ Example configurations for common deployment scenarios.
 
 Ingress controllers, TLS, DNS, and cert-manager configurations for exposing Laminar externally.
 
-- `traefik-install.yaml` — Traefik Helm values (includes port 8443 entrypoint for gRPC)
+- `traefik-install.yaml` — Traefik Helm values (includes port 8443 HTTP/2 entrypoint for gRPC)
 - `traefik-frontend.yaml` — HTTPS IngressRoute for the frontend with cert-manager
-- `traefik-app-server.yaml` — HTTPS IngressRoute (port 443) + TCP passthrough (port 8443) for the app server
+- `traefik-app-server.yaml` — HTTPS IngressRoute (port 443) + TLS-terminating gRPC IngressRoute (port 8443) for the app server
 - `cert-manager-clusterissuer.yaml` — Let's Encrypt ClusterIssuer
 - `external-dns-gcp.yaml` — external-dns for Google Cloud DNS
 - `external-dns-route53.yaml` — external-dns for AWS Route53

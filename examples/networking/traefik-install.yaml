@@ -7,7 +7,7 @@
 service:
   type: LoadBalancer
 
-# Expose port 8443 as an additional TCP entrypoint for gRPC
+# Expose port 8443 as an additional HTTP/2 entrypoint for gRPC (TLS-terminating)
 ports:
   web:
     port: 80
@@ -23,8 +23,9 @@ ports:
     port: 8443
     expose:
       default: true
-    # TCP entrypoint — no TLS termination, passes gRPC plaintext through
-    protocol: TCP
+    tls:
+      enabled: true
+    # HTTP/2 entrypoint — Traefik terminates TLS, forwards plaintext h2c gRPC to the backend
 
 # Allow Traefik to read IngressRoute resources across all namespaces
 providers:
