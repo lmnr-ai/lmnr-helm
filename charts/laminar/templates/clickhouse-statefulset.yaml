@@ -11,7 +11,7 @@ spec:
   selector:
     matchLabels:
       app: {{ include "laminar.resourceName" "clickhouse" }}
-  {{- if and .Values.clickhouse.persistence.enabled (not .Values.clickhouse.s3.enabled) }}
+  {{- if .Values.clickhouse.persistence.enabled }}
   volumeClaimTemplates:
     - metadata:
         name: clickhouse-data
@@ -50,15 +50,13 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
           volumeMounts:
-            {{- if not .Values.clickhouse.s3.enabled }}
             - name: clickhouse-data
               mountPath: /var/lib/clickhouse
-            {{- end }}
             {{- if .Values.clickhouse.s3.enabled }}
             - name: clickhouse-storage-config
               mountPath: /etc/clickhouse-server/config.d/storage_config.xml
               subPath: storage_config.xml
-            {{- if .Values.clickhouse.s3.cache.enabled }}
+            {{- if and .Values.clickhouse.s3.cache.enabled (not .Values.clickhouse.persistence.enabled) }}
             - name: clickhouse-s3-cache
               mountPath: {{ .Values.clickhouse.s3.cache.path }}
             {{- end }}
@@ -103,7 +101,7 @@ spec:
             items:
               - key: storage_config.xml
                 path: storage_config.xml
-        {{- if .Values.clickhouse.s3.cache.enabled }}
+        {{- if and .Values.clickhouse.s3.cache.enabled (not .Values.clickhouse.persistence.enabled) }}
         - name: clickhouse-s3-cache
           emptyDir:
             sizeLimit: {{ .Values.clickhouse.s3.cache.maxSize }}
