@@ -5,12 +5,13 @@
 #   nginx filters traffic to /v1/* and /health only, then proxies to the Rust server on 8000.
 #
 # Port 8443 (gRPC trace ingestion):
-#   TCP IngressRoute → laminar-app-server-service:8001 (plaintext gRPC passthrough)
-#   TLS is NOT terminated here — gRPC clients must connect with plaintext
-#   (use port 8443 and disable TLS in the SDK, or handle TLS at the client side).
+#   HTTPS IngressRoute → laminar-app-server-service:8001 (plaintext h2c gRPC)
+#   Traefik terminates TLS on port 8443 and forwards plaintext HTTP/2 (h2c) to the backend.
+#   gRPC clients connect with TLS on port 8443 — standard TLS gRPC, no special SDK config needed.
+#   Both ports share the same TLS certificate (laminar-app-server-tls).
 #
 # Prerequisites:
-#   - Traefik installed with traefik-install.yaml (includes the 'grpc' TCP entrypoint)
+#   - Traefik installed with traefik-install.yaml (includes the 'grpc' HTTP/2 entrypoint)
 #   - cert-manager installed with cert-manager-clusterissuer.yaml applied
 #   - DNS A record for API_HOSTNAME pointing to Traefik's external IP
 #   - appServer.ingress.hostname set in your Laminar values (even if not using a standard
@@ -41,23 +42,28 @@ spec:
   tls:
     secretName: laminar-app-server-tls
 ---
-# TCP passthrough route for gRPC (port 8443)
-# gRPC clients connect with plaintext on port 8443.
-# If your clients require TLS gRPC, add a tls block here and configure
-# the client to trust the same certificate.
+# TLS-terminating gRPC route (port 8443)
+# Traefik terminates TLS and forwards plaintext HTTP/2 (h2c) to the backend on port 8001.
+# gRPC clients connect using standard TLS gRPC on port 8443.
 apiVersion: traefik.io/v1alpha1
-kind: IngressRouteTCP
+kind: IngressRoute
 metadata:
   name: laminar-app-server-grpc
   namespace: default
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
 spec:
   entryPoints:
-    - grpc   # the TCP entrypoint on port 8443 defined in traefik-install.yaml
+    - grpc   # the HTTP/2 entrypoint on port 8443 defined in traefik-install.yaml
   routes:
-    - match: HostSNI(`*`)   # match all — TCP passthrough, no SNI routing needed
+    - match: Host(`API_HOSTNAME`)   # e.g. api.yourdomain.com
+      kind: Rule
       services:
         - name: laminar-app-server-service
           port: 8001
+          scheme: h2c   # forward as plaintext HTTP/2 to the backend
+  tls:
+    secretName: laminar-app-server-tls
 ---
 # cert-manager Certificate for the app server
 apiVersion: cert-manager.io/v1

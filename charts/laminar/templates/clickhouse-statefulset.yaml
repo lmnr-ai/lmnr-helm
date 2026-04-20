@@ -46,6 +46,9 @@ spec:
               value: {{ .Values.clickhouse.database }}
             - name: CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT
               value: "1"
+            {{- with .Values.clickhouse.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           volumeMounts:
             {{- if not .Values.clickhouse.s3.enabled }}
             - name: clickhouse-data

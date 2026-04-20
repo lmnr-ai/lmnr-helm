@@ -10,7 +10,7 @@ See [NETWORKING.md](../../NETWORKING.md) for a full explanation of Laminar's net
 |---|---|
 | `traefik-install.yaml` | Traefik Helm values for installation |
 | `traefik-frontend.yaml` | Traefik `IngressRoute` for the frontend (HTTP + HTTPS) |
-| `traefik-app-server.yaml` | Traefik routes for app server: HTTPS on port 443, TCP passthrough on port 8443 |
+| `traefik-app-server.yaml` | Traefik routes for app server: HTTPS on port 443, TLS-terminating gRPC on port 8443 |
 | `cert-manager-clusterissuer.yaml` | Let's Encrypt `ClusterIssuer` for automatic TLS |
 | `external-dns-gcp.yaml` | external-dns Helm values for Google Cloud DNS |
 | `external-dns-route53.yaml` | external-dns Helm values for AWS Route53 |
@@ -50,6 +50,6 @@ helm upgrade -i laminar ../../charts/laminar -f ../../laminar.yaml
 |---|---|---|
 | `443` (frontend) | `laminar-frontend-service:80` | HTTPS → HTTP |
 | `443` (app server) | `laminar-app-server-service:8080` (nginx sidecar) | HTTPS → HTTP; nginx filters to `/v1/*` and `/health` |
-| `8443` (app server) | `laminar-app-server-service:8001` (gRPC) | TCP passthrough (gRPC plaintext) |
+| `8443` (app server) | `laminar-app-server-service:8001` (gRPC) | HTTPS → h2c; Traefik terminates TLS, forwards plaintext HTTP/2 |
 
 > **Important:** Ports `8080` and `8001` are only added to `laminar-app-server-service` when `appServer.ingress.hostname` is set in your values. If you are using Traefik's `IngressRoute` CRD instead of a standard Kubernetes `Ingress`, you must still set `appServer.ingress.hostname` in your Laminar values so these ports are exposed on the ClusterIP Service. Without it, both the HTTPS and gRPC Traefik routes will fail to connect.

@@ -10,7 +10,7 @@ Laminar exposes two public endpoints:
 |---|---|---|
 | `https://app.yourdomain.com` | Frontend | Web UI |
 | `https://api.yourdomain.com:443` | App Server | HTTP trace ingestion (`/v1/*`) |
-| `api.yourdomain.com:8443` | App Server | gRPC trace ingestion |
+| `https://api.yourdomain.com:8443` | App Server | gRPC trace ingestion (TLS) |
 
 These are served by two separate mechanisms described below.
 
@@ -39,7 +39,7 @@ The app server exposes **two ports** through a single `LoadBalancer` Service (`l
 | Port | Target | Protocol | What it is |
 |---|---|---|---|
 | `443` | `8080` (nginx) | HTTPS/HTTP | HTTP trace ingestion, path-filtered by nginx (`/v1/*` and `/health` only) |
-| `8443` | `8001` (Rust) | gRPC (plaintext) | gRPC trace ingestion |
+| `8443` | `8001` (Rust) | gRPC (TLS) | gRPC trace ingestion |
 
 This is a Layer 4 (TCP) load balancer on both AWS and GCP — traffic is passed through as-is with no L7 processing by the cloud provider.
 
@@ -47,7 +47,7 @@ This is a Layer 4 (TCP) load balancer on both AWS and GCP — traffic is passed 
 nginx sits in front of the Rust app server as a sidecar container. It only forwards `/v1/*` and `/health` — all other paths return 404. This is intentional to prevent unauthorized access to internal endpoints. nginx listens on port 8080 (plain HTTP); the "443" is just the external port number, there is no TLS termination inside the pod by default.
 
 **Port 8443 — gRPC:**
-The Rust app server listens for plaintext gRPC directly on port 8001. The external port 8443 passes TCP traffic straight through.
+The Rust app server listens for plaintext gRPC (h2c) on port 8001. When using Traefik, TLS is terminated at the ingress layer and traffic is forwarded as plaintext HTTP/2 to the backend — gRPC clients connect with standard TLS on port 8443.
 
 ### TLS for the App Server
 
@@ -55,13 +55,13 @@ The Rust app server listens for plaintext gRPC directly on port 8001. The extern
 
 **GCP:** The GCP Network Load Balancer is pure TCP passthrough — it cannot terminate TLS. Options:
 
-1. **Use a reverse proxy / ingress controller (recommended for HTTP port 443):** Deploy Traefik or nginx-ingress in front of the app server to handle TLS termination and cert-manager integration. See [examples/networking/](./examples/networking/) for ready-to-use configurations. This can cover port 443 (HTTP) with full TLS + DNS automation.
+1. **Use a reverse proxy / ingress controller (recommended):** Deploy Traefik in front of the app server to handle TLS termination and cert-manager integration. See [examples/networking/](./examples/networking/) for ready-to-use configurations. This covers both port 443 (HTTP) and port 8443 (gRPC) with full TLS + DNS automation.
 
 2. **TLS inside nginx (advanced):** Mount a cert-manager TLS secret as a volume into the app-server pod and configure nginx for TLS. This is more complex and requires nginx reload on cert rotation.
 
 3. **Private networking / no TLS:** If the app server is only reachable from within the cluster or a private VPC, TLS is not required. SDK clients in the same cluster can use `http://laminar-app-server-service:8000` directly.
 
-**gRPC (port 8443):** gRPC TLS would require the Rust app server to serve TLS gRPC natively (a code change) or a gRPC-capable proxy. For most deployments, gRPC clients running inside the same cluster or VPC can connect without TLS. If you need public TLS gRPC, configure Traefik's `TCPIngressRoute` with a `tls` block pointing at the gRPC port (see [examples/networking/traefik-app-server.yaml](./examples/networking/traefik-app-server.yaml)).
+**gRPC (port 8443):** When using Traefik, TLS is terminated at the ingress layer — gRPC clients connect with standard TLS on port 8443 and Traefik forwards plaintext h2c to the backend pod on port 8001. No code changes to the Rust server are needed. See [examples/networking/traefik-app-server.yaml](./examples/networking/traefik-app-server.yaml).
 
 ---
 
