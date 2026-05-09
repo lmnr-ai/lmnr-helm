@@ -63,7 +63,7 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - exec pg_isready -U "$(POSTGRES_USER)" -d "{{ .Values.postgres.database }}" -h 127.0.0.1 -p {{ .Values.postgres.service.port }}
+                - exec pg_isready -U "$POSTGRES_USER" -d "{{ .Values.postgres.database }}" -h 127.0.0.1 -p {{ .Values.postgres.service.port }}
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
@@ -74,7 +74,7 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - exec pg_isready -U "$(POSTGRES_USER)" -d "{{ .Values.postgres.database }}" -h 127.0.0.1 -p {{ .Values.postgres.service.port }}
+                - exec pg_isready -U "$POSTGRES_USER" -d "{{ .Values.postgres.database }}" -h 127.0.0.1 -p {{ .Values.postgres.service.port }}
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 5
