@@ -16,6 +16,18 @@ spec:
       app.kubernetes.io/name: quickwit
       app.kubernetes.io/instance: quickwit
       app.kubernetes.io/component: indexer
+  {{- if .Values.quickwit.indexer.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        storageClassName: {{ .Values.quickwit.indexer.persistence.storageClass | default (include "laminar.resourceName" .Values.storage.storageClass.name) }}
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.quickwit.indexer.persistence.size | quote }}
+  {{- end }}
   template:
     metadata:
       labels:
@@ -74,11 +86,12 @@ spec:
               containerPort: 7282
               protocol: UDP
           startupProbe:
-            failureThreshold: 12
             httpGet:
               path: /health/livez
               port: rest
-            periodSeconds: 5
+            initialDelaySeconds: {{ .Values.quickwit.indexer.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.quickwit.indexer.startupProbe.periodSeconds }}
+            failureThreshold: {{ .Values.quickwit.indexer.startupProbe.failureThreshold }}
           livenessProbe:
             httpGet:
               path: /health/livez
@@ -103,8 +116,13 @@ spec:
             items:
               - key: node.yaml
                 path: node.yaml
+        {{- if not .Values.quickwit.indexer.persistence.enabled }}
         - name: data
-          emptyDir: {}
+          emptyDir:
+            {{- with .Values.quickwit.indexer.emptyDir.sizeLimit }}
+            sizeLimit: {{ . | quote }}
+            {{- end }}
+        {{- end }}
       {{- include "laminar.nodeSelector" (dict "service" .Values.quickwit "global" .Values.global) | nindent 6 }}
       {{- include "laminar.affinity" (dict "service" .Values.quickwit "global" .Values.global) | nindent 6 }}
       {{- include "laminar.tolerations" (dict "service" .Values.quickwit "global" .Values.global) | nindent 6 }}

@@ -17,5 +17,7 @@ data:
       s3:
         region: {{ .Values.quickwit.s3.region }}
     metastore_uri: ${QW_METASTORE_URI}
+    grpc:
+      max_message_size: {{ .Values.quickwit.config.grpcMaxMessageSize | quote }}
     version: 0.8
 {{- end }}

@@ -21,4 +21,15 @@ data:
     queue_master_locator=min-masters
 
     max_message_size = {{ .Values.rabbitmq.config.maxMessageSize | int }}
+
+    # Self-protection: block publishers (flow-control) before RabbitMQ
+    # crashes from running out of disk or memory. Without these defaults,
+    # RabbitMQ will hit ENOSPC on the Ra/WAL files and exit hard.
+    disk_free_limit.absolute = {{ .Values.rabbitmq.config.diskFreeLimit }}
+    vm_memory_high_watermark.absolute = {{ .Values.rabbitmq.config.vmMemoryHighWatermark }}
+
+    # Emit logs to stdout so `kubectl logs` shows them instead of /var/log
+    # inside the container (the latter disappears on SIGKILL).
+    log.console = true
+    log.console.level = {{ .Values.rabbitmq.config.logLevel }}
 {{- end }}

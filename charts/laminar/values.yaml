@@ -446,6 +446,13 @@ quickwit:
   s3:
     defaultIndexRootUri: "s3://lmnr-quickwit/indexes"
     region: "us-east-1"
+  # Quickwit node.yaml settings
+  config:
+    # Increase from Quickwit's 4 MiB default — app-server-consumer can
+    # send large span batches to the indexer, and the searcher returns
+    # large result sets to app-server. Hitting the default cap surfaces
+    # as opaque gRPC errors.
+    grpcMaxMessageSize: "50 MiB"
   # Component configurations
   controlPlane:
     replicaCount: 1
@@ -483,12 +490,52 @@ quickwit:
   indexer:
     replicaCount: 1
     resources:
+      # Requests bumped from 0.1cpu/100Mi: under realistic ingest the
+      # indexer needs at least ~1Gi resident, and scheduling it onto a
+      # node that can't supply that is what surfaces as OOMKilled on
+      # startup with a backlog. Limits unchanged — operators with heavy
+      # ingest should raise `limits.memory` to 8Gi+.
       requests:
-        cpu: "0.1"
-        memory: "100Mi"
+        cpu: "0.5"
+        memory: "1Gi"
       limits:
         cpu: "1.0"
         memory: "4Gi"
+    # Startup probe budget. Quickwit can take a while to come up on a
+    # non-empty index because it enumerates splits from S3. The old
+    # hardcoded budget (12 × 5s = 60s) is tight and produced misleading
+    # "connection refused" events when the real failure was an OOM kill
+    # later in startup. ~165s gives genuine startups room to finish.
+    startupProbe:
+      initialDelaySeconds: 15
+      periodSeconds: 5
+      failureThreshold: 30
+    # Indexer working data (incoming docs being built into splits, merge
+    # scratch space, local split cache). Final splits live in S3
+    # regardless of this setting.
+    #
+    # Default (persistence.enabled=false) uses an emptyDir capped by
+    # `emptyDir.sizeLimit`. The cap means a runaway working set fails
+    # the indexer pod instead of evicting every other pod on the node
+    # via kubelet ephemeral-storage pressure.
+    #
+    # RECOMMENDED FOR PRODUCTION: set `persistence.enabled=true` to
+    # back qwdata with a PVC. This (a) keeps the indexer's working set
+    # off node ephemeral storage entirely, and (b) avoids re-fetching
+    # split state from S3 on every restart.
+    #
+    # Upgrade note: switching an existing install from emptyDir to PVC
+    # requires recreating the StatefulSet because
+    # `spec.volumeClaimTemplates` is immutable:
+    #   kubectl delete sts laminar-quickwit-indexer --cascade=orphan
+    #   helm upgrade -i laminar ./charts/laminar -f laminar.yaml
+    # The new pod re-fetches working state from S3 on startup.
+    persistence:
+      enabled: false
+      storageClass: ""
+      size: "20Gi"
+    emptyDir:
+      sizeLimit: "20Gi"
   searcher:
     replicaCount: 1
     resources:
@@ -498,6 +545,21 @@ quickwit:
       limits:
         cpu: "1.0"
         memory: "2Gi"
+    startupProbe:
+      initialDelaySeconds: 15
+      periodSeconds: 5
+      failureThreshold: 30
+    # Searcher's qwdata is mostly a local hot cache of splits pulled
+    # from S3 for the active query workload. Same trade-off as the
+    # indexer: emptyDir is fine for most installs, but if you have a
+    # large index or slow S3 round-trips, a PVC keeps the cache warm
+    # across restarts.
+    persistence:
+      enabled: false
+      storageClass: ""
+      size: "10Gi"
+    emptyDir:
+      sizeLimit: "10Gi"
 
 # Query Engine configuration
 queryEngine:
@@ -660,7 +722,11 @@ rabbitmq:
     enabled: true
     # Storage class name - if empty, uses default storage class
     storageClass: ""
-    size: "50Gi"
+    # Default sized for moderate trace volume. RabbitMQ persists durable
+    # messages to its WAL on disk; if a downstream consumer (e.g. the
+    # Quickwit indexer) stalls, the backlog grows here. See README for
+    # sizing guidance against your expected ingest rate.
+    size: "100Gi"
   service:
     type: ClusterIP
     amqpPort: 5672
@@ -668,6 +734,21 @@ rabbitmq:
     enabled: true
   config:
     maxMessageSize: 78643200
+    # Self-protection limits. Without these, RabbitMQ will crash on
+    # ENOSPC instead of blocking publishers when the disk is nearly full.
+    # `diskFreeLimit` is the absolute amount of free disk RabbitMQ tries
+    # to keep available; when free space drops below this, publishers are
+    # blocked (flow-control).
+    diskFreeLimit: "2GB"
+    # `vmMemoryHighWatermark` is the absolute memory threshold at which
+    # RabbitMQ starts paging/flow-controlling. Keep this comfortably
+    # below `rabbitmq.resources.limits.memory` so the kernel does not
+    # OOM-kill the container before RabbitMQ self-protects.
+    vmMemoryHighWatermark: "2GB"
+    # Console log level. RabbitMQ also writes to a file inside the
+    # container, but that disappears on SIGKILL — keep console logging
+    # on so `kubectl logs` shows the failure.
+    logLevel: "info"
 
 # Storage configuration
 storage:
@@ -684,6 +765,10 @@ storage:
     type: ""
     reclaimPolicy: "Retain" # Retain volumes after pod deletion
     volumeBindingMode: "WaitForFirstConsumer" # Bind volumes when pod is scheduled
+    # Allow PVCs created against this class to be resized in place.
+    # Disable only if you have a managed-StorageClass policy that
+    # forbids expansion.
+    allowVolumeExpansion: true
     # Availability zones where volumes can be created. Required for AWS EBS.
     # On GKE, you can often leave this empty to use default regional/zonal placement.
     # Important: Ensure your nodes are running in these zones.
