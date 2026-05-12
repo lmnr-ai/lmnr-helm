@@ -34,6 +34,13 @@ spec:
         app.kubernetes.io/name: quickwit
         app.kubernetes.io/instance: quickwit
         app.kubernetes.io/component: indexer
+      annotations:
+        # subPath mounts of ConfigMaps are NOT live-updated by the
+        # kubelet, so a `helm upgrade` that only edits
+        # `quickwit-configmap.yaml` (e.g. raising grpcMaxMessageSize)
+        # leaves the running pods on the old node.yaml. The checksum
+        # forces a rolling restart whenever the configmap changes.
+        checksum/config: {{ include (print $.Template.BasePath "/quickwit-configmap.yaml") . | sha256sum }}
     spec:
       serviceAccountName: {{ include "laminar.resourceName" "quickwit" }}
       securityContext:

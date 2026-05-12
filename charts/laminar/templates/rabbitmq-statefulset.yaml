@@ -26,6 +26,15 @@ spec:
       name: {{ include "laminar.resourceName" "rabbitmq" }}
       labels:
         app: {{ include "laminar.resourceName" "rabbitmq" }}
+      annotations:
+        # Force a pod rollout whenever the RabbitMQ ConfigMap content
+        # changes. Without this, a `helm upgrade` that only edits
+        # `rabbitmq.conf` (e.g. raising `disk_free_limit.absolute`)
+        # leaves the running broker on the old snapshot: the init
+        # container copies the configmap into an emptyDir at pod start,
+        # and nothing about the StatefulSet's pod template changes, so
+        # K8s never restarts the pod.
+        checksum/config: {{ include (print $.Template.BasePath "/rabbitmq-configmap.yaml") . | sha256sum }}
     spec:
       serviceAccountName: {{ include "lmnr.secrets.serviceAccountName" . }}
       initContainers:

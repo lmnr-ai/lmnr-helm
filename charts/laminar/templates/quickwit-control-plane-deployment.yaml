@@ -22,6 +22,11 @@ spec:
         app.kubernetes.io/name: quickwit
         app.kubernetes.io/instance: quickwit
         app.kubernetes.io/component: control-plane
+      annotations:
+        # ConfigMap-via-subPath is not live-updated by the kubelet;
+        # checksum forces a rollout on `helm upgrade` when node.yaml
+        # changes.
+        checksum/config: {{ include (print $.Template.BasePath "/quickwit-configmap.yaml") . | sha256sum }}
     spec:
       serviceAccountName: {{ include "lmnr.secrets.serviceAccountName" . }}
       securityContext:
