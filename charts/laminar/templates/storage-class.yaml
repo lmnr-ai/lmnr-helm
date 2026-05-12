@@ -8,6 +8,10 @@ parameters:
   type: {{ .Values.storage.storageClass.type | default (eq $cloudProvider "aws" | ternary "gp3" "pd-balanced") }}
 reclaimPolicy: {{ .Values.storage.storageClass.reclaimPolicy | default "Retain" }}
 volumeBindingMode: {{ .Values.storage.storageClass.volumeBindingMode | default "WaitForFirstConsumer" }}
+# Allow `kubectl edit pvc ... resources.requests.storage` to grow volumes
+# in place during an incident, without needing cluster-admin to patch the
+# StorageClass first.
+allowVolumeExpansion: {{ .Values.storage.storageClass.allowVolumeExpansion | default true }}
 {{- $showTopologies := false -}}
 {{- if .Values.storage.storageClass.zones -}}
   {{- $showTopologies = true -}}
