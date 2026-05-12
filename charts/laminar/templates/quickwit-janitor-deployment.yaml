@@ -22,6 +22,8 @@ spec:
         app.kubernetes.io/name: quickwit
         app.kubernetes.io/instance: quickwit
         app.kubernetes.io/component: janitor
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/quickwit-configmap.yaml") . | sha256sum }}
     spec:
       serviceAccountName: {{ include "laminar.resourceName" "quickwit" }}
       securityContext:

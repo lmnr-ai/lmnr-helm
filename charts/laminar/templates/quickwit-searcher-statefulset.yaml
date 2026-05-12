@@ -34,6 +34,11 @@ spec:
         app.kubernetes.io/name: quickwit
         app.kubernetes.io/instance: quickwit
         app.kubernetes.io/component: searcher
+      annotations:
+        # See rabbitmq-statefulset.yaml for the rationale; same bug
+        # applies here because Quickwit's node.yaml is mounted via
+        # subPath, which never receives live ConfigMap updates.
+        checksum/config: {{ include (print $.Template.BasePath "/quickwit-configmap.yaml") . | sha256sum }}
     spec:
       serviceAccountName: {{ include "laminar.resourceName" "quickwit" }}
       securityContext:
