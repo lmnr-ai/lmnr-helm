@@ -249,7 +249,6 @@ frontend:
     # One of: "openai" | "gemini" | "bedrock". openai and gemini read
     # LLM_API_KEY (and optional LLM_BASE_URL); bedrock reads AWS_ACCESS_KEY_ID /
     # AWS_SECRET_ACCESS_KEY / AWS_REGION from secrets.
-    # Must match appServer.env.llmProvider and appServerConsumer.env.llmProvider.
     llmProvider: "gemini"
     # Optional base URL override. Used by openai for OpenAI-compatible gateways
     # (LiteLLM, OpenRouter, vLLM) and by gemini for custom endpoints.
@@ -377,7 +376,6 @@ appServer:
     # LLM provider (one of "openai" | "gemini" | "bedrock"). Required when the
     # signals feature is enabled. openai/gemini read LLM_API_KEY; bedrock reads
     # AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_REGION from secrets.
-    # Must match frontend.env.llmProvider and appServerConsumer.env.llmProvider.
     llmProvider: "gemini"
     # Optional base URL override (OpenAI-compatible gateways or custom Gemini endpoints).
     llmBaseUrl: ""
@@ -446,7 +444,6 @@ appServerConsumer:
     rabbitmqMaxChannelPoolSize: "128"
     # LLM provider for signals (one of "openai" | "gemini" | "bedrock").
     # openai/gemini read LLM_API_KEY; bedrock reads AWS_* creds from secrets.
-    # Must match frontend.env.llmProvider and appServer.env.llmProvider.
     llmProvider: "gemini"
     # Optional base URL override (OpenAI-compatible gateways or custom Gemini endpoints).
     llmBaseUrl: ""

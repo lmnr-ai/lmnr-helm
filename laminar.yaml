@@ -73,14 +73,14 @@ quickwit:
 
 appServer:
   env:
-    # LLM provider for signals producer-side worker. Must match the frontend's
-    # llmProvider. One of: "openai" | "gemini" | "bedrock".
+    # LLM provider for signals producer-side worker.
+    # One of: "openai" | "gemini" | "bedrock".
     llmProvider: "gemini"
 
 appServerConsumer:
   env:
-    # LLM provider for signals consumer-side worker. Must match the frontend's
-    # llmProvider. One of: "openai" | "gemini" | "bedrock".
+    # LLM provider for signals consumer-side worker.
+    # One of: "openai" | "gemini" | "bedrock".
     llmProvider: "gemini"
     # Optional overrides. Per-provider defaults apply when empty.
     # llmBaseUrl: "http://my-gateway:4000"
