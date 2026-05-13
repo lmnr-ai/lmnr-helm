@@ -84,6 +84,16 @@ spec:
               value: {{ .Values.appServer.env.quickwitSearchUrl }}
             - name: QUICKWIT_INGEST_URL
               value: {{ .Values.appServer.env.quickwitIngestUrl }}
+            - name: LLM_PROVIDER
+              value: {{ .Values.appServer.env.llmProvider | quote }}
+            - name: LLM_BASE_URL
+              value: {{ .Values.appServer.env.llmBaseUrl | quote }}
+            - name: LLM_MODEL_SMALL
+              value: {{ .Values.appServer.env.llmModelSmall | quote }}
+            - name: LLM_MODEL_MEDIUM
+              value: {{ .Values.appServer.env.llmModelMedium | quote }}
+            - name: LLM_MODEL_LARGE
+              value: {{ .Values.appServer.env.llmModelLarge | quote }}
             {{- with .Values.appServer.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

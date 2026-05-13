@@ -32,7 +32,9 @@ secrets:
     AWS_ACCESS_KEY_ID: "your-aws-access-key-id"
     AWS_SECRET_ACCESS_KEY: "your-secret-access-key"
     AWS_REGION: "us-east-1"
-    GOOGLE_GENERATIVE_AI_API_KEY: "AIzaSy..." # your Gemini api key
+    # LLM provider API key. Required when llmProvider is "gemini" or "openai".
+    # For bedrock, leave empty — AWS_* credentials are used instead.
+    LLM_API_KEY: "AIzaSy..." # your Gemini / OpenAI / OpenAI-compatible key
     AEAD_SECRET_KEY: "your-aead-secret (can be generated with `openssl rand -hex 32`)" # aead secret used to encrypt Laminar project api keys and model API keys for playground
     # Check out charts/laminar/values.yaml for full list of secrets
     # Refer to QUICKSTART.md for more details
@@ -41,6 +43,11 @@ frontend:
   env:
     nextauthUrl: "http://localhost:3000"
     nextPublicUrl: "http://localhost:3000"
+    # LLM provider for AI features (chat-with-trace, SQL-with-AI, signals).
+    # One of: "openai" | "gemini" | "bedrock".
+    llmProvider: "gemini"
+    # For OpenAI-compatible gateways (LiteLLM, OpenRouter, vLLM):
+    # llmBaseUrl: "http://my-gateway:4000"
   # Extra environment variables — use to reference pre-existing K8s Secrets
   # or inject additional config. These override matching keys from secrets.data.
   # extraEnv:
@@ -64,14 +71,22 @@ quickwit:
     defaultIndexRootUri: "s3://your-bucket-name/indexes"
     region: "<region>"
 
+appServer:
+  env:
+    # LLM provider for signals producer-side worker. Must match the frontend's
+    # llmProvider. One of: "openai" | "gemini" | "bedrock".
+    llmProvider: "gemini"
+
 appServerConsumer:
   env:
-    signalsLlmProvider: "gemini" # or bedrock
-    # model name for gemini, or Inference Profile ID for bedrock
-    # defaults to smaller models: gemini-3-flash and haiku-4.5
-    #
-    # uncomment or overwrite to set to custom model
-    # signalsLlmModel: "gemini-3-flash"
+    # LLM provider for signals consumer-side worker. Must match the frontend's
+    # llmProvider. One of: "openai" | "gemini" | "bedrock".
+    llmProvider: "gemini"
+    # Optional overrides. Per-provider defaults apply when empty.
+    # llmBaseUrl: "http://my-gateway:4000"
+    # llmModelSmall: "gemini-3-flash-preview"
+    # llmModelMedium: "gemini-3-flash-preview"
+    # llmModelLarge: "gemini-3-pro-preview"
   # Extra environment variables for app-server-consumer (same format as frontend.extraEnv)
   # extraEnv:
   #   - name: CUSTOM_VAR
