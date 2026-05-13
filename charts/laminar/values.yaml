@@ -19,13 +19,13 @@ images:
   repository: "ghcr.io/lmnr-ai"
   pullPolicy: Always
   frontend:
-    name: "frontend"
+    name: "frontend-ee"
     tag: "latest"
   appServer:
-    name: "app-server"
+    name: "app-server-ee"
     tag: "latest"
   queryEngine:
-    name: "query-engine"
+    name: "query-engine-ee"
     tag: "latest"
   redis:
     repository: "valkey/valkey"
