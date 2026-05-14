@@ -3,6 +3,16 @@ entries:
   laminar:
   - apiVersion: v2
     appVersion: latest
+    created: "2026-05-14T19:51:06.225045236Z"
+    description: Helm chart for deploying the Laminar platform to kubernetes
+    digest: 8abb8962499fdddeb5b19850093c954ea5cd9235cab6c50a6f68f2ac7c6ed02b
+    name: laminar
+    type: application
+    urls:
+    - https://github.com/lmnr-ai/lmnr-helm/releases/download/laminar-0.1.12/laminar-0.1.12.tgz
+    version: 0.1.12
+  - apiVersion: v2
+    appVersion: latest
     created: "2026-05-12T21:15:51.91395412Z"
     description: Helm chart for deploying the Laminar platform to kubernetes
     digest: ad7616e2c0d5014a634eee40b0472337c1714d5813424d69fea8384980ddf689
@@ -71,4 +81,4 @@ entries:
     urls:
     - https://lmnr-ai.github.io/lmnr-helm/laminar-0.1.2.tgz
     version: 0.1.2
-generated: "2026-05-12T21:15:51.913980639Z"
+generated: "2026-05-14T19:51:06.225081351Z"
