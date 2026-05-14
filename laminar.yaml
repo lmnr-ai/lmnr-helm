@@ -34,7 +34,7 @@ secrets:
     AWS_REGION: "us-east-1"
     # LLM provider API key. Required when llmProvider is "gemini" or "openai".
     # For bedrock, leave empty — AWS_* credentials are used instead.
-    LLM_API_KEY: "AIzaSy..." # your Gemini / OpenAI / OpenAI-compatible key
+    LLM_API_KEY: "AIzaSy..." # your Gemini / OpenAI / OpenAI-compatible key that will be used both in the frontend and app-server-consumer
     AEAD_SECRET_KEY: "your-aead-secret (can be generated with `openssl rand -hex 32`)" # aead secret used to encrypt Laminar project api keys and model API keys for playground
     # Check out charts/laminar/values.yaml for full list of secrets
     # Refer to QUICKSTART.md for more details
@@ -70,12 +70,6 @@ quickwit:
   s3:
     defaultIndexRootUri: "s3://your-bucket-name/indexes"
     region: "<region>"
-
-appServer:
-  env:
-    # LLM provider for signals producer-side worker.
-    # One of: "openai" | "gemini" | "bedrock".
-    llmProvider: "gemini"
 
 appServerConsumer:
   env:
