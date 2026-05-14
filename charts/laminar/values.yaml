@@ -19,13 +19,13 @@ images:
   repository: "ghcr.io/lmnr-ai"
   pullPolicy: Always
   frontend:
-    name: "frontend"
+    name: "frontend-ee"
     tag: "latest"
   appServer:
-    name: "app-server"
+    name: "app-server-ee"
     tag: "latest"
   queryEngine:
-    name: "query-engine"
+    name: "query-engine-ee"
     tag: "latest"
   redis:
     repository: "valkey/valkey"
@@ -120,7 +120,9 @@ secrets:
     AWS_SECRET_ACCESS_KEY: ""
     AWS_REGION: "us-east-1"
     S3_EXPORTS_BUCKET: "<s3-exports-bucket-name>"
-    GOOGLE_GENERATIVE_AI_API_KEY: ""
+    # LLM provider API key (for gemini and openai; bedrock uses AWS_* creds).
+    # See `llmProvider` on frontend/appServer/appServerConsumer to select the provider.
+    LLM_API_KEY: ""
     # App Server secrets
     CLICKHOUSE_RO_USER: "default"
     CLICKHOUSE_RO_PASSWORD: "clickhouse123"
@@ -243,7 +245,20 @@ frontend:
     nextPublicUrl: "https://localhost:3000"
     redisUrl: "redis://laminar-redis-service:6379"
     quickwitSearchUrl: "http://laminar-quickwit-searcher:7280"
-    bedrockEnabled: "false"
+    # LLM provider for AI features (chat-with-trace, SQL-with-AI, signals).
+    # One of: "openai" | "gemini" | "bedrock". openai and gemini read
+    # LLM_API_KEY (and optional LLM_BASE_URL); bedrock reads AWS_ACCESS_KEY_ID /
+    # AWS_SECRET_ACCESS_KEY / AWS_REGION from secrets.
+    llmProvider: "gemini"
+    # Optional base URL override. Used by openai for OpenAI-compatible gateways
+    # (LiteLLM, OpenRouter, vLLM) and by gemini for custom endpoints.
+    llmBaseUrl: ""
+    # Optional model overrides per size tier. Per-provider defaults apply when empty.
+    llmModelSmall: ""
+    llmModelMedium: ""
+    llmModelLarge: ""
+    # Enables the Signals feature in the frontend. Requires llmProvider (+ creds).
+    signalsEnabled: "true"
   # First launch runs all migrations to prepare databases, which can take several minutes.
   # Larger initial delays are set to account for this.
   readinessProbe:
@@ -358,6 +373,16 @@ appServer:
     quickwitSearchUrl: "http://laminar-quickwit-searcher:7280"
     quickwitIngestUrl: "http://laminar-quickwit-indexer:7281"
     redisUrl: "redis://laminar-redis-service:6379"
+    # LLM provider (one of "openai" | "gemini" | "bedrock"). Required when the
+    # signals feature is enabled. openai/gemini read LLM_API_KEY; bedrock reads
+    # AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_REGION from secrets.
+    llmProvider: "gemini"
+    # Optional base URL override (OpenAI-compatible gateways or custom Gemini endpoints).
+    llmBaseUrl: ""
+    # Optional model overrides per size tier. Per-provider defaults apply when empty.
+    llmModelSmall: ""
+    llmModelMedium: ""
+    llmModelLarge: ""
   # Additional environment variables for the app-server container.
   # Supports all Kubernetes env var formats including valueFrom.secretKeyRef.
   # These take precedence over values injected via envFrom (secrets.data).
@@ -417,9 +442,15 @@ appServerConsumer:
     numReportsWorkers: "2"
     spansIndexerQueuePrefetchCount: "1"
     rabbitmqMaxChannelPoolSize: "128"
-    signalsLlmProvider: "gemini"
-    # override to set to a custom value otherwise defaults to smaller models
-    signalsLlmModel: ""
+    # LLM provider for signals (one of "openai" | "gemini" | "bedrock").
+    # openai/gemini read LLM_API_KEY; bedrock reads AWS_* creds from secrets.
+    llmProvider: "gemini"
+    # Optional base URL override (OpenAI-compatible gateways or custom Gemini endpoints).
+    llmBaseUrl: ""
+    # Optional model overrides per size tier. Per-provider defaults apply when empty.
+    llmModelSmall: ""
+    llmModelMedium: ""
+    llmModelLarge: ""
     # if the provider supports batch API, we prefer that. Can be overriden
     # globally by this control
     signalsAlwaysUseRealtime: "false"

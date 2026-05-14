@@ -92,10 +92,16 @@ spec:
               value: {{ .Values.appServerConsumer.env.numSignalJobRealtimeWorkers | quote }}
             - name: NUM_REPORTS_WORKERS
               value: {{ .Values.appServerConsumer.env.numReportsWorkers | quote }}
-            - name: SIGNALS_LLM_PROVIDER
-              value: {{ .Values.appServerConsumer.env.signalsLlmProvider | quote }}
-            - name: SIGNALS_LLM_MODEL
-              value: {{ .Values.appServerConsumer.env.signalsLlmModel | quote }}
+            - name: LLM_PROVIDER
+              value: {{ .Values.appServerConsumer.env.llmProvider | quote }}
+            - name: LLM_BASE_URL
+              value: {{ .Values.appServerConsumer.env.llmBaseUrl | quote }}
+            - name: LLM_MODEL_SMALL
+              value: {{ .Values.appServerConsumer.env.llmModelSmall | quote }}
+            - name: LLM_MODEL_MEDIUM
+              value: {{ .Values.appServerConsumer.env.llmModelMedium | quote }}
+            - name: LLM_MODEL_LARGE
+              value: {{ .Values.appServerConsumer.env.llmModelLarge | quote }}
             - name: SIGNALS_ALWAYS_USE_REALTIME
               value: {{ .Values.appServerConsumer.env.signalsAlwaysUseRealtime | quote }}
             - name: RABBITMQ_MAX_CHANNEL_POOL_SIZE

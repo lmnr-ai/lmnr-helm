@@ -68,8 +68,18 @@ spec:
               value: {{ .Values.frontend.env.redisUrl }}
             - name: QUICKWIT_SEARCH_URL
               value: {{ .Values.frontend.env.quickwitSearchUrl }}
-            - name: BEDROCK_ENABLED
-              value: {{ .Values.frontend.env.bedrockEnabled | quote }}
+            - name: LLM_PROVIDER
+              value: {{ .Values.frontend.env.llmProvider | quote }}
+            - name: LLM_BASE_URL
+              value: {{ .Values.frontend.env.llmBaseUrl | quote }}
+            - name: LLM_MODEL_SMALL
+              value: {{ .Values.frontend.env.llmModelSmall | quote }}
+            - name: LLM_MODEL_MEDIUM
+              value: {{ .Values.frontend.env.llmModelMedium | quote }}
+            - name: LLM_MODEL_LARGE
+              value: {{ .Values.frontend.env.llmModelLarge | quote }}
+            - name: SIGNALS_ENABLED
+              value: {{ .Values.frontend.env.signalsEnabled | quote }}
             {{- with .Values.frontend.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

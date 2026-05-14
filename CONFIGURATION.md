@@ -10,6 +10,7 @@ This guide covers advanced configuration options for the Laminar Helm chart.
 - [Secrets Management](#secrets-management)
 - [Extra Environment Variables](#extra-environment-variables)
 - [OAuth setup](#oauth-setup)
+- [LLM Provider](#llm-provider)
 - [Ingress and DNS](#ingress-and-dns)
 - [Storage Configuration](#storage-configuration)
 - [ClickHouse S3 Storage](#clickhouse-s3-storage)
@@ -413,36 +414,102 @@ helm upgrade -i laminar . -f laminar.yaml
 
 ## LLM Provider
 
-For signals, in app-server-consumer and frontend, LLM provider is set explicitly via environment variables.
-In frontend, the resolution is based on API keys.
+All AI features (chat-with-trace, SQL-with-AI, signals) share one unified set
+of environment variables:
 
-### app-server-consumer configuration
+- `LLM_PROVIDER` — one of `gemini` (default), `openai`, `bedrock`. Set via
+  `frontend.env.llmProvider`, `appServer.env.llmProvider`, and
+  `appServerConsumer.env.llmProvider`. All three default to `gemini`.
+- `LLM_API_KEY` — key for `gemini` or `openai`. Set via `secrets.data`.
+- `LLM_BASE_URL` — optional, for OpenAI-compatible gateways (LiteLLM,
+  OpenRouter, vLLM) or custom Gemini endpoints. Set via `*.env.llmBaseUrl`.
+- `LLM_MODEL_SMALL` / `LLM_MODEL_MEDIUM` / `LLM_MODEL_LARGE` — optional
+  per-tier model overrides. Per-provider defaults apply when unset. For
+  Bedrock, these values are Inference Profile IDs.
+- `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` — used by
+  `bedrock` instead of `LLM_API_KEY`. Set via `secrets.data`.
 
-In your `laminar.yaml` or another file that overrides values, do:
+`signalsEnabled` on the frontend defaults to `"true"`; AI features in the
+frontend are active as soon as `LLM_API_KEY` (or AWS credentials for
+Bedrock) is populated.
+
+### Gemini (default)
+
+Gemini is the default provider — just supply the key:
 
 ```yaml
-appServerConsumer:
-  env:
-    signalsLlmProvider: "gemini" # or bedrock
-    # model name for gemini, or Inference Profile ID for bedrock
-    signalsLlmModel: "gemini-3-flash"
+secrets:
+  data:
+    LLM_API_KEY: "your-gemini-key"
 ```
 
-### Frontend configuration
-
-By default, if `GOOGLE_GENERATIVE_AI_API_KEY` environment variable is set via secret, use gemini.
-Otherwise, for bedrock the following must be set:
+### OpenAI (or OpenAI-compatible gateway)
 
 ```yaml
 frontend:
   env:
-    bedrockEnabled: "true"
+    llmProvider: "openai"
+    # Optional: OpenAI-compatible gateway (LiteLLM, OpenRouter, vLLM)
+    # llmBaseUrl: "http://my-gateway:4000"
+
+appServer:
+  env:
+    llmProvider: "openai"
+
+appServerConsumer:
+  env:
+    llmProvider: "openai"
+
+secrets:
+  data:
+    LLM_API_KEY: "your-openai-or-gateway-key"
+```
+
+### AWS Bedrock
+
+Bedrock uses AWS credentials from `secrets.data` instead of `LLM_API_KEY`.
+
+```yaml
+frontend:
+  env:
+    llmProvider: "bedrock"
+
+appServer:
+  env:
+    llmProvider: "bedrock"
+
+appServerConsumer:
+  env:
+    llmProvider: "bedrock"
 
 secrets:
   data:
     AWS_ACCESS_KEY_ID: "your-aws-access-key-id"
     AWS_SECRET_ACCESS_KEY: "your-secret-access-key"
     AWS_REGION: "us-east-1" # or another aws region
+```
+
+### Model overrides (optional)
+
+Per-provider defaults apply when unset. Override per size tier to pin specific
+models (for Bedrock, values are Inference Profile IDs):
+
+```yaml
+appServerConsumer:
+  env:
+    llmModelSmall: "gemini-3-flash-preview"
+    llmModelMedium: "gemini-3-flash-preview"
+    llmModelLarge: "gemini-3-pro-preview"
+```
+
+### Disabling signals
+
+Signals are enabled by default in the frontend. To disable:
+
+```yaml
+frontend:
+  env:
+    signalsEnabled: "false"
 ```
 
 ## Ingress and DNS
