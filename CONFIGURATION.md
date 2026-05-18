@@ -15,6 +15,7 @@ This guide covers advanced configuration options for the Laminar Helm chart.
 - [Ingress and DNS](#ingress-and-dns)
 - [Storage Configuration](#storage-configuration)
 - [ClickHouse S3 Storage](#clickhouse-s3-storage)
+- [Quickwit Storage Backend](#quickwit-storage-backend)
 - [Node Placement](#node-placement)
 - [Resource Limits](#resource-limits)
 - [Upgrading the Chart](#upgrading-the-chart)
@@ -975,6 +976,74 @@ clickhouse:
           name: clickhouse-gcs-credentials
           key: secret-access-key
 ```
+
+## Quickwit Storage Backend
+
+Quickwit holds Laminar's full-text search index for spans. By default, the chart points it at AWS S3 in `us-east-1`. The same Quickwit deployment runs against any S3-compatible object store via `quickwit.s3.flavor` and `quickwit.s3.endpoint`.
+
+### Default (AWS S3)
+
+```yaml
+quickwit:
+  s3:
+    defaultIndexRootUri: "s3://my-bucket/indexes"
+    region: "us-east-1"
+```
+
+On EKS, credentials come from the node's IAM instance role via the AWS metadata service — no extra env vars needed.
+
+### Quickwit on GCS (GKE)
+
+Quickwit does not have a native GCP credential path. Use GCS's S3 interoperability layer with **HMAC keys**, fed in as `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`. Without `flavor: gcs` and the HMAC env vars, the AWS SDK inside Quickwit falls through to the EC2 metadata service, which doesn't exist on GKE — operators see this as `IMDS InvalidToken (404)` in the indexer logs.
+
+**1. Create HMAC keys** for a service account that can read/write the bucket. See [Managing HMAC keys](https://cloud.google.com/storage/docs/authentication/managing-hmackeys).
+
+**2. Store them in a Kubernetes secret:**
+```bash
+kubectl create secret generic quickwit-gcs-credentials \
+  --from-literal=access-key-id=GOOG1... \
+  --from-literal=secret-access-key=...
+```
+
+**3. Configure `laminar.yaml`:**
+```yaml
+quickwit:
+  s3:
+    defaultIndexRootUri: "s3://my-quickwit-bucket/indexes"
+    region: "us-central1"
+    flavor: "gcs"
+    endpoint: "https://storage.googleapis.com"
+    forcePathStyleAccess: true
+  extraEnv:
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: quickwit-gcs-credentials
+          key: access-key-id
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: quickwit-gcs-credentials
+          key: secret-access-key
+```
+
+`quickwit.extraEnv` is propagated to all five Quickwit components (control-plane, indexer, janitor, metastore, searcher). For overrides that should only apply to one component, use the per-component knob — e.g. `quickwit.indexer.extraEnv` — which is appended after `quickwit.extraEnv`.
+
+A complete example also lives in [`examples/quickwit-gcs-storage.yaml`](./examples/quickwit-gcs-storage.yaml).
+
+### Other S3-compatible stores
+
+The same shape works for MinIO, Cloudflare R2, DigitalOcean Spaces, etc. Pick the right `flavor` and `endpoint`; supply HMAC-style credentials via `quickwit.extraEnv`.
+
+| Provider             | `flavor`  | `endpoint`                                             | `forcePathStyleAccess` |
+| -------------------- | --------- | ------------------------------------------------------ | ---------------------- |
+| AWS S3               | _(empty)_ | _(default)_                                            | `false`                |
+| Google Cloud Storage | `gcs`     | `https://storage.googleapis.com`                       | `true`                 |
+| MinIO                | `minio`   | `http://minio.<ns>.svc.cluster.local:9000`             | `true`                 |
+| Cloudflare R2        | _(empty)_ | `https://<account-id>.r2.cloudflarestorage.com`        | `true`                 |
+| DigitalOcean Spaces  | `do`      | `https://<region>.digitaloceanspaces.com`              | `false`                |
+
+See [Quickwit's storage configuration reference](https://quickwit.io/docs/configuration/storage-config) for the full list of supported flavors and the trade-offs each one applies (e.g. GCS disables multi-object delete and multipart upload).
 
 ## Node Placement
 

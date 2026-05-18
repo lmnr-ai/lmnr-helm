@@ -68,6 +68,7 @@ spec:
               value: "http://{{ include "laminar.resourceName" "quickwit-metastore" }}.{{ include "laminar.namespace" . }}.svc.cluster.local:7280"
             - name: QW_METASTORE_URI
               value: "$(QUICKWIT_DATABASE_URL)"
+            {{- include "lmnr.quickwit.extraEnv" (dict "root" $ "component" .Values.quickwit.controlPlane) | nindent 12 }}
           ports:
             - name: rest
               containerPort: 7280
