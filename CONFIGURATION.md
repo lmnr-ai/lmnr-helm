@@ -7,6 +7,7 @@ This guide covers advanced configuration options for the Laminar Helm chart.
 ## Table of Contents
 
 - [Cloud Provider](#cloud-provider)
+- [Container Images](#container-images)
 - [Secrets Management](#secrets-management)
 - [Extra Environment Variables](#extra-environment-variables)
 - [OAuth setup](#oauth-setup)
@@ -16,6 +17,7 @@ This guide covers advanced configuration options for the Laminar Helm chart.
 - [ClickHouse S3 Storage](#clickhouse-s3-storage)
 - [Node Placement](#node-placement)
 - [Resource Limits](#resource-limits)
+- [Upgrading the Chart](#upgrading-the-chart)
 
 ## Cloud Provider
 
@@ -33,6 +35,95 @@ global:
 
 - **AWS**: Uses AWS Load Balancer Controller (`alb` Ingress class) and EBS CSI Driver.
 - **GCP**: Uses GCE Ingress (`gce` Ingress class) and GCE Persistent Disk CSI Driver.
+
+## Container Images
+
+The three Laminar containers — frontend, app server (used by both `app-server` and `app-server-consumer`), and query engine — are pulled from `ghcr.io/lmnr-ai`:
+
+```yaml
+# values.yaml (defaults)
+images:
+  repository: "ghcr.io/lmnr-ai"
+  pullPolicy: Always
+  frontend:
+    name: "frontend-ee"
+    tag: "latest"
+  appServer:
+    name: "app-server-ee"
+    tag: "latest"
+  queryEngine:
+    name: "query-engine-ee"
+    tag: "latest"
+```
+
+`ghcr.io/lmnr-ai/*-ee` images are public — `helm install` pulls them on its own and most users never need to think about this section.
+
+### Pinning a specific tag
+
+`tag: "latest"` is convenient but means a `kubectl rollout restart` will pick up whatever was pushed most recently. For production, pin a specific version in your `laminar.yaml`:
+
+```yaml
+images:
+  frontend:
+    tag: "0.1.546"
+  appServer:
+    tag: "0.1.546"
+  queryEngine:
+    tag: "0.1.546"
+```
+
+Available tags are listed under the [Packages tab on GitHub](https://github.com/orgs/lmnr-ai/packages). The frontend, app server, and query engine are released together — keep their tags in sync.
+
+When pinning to a tag that does not change content, you can also drop `pullPolicy: Always` to avoid an extra registry round-trip on every pod start:
+
+```yaml
+images:
+  pullPolicy: IfNotPresent
+```
+
+### Pulling images manually
+
+If your nodes have no outbound internet access, or you want to mirror images into your own registry, pull them ahead of time:
+
+```bash
+docker pull ghcr.io/lmnr-ai/frontend-ee:latest
+docker pull ghcr.io/lmnr-ai/app-server-ee:latest
+docker pull ghcr.io/lmnr-ai/query-engine-ee:latest
+```
+
+Replace `latest` with the tag you intend to deploy. To use a private mirror, retag and push each image, then point the chart at it:
+
+```bash
+# Example: mirror to your own registry
+docker tag ghcr.io/lmnr-ai/frontend-ee:0.1.546 my-registry.example.com/laminar/frontend-ee:0.1.546
+docker push my-registry.example.com/laminar/frontend-ee:0.1.546
+# Repeat for app-server-ee and query-engine-ee
+```
+
+```yaml
+# laminar.yaml
+images:
+  repository: "my-registry.example.com/laminar"
+  pullPolicy: IfNotPresent
+  frontend:
+    tag: "0.1.546"
+  appServer:
+    tag: "0.1.546"
+  queryEngine:
+    tag: "0.1.546"
+```
+
+If the mirror requires authentication, the pods need an `imagePullSecrets` entry on the ServiceAccount they run as. The chart does not template this today — create a `docker-registry` secret and patch the default ServiceAccount manually:
+
+```bash
+kubectl create secret docker-registry my-registry-creds \
+  --docker-server=my-registry.example.com \
+  --docker-username=<user> \
+  --docker-password=<pass>
+
+kubectl patch serviceaccount default \
+  -p '{"imagePullSecrets":[{"name":"my-registry-creds"}]}'
+```
 
 ## Secrets Management
 
@@ -1018,3 +1109,57 @@ We recommend setting short rotation periods on all of the tables,
 if you enable logging at all.
 
 For more information, see the [ClickHouse logging documentation](https://clickhouse.com/docs/knowledgebase/why_default_logging_verbose).
+
+## Upgrading the Chart
+
+The standard upgrade is:
+
+```bash
+helm upgrade -i laminar ./charts/laminar -f laminar.yaml
+```
+
+For routine upgrades within a minor (`0.1.x` → `0.1.y`), this is enough — Deployments roll over and StatefulSets restart their pods one at a time.
+
+### Upgrading from <= 0.1.11 to >= 0.1.12
+
+`0.1.12` rebuilt the RabbitMQ and Quickwit indexer/searcher templates. Two things changed that an in-place `helm upgrade` cannot apply:
+
+- **Quickwit indexer and searcher** gained a conditional `volumeClaimTemplates` block (active when `persistence.enabled: true`). `spec.volumeClaimTemplates` is immutable on a StatefulSet, so even if you leave persistence off, the diff trips Kubernetes' validation when other fields move around it.
+- **RabbitMQ and the Quickwit indexer** picked up a `checksum/config` annotation on their pod templates, so a ConfigMap change (`rabbitmq.conf`, Quickwit `node.yaml`) now actually rolls the pods. On its own this is a normal pod-template diff and not a problem, but it lands in the same upgrade as the Quickwit volumeClaimTemplates change.
+
+The upgrade fails with errors like:
+
+```
+Forbidden: updates to statefulset spec for fields other than 'replicas',
+'ordinals', 'template', 'updateStrategy', 'persistentVolumeClaimRetentionPolicy'
+and 'minReadySeconds' are forbidden
+```
+
+Delete the affected StatefulSets with `--cascade=orphan` (which keeps the running pods serving traffic) and let `helm upgrade` recreate them with the new spec:
+
+```bash
+kubectl delete statefulset laminar-rabbitmq --cascade=orphan
+kubectl delete statefulset laminar-quickwit-indexer --cascade=orphan
+kubectl delete statefulset laminar-quickwit-searcher --cascade=orphan
+
+helm upgrade -i laminar ./charts/laminar -f laminar.yaml
+```
+
+The new StatefulSets adopt the existing pods (matched by labels), then each pod is restarted on its own with the updated template. PVCs are preserved — RabbitMQ keeps its WAL, and the Quickwit nodes keep their local working data. Any data that lives in S3 (Quickwit splits, ClickHouse on S3) is untouched regardless.
+
+> ClickHouse and Postgres StatefulSets did not change in `0.1.12`. Don't delete them unless a future release note says to — losing the StatefulSet on a database with a PVC bound is recoverable, but it's a risk you don't need to take on a routine upgrade.
+
+### Switching the Quickwit indexer/searcher to PVC-backed storage
+
+Setting `quickwit.indexer.persistence.enabled: true` (or the same on `searcher`) on an existing install requires recreating the StatefulSet, because `volumeClaimTemplates` is immutable:
+
+```bash
+kubectl delete statefulset laminar-quickwit-indexer --cascade=orphan
+helm upgrade -i laminar ./charts/laminar -f laminar.yaml
+```
+
+The new pod re-fetches working state from S3 on startup; final splits live in S3 regardless.
+
+### When in doubt
+
+`kubectl describe statefulset <name>` shows the current spec, and `helm get manifest laminar` shows what the chart wants it to be. Diff the two before deciding to delete anything.
