@@ -186,6 +186,8 @@ kubectl exec -it laminar-clickhouse-0 -- clickhouse-client
 helm upgrade -i laminar ./charts/laminar -f laminar.yaml
 ```
 
+Upgrading from `<= 0.1.11` to `>= 0.1.12` requires deleting the RabbitMQ and Quickwit StatefulSets with `--cascade=orphan` first — see [CONFIGURATION.md — Upgrading the Chart](./CONFIGURATION.md#upgrading-the-chart).
+
 ### Uninstall
 
 ```bash
