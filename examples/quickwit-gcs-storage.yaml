@@ -25,6 +25,9 @@
 quickwit:
   s3:
     # GCS bucket where Quickwit splits and the metastore index live.
+    # Use the `s3://` scheme even though the bucket is on GCS — Quickwit
+    # only recognizes s3:// / azure:// / file:// URIs, and `flavor: gcs`
+    # below is what actually routes the request to GCS.
     defaultIndexRootUri: "s3://my-quickwit-bucket/indexes"
     # GCP region of the bucket.
     region: "us-central1"
