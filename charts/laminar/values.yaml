@@ -495,23 +495,52 @@ quickwit:
   #     secretKeyRef:
   #       name: quickwit-gcs-credentials
   #       key: secret-access-key
-  # S3 / object-store configuration
+  # Storage configuration. The URI scheme of `s3.defaultIndexRootUri` is
+  # what picks the backend:
+  #   s3://...    AWS S3 (default) or any S3-compatible store via `s3.flavor`
+  #   gs://...    Google Cloud Storage (native, see `gcs:` below)
+  #   azure://... Azure Blob Storage
+  # The `s3:` key name is historical — the URI scheme, not the key, drives
+  # routing inside Quickwit.
   s3:
+    # Where Quickwit creates indexes and the metastore. Use a `gs://` URI
+    # to target Google Cloud Storage; the rest of this s3: block is then
+    # ignored and the gcs: block below is used instead.
     defaultIndexRootUri: "s3://lmnr-quickwit/indexes"
     region: "us-east-1"
     # Quickwit storage flavor. Leave empty for AWS S3.
-    # Set to "gcs" for Google Cloud Storage (S3 interoperability mode).
-    # Other accepted values: "do" (DigitalOcean Spaces), "garage", "minio".
+    # Other accepted values: "do" (DigitalOcean Spaces), "garage", "minio",
+    # and "gcs" if you want to access GCS through its S3 interoperability
+    # layer with HMAC keys (Workload Identity is NOT available on this
+    # path — prefer the native `gs://` + `gcs:` config below).
     # See https://quickwit.io/docs/configuration/storage-config
     flavor: ""
-    # Custom S3 endpoint. Required for any non-AWS object store.
-    #   GCS:    https://storage.googleapis.com
+    # Custom S3 endpoint. Required for any non-AWS S3-compatible store.
     #   MinIO:  http://minio.minio.svc.cluster.local:9000
     #   R2:     https://<account-id>.r2.cloudflarestorage.com
     endpoint: ""
-    # Force path-style addressing. Required for GCS, MinIO, and most
+    # Force path-style addressing. Required for MinIO and most
     # S3-compatible stores that do not support virtual-host-style buckets.
     forcePathStyleAccess: false
+  # Google Cloud Storage configuration. Used when `s3.defaultIndexRootUri`
+  # starts with `gs://`. Ignored otherwise.
+  #
+  # Quickwit's GCS backend follows the standard GCP credential chain:
+  #   1. credentialPath below (or QW_GOOGLE_CLOUD_STORAGE_CREDENTIAL_PATH)
+  #   2. GOOGLE_APPLICATION_CREDENTIALS env var
+  #   3. ~/.config/gcloud/application_default_credentials.json
+  #   4. GCE / GKE metadata server  ← Workload Identity lives here
+  #
+  # On GKE with Workload Identity, leave credentialPath empty: Quickwit
+  # picks up tokens from the metadata server automatically once the
+  # serviceAccount on these pods is bound to a GCP service account that
+  # has objectAdmin on the bucket.
+  gcs:
+    # Path inside the Quickwit container to a service-account JSON key.
+    # Only set this if you are NOT using Workload Identity. Mount the key
+    # into the pods (e.g. via quickwit.extraEnv + a projected secret) and
+    # point this at the mount path.
+    credentialPath: ""
   # Quickwit node.yaml settings
   config:
     # Increase from Quickwit's 4 MiB default — app-server-consumer can

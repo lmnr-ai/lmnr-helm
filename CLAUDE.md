@@ -23,10 +23,14 @@ A common failure mode: two `toYaml` blocks emitted back-to-back into a `env:` ar
 
 ## Object storage (Quickwit + ClickHouse)
 
-Both services support GCS via GCS's S3 interoperability layer using HMAC keys — there is no native GCP credential path in either binary. Configuration is parallel but not identical:
+ClickHouse and Quickwit have very different stories on GCS:
 
-- **ClickHouse**: typed `clickhouse.s3.accessKeyId` / `accessKeyIdFrom` rendered into `storage_config.xml`. The `useEnvironmentCredentials: true` path does not work on GKE because the GKE metadata server returns OAuth2 tokens, which GCS's S3 API does not accept.
-- **Quickwit**: no typed credential fields; HMAC keys come in as `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` env vars via `quickwit.extraEnv` (chart-wide) or `quickwit.<component>.extraEnv` (per-pod). The configmap exposes `s3.flavor`, `s3.endpoint`, and `s3.forcePathStyleAccess` for non-AWS stores. **Default behavior** (no flavor/endpoint set) is the AWS SDK's default credential chain, which falls through to IMDS — operators on GKE see this as `IMDS InvalidToken (404)` in the indexer logs.
+- **ClickHouse** has no native GCS backend. It must go through GCS's S3 interoperability layer with HMAC keys, configured via typed `clickhouse.s3.accessKeyId` / `accessKeyIdFrom` rendered into `storage_config.xml`. `useEnvironmentCredentials: true` does NOT work on GKE because the GKE metadata server returns OAuth2 tokens, which GCS's S3 API does not accept.
+- **Quickwit 0.8.2** does have a native GCS backend (the `quickwit/quickwit:v0.8.2` Docker image is built with `release-feature-set`, which enables `quickwit-storage/gcs`). Native path: set `quickwit.s3.defaultIndexRootUri: "gs://bucket/..."`, optionally `quickwit.gcs.credentialPath` for a mounted SA JSON, and Quickwit's reqsign-based credential loader runs the standard chain: credential_path → `GOOGLE_APPLICATION_CREDENTIALS` → `~/.config/gcloud/application_default_credentials.json` → GKE metadata server. **GKE Workload Identity works out of the box** on the native path — bind the GCP SA, annotate the K8s SA, done.
+
+Quickwit URI schemes the v0.8 binary parses: `s3://`, `gs://`, `azure://`, `file://` (also `ram://`, `actor://`, `grpc://`, `postgresql://` for non-storage uses). The current public docs list `gs://` but the v0.8.2 markdown in the repo doesn't — trust the source and the runtime, not the markdown.
+
+The chart's `quickwit.s3.flavor: gcs` + `endpoint: https://storage.googleapis.com` path is the **HMAC-keys-on-S3-API fallback**, kept for parity with ClickHouse-on-GCS and for environments without Workload Identity. Always recommend the native `gs://` path first.
 
 When adding new Quickwit storage knobs, render them into `quickwit-configmap.yaml` only. The configmap is mounted at `/quickwit/node.yaml` via `subPath`, which the kubelet does not live-update; every Quickwit workload template carries `checksum/config` in its pod annotations so a `helm upgrade` that edits the configmap forces a rolling restart.
 
