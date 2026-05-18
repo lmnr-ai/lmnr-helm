@@ -1,92 +1,55 @@
 # Quickwit on Google Cloud Storage (GKE)
 #
-# Quickwit 0.8 ships a native GCS backend. Use a `gs://` URI and the
-# binary takes the standard GCP credential chain:
+# Quickwit talks to GCS through GCS's S3 interoperability layer. There is
+# no native GCP-credential path in Quickwit today (no workload identity,
+# no service-account JSON), so the only supported auth is HMAC keys for a
+# GCP service account, fed in as AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY.
 #
-#   1. quickwit.gcs.credentialPath (a mounted service-account JSON), OR
-#   2. GOOGLE_APPLICATION_CREDENTIALS env var, OR
-#   3. ~/.config/gcloud/application_default_credentials.json, OR
-#   4. GKE / GCE metadata server  ← this is the Workload Identity path
+# This example assumes:
+#   1. You have a GCS bucket created (e.g. `my-quickwit-bucket`).
+#   2. You have created HMAC keys for a service account that can read/write
+#      that bucket. See:
+#      https://cloud.google.com/storage/docs/authentication/managing-hmackeys
+#   3. You have stored those keys in a Kubernetes secret in the release
+#      namespace, e.g.:
 #
-# The recommended setup on GKE is Workload Identity: bind a GCP service
-# account that has objectAdmin on the bucket to the Kubernetes service
-# account these pods run as, and Quickwit picks up tokens from the
-# metadata server automatically. NO HMAC keys or secrets needed.
-#
-# The fallback HMAC-keys-on-S3-API path also works; see the bottom of
-# this file for that alternative.
+#        kubectl create secret generic quickwit-gcs-credentials \
+#          --from-literal=access-key-id=GOOG1...           \
+#          --from-literal=secret-access-key=...
 #
 # Usage:
 #   helm upgrade -i laminar ./charts/laminar \
 #     -f laminar.yaml \
 #     -f examples/quickwit-gcs-storage.yaml
 
-# === Workload Identity (recommended) ============================
-#
-# Prerequisites — run once outside Helm:
-#
-#   1. Create the GCS bucket and the GCP service account:
-#        gcloud iam service-accounts create laminar-quickwit \
-#          --project=YOUR_PROJECT
-#        gsutil iam ch \
-#          serviceAccount:laminar-quickwit@YOUR_PROJECT.iam.gserviceaccount.com:objectAdmin \
-#          gs://YOUR_BUCKET
-#
-#   2. Bind the GCP SA to the K8s SA used by Quickwit pods (default name:
-#      `laminar-quickwit` in the release namespace; rename if you set a
-#      different release name):
-#        gcloud iam service-accounts add-iam-policy-binding \
-#          laminar-quickwit@YOUR_PROJECT.iam.gserviceaccount.com \
-#          --role=roles/iam.workloadIdentityUser \
-#          --member="serviceAccount:YOUR_PROJECT.svc.id.goog[default/laminar-quickwit]"
-#
-#   3. Annotate the K8s SA after `helm install`:
-#        kubectl annotate serviceaccount laminar-quickwit \
-#          iam.gke.io/gcp-service-account=laminar-quickwit@YOUR_PROJECT.iam.gserviceaccount.com
-
 quickwit:
   s3:
-    # `gs://` URI flips Quickwit to its native GCS backend. The other
-    # fields under `s3:` (region, flavor, endpoint, forcePathStyleAccess)
-    # are ignored when the URI scheme is `gs://`.
-    defaultIndexRootUri: "gs://YOUR_BUCKET/indexes"
+    # GCS bucket where Quickwit splits and the metastore index live.
+    # Use the `s3://` scheme even though the bucket is on GCS — Quickwit
+    # only recognizes s3:// / azure:// / file:// URIs, and `flavor: gcs`
+    # below is what actually routes the request to GCS.
+    defaultIndexRootUri: "s3://my-quickwit-bucket/indexes"
+    # GCP region of the bucket.
+    region: "us-central1"
+    # Tells Quickwit to disable multi-object delete + multipart upload,
+    # which GCS's S3 interop layer doesn't fully support.
+    flavor: "gcs"
+    # GCS S3-interop endpoint.
+    endpoint: "https://storage.googleapis.com"
+    # GCS does not support virtual-host-style addressing.
+    forcePathStyleAccess: true
 
-  # Leave empty for Workload Identity. Set only when mounting a
-  # service-account JSON key (see the alternative at the bottom).
-  gcs:
-    credentialPath: ""
-
-
-# === Alternative: HMAC keys via S3 interoperability =============
-# Use this only if you cannot configure Workload Identity. Quickwit
-# v0.8 has a native GCS backend, so this path is no longer recommended,
-# but the chart still supports it for parity with how ClickHouse on GCS
-# is configured.
-#
-# Setup:
-#   1. Create HMAC keys for a GCP SA with objectAdmin on the bucket:
-#        gcloud storage hmac create laminar-quickwit@YOUR_PROJECT.iam.gserviceaccount.com
-#   2. Store them in a K8s secret:
-#        kubectl create secret generic quickwit-gcs-credentials \
-#          --from-literal=access-key-id=GOOG1... \
-#          --from-literal=secret-access-key=...
-#   3. Replace the `quickwit:` block above with:
-#
-# quickwit:
-#   s3:
-#     defaultIndexRootUri: "s3://YOUR_BUCKET/indexes"  # NOTE: s3:// not gs://
-#     region: "us-central1"
-#     flavor: "gcs"
-#     endpoint: "https://storage.googleapis.com"
-#     forcePathStyleAccess: true
-#   extraEnv:
-#     - name: AWS_ACCESS_KEY_ID
-#       valueFrom:
-#         secretKeyRef:
-#           name: quickwit-gcs-credentials
-#           key: access-key-id
-#     - name: AWS_SECRET_ACCESS_KEY
-#       valueFrom:
-#         secretKeyRef:
-#           name: quickwit-gcs-credentials
-#           key: secret-access-key
+  # HMAC credentials are wired into ALL Quickwit components
+  # (control-plane, indexer, janitor, metastore, searcher) via the AWS
+  # SDK env vars Quickwit reads natively.
+  extraEnv:
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: quickwit-gcs-credentials
+          key: access-key-id
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: quickwit-gcs-credentials
+          key: secret-access-key

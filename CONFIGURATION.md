@@ -994,62 +994,25 @@ On EKS, credentials come from the node's IAM instance role via the AWS metadata 
 
 ### Quickwit on GCS (GKE)
 
-Quickwit 0.8 ships a native Google Cloud Storage backend. Set `quickwit.s3.defaultIndexRootUri` to a `gs://` URI and Quickwit follows the standard GCP credential chain:
+Quickwit does not have a native GCP credential path. Use GCS's S3 interoperability layer with **HMAC keys**, fed in as `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`. Without `flavor: gcs` and the HMAC env vars, the AWS SDK inside Quickwit falls through to the EC2 metadata service, which doesn't exist on GKE — operators see this as `IMDS InvalidToken (404)` in the indexer logs.
 
-1. `quickwit.gcs.credentialPath` (or `QW_GOOGLE_CLOUD_STORAGE_CREDENTIAL_PATH`)
-2. `GOOGLE_APPLICATION_CREDENTIALS` env var
-3. `~/.config/gcloud/application_default_credentials.json`
-4. GKE / GCE metadata server — **this is the Workload Identity path**
+**1. Create HMAC keys** for a service account that can read/write the bucket. See [Managing HMAC keys](https://cloud.google.com/storage/docs/authentication/managing-hmackeys).
 
-> **Note on the failure mode customers hit on GKE before this support landed**
->
-> The previous chart only rendered `region:` into Quickwit's `node.yaml`, so the AWS SDK fell through to the EC2 metadata service and crashed with `IMDS InvalidToken (404)`. The fix is to use the native `gs://` scheme below; do not leave the chart on a `s3://` URI without setting `flavor: gcs`.
-
-#### Recommended: Workload Identity (no secrets)
-
-**1. Create the bucket and a GCP service account with bucket access:**
+**2. Store them in a Kubernetes secret:**
 ```bash
-gcloud iam service-accounts create laminar-quickwit --project=YOUR_PROJECT
-
-gsutil iam ch \
-  serviceAccount:laminar-quickwit@YOUR_PROJECT.iam.gserviceaccount.com:objectAdmin \
-  gs://YOUR_BUCKET
-```
-
-**2. Bind that GCP SA to the Kubernetes SA Quickwit pods run as** (default: `laminar-quickwit` in the release namespace):
-```bash
-gcloud iam service-accounts add-iam-policy-binding \
-  laminar-quickwit@YOUR_PROJECT.iam.gserviceaccount.com \
-  --role=roles/iam.workloadIdentityUser \
-  --member="serviceAccount:YOUR_PROJECT.svc.id.goog[default/laminar-quickwit]"
-
-kubectl annotate serviceaccount laminar-quickwit \
-  iam.gke.io/gcp-service-account=laminar-quickwit@YOUR_PROJECT.iam.gserviceaccount.com
+kubectl create secret generic quickwit-gcs-credentials \
+  --from-literal=access-key-id=GOOG1... \
+  --from-literal=secret-access-key=...
 ```
 
 **3. Configure `laminar.yaml`:**
-```yaml
-quickwit:
-  s3:
-    defaultIndexRootUri: "gs://YOUR_BUCKET/indexes"
-  gcs:
-    credentialPath: ""   # leave empty for Workload Identity
-```
 
-That's the entire config. With Workload Identity bound, no HMAC keys or secrets are needed — every Quickwit component picks up tokens from the GKE metadata server.
-
-#### Alternative: mounted service-account JSON
-
-If Workload Identity isn't available (e.g. the cluster runs with the legacy GCE metadata path), mount a GCP service-account JSON key into each Quickwit pod and point `gcs.credentialPath` at the mount path. The simplest way is `quickwit.extraEnv` plus a projected secret — see the chart's [`examples/quickwit-gcs-storage.yaml`](./examples/quickwit-gcs-storage.yaml).
-
-#### Alternative: HMAC keys via S3 interoperability
-
-The chart also supports the older HMAC-keys-via-S3-API path for parity with how ClickHouse-on-GCS is configured. Use it only if you can't use Workload Identity or a mounted JSON. Note the URI scheme is `s3://`, not `gs://`, on this path:
+Note: even though the bucket lives on GCS, the URI uses the `s3://` scheme. Quickwit only recognizes `s3://`, `azure://`, and `file://` URIs; `flavor: gcs` is what actually routes the request to GCS.
 
 ```yaml
 quickwit:
   s3:
-    defaultIndexRootUri: "s3://YOUR_BUCKET/indexes"
+    defaultIndexRootUri: "s3://my-quickwit-bucket/indexes"
     region: "us-central1"
     flavor: "gcs"
     endpoint: "https://storage.googleapis.com"
@@ -1057,28 +1020,33 @@ quickwit:
   extraEnv:
     - name: AWS_ACCESS_KEY_ID
       valueFrom:
-        secretKeyRef: { name: quickwit-gcs-credentials, key: access-key-id }
+        secretKeyRef:
+          name: quickwit-gcs-credentials
+          key: access-key-id
     - name: AWS_SECRET_ACCESS_KEY
       valueFrom:
-        secretKeyRef: { name: quickwit-gcs-credentials, key: secret-access-key }
+        secretKeyRef:
+          name: quickwit-gcs-credentials
+          key: secret-access-key
 ```
 
-`quickwit.extraEnv` propagates to all five Quickwit components (control-plane, indexer, janitor, metastore, searcher). For overrides that should only apply to one component, use the per-component knob — e.g. `quickwit.indexer.extraEnv` — which is appended after `quickwit.extraEnv`.
+`quickwit.extraEnv` is propagated to all five Quickwit components (control-plane, indexer, janitor, metastore, searcher). For overrides that should only apply to one component, use the per-component knob — e.g. `quickwit.indexer.extraEnv` — which is appended after `quickwit.extraEnv`.
+
+A complete example also lives in [`examples/quickwit-gcs-storage.yaml`](./examples/quickwit-gcs-storage.yaml).
 
 ### Other S3-compatible stores
 
-For MinIO, Cloudflare R2, DigitalOcean Spaces, etc., pick the right `flavor` and `endpoint` and supply HMAC-style credentials via `quickwit.extraEnv`.
+The same shape works for MinIO, Cloudflare R2, DigitalOcean Spaces, etc. Pick the right `flavor` and `endpoint`; supply HMAC-style credentials via `quickwit.extraEnv`.
 
-| Provider             | `defaultIndexRootUri`                | `flavor`  | `endpoint`                                             | `forcePathStyleAccess` |
-| -------------------- | ------------------------------------ | --------- | ------------------------------------------------------ | ---------------------- |
-| AWS S3               | `s3://bucket/...`                    | _(empty)_ | _(default)_                                            | `false`                |
-| Google Cloud Storage | `gs://bucket/...` _(recommended)_    | _(empty)_ | _(default)_                                            | `false`                |
-| Google Cloud Storage | `s3://bucket/...` _(HMAC fallback)_  | `gcs`     | `https://storage.googleapis.com`                       | `true`                 |
-| MinIO                | `s3://bucket/...`                    | `minio`   | `http://minio.<ns>.svc.cluster.local:9000`             | `true`                 |
-| Cloudflare R2        | `s3://bucket/...`                    | _(empty)_ | `https://<account-id>.r2.cloudflarestorage.com`        | `true`                 |
-| DigitalOcean Spaces  | `s3://bucket/...`                    | `do`      | `https://<region>.digitaloceanspaces.com`              | `false`                |
+| Provider             | `flavor`  | `endpoint`                                             | `forcePathStyleAccess` |
+| -------------------- | --------- | ------------------------------------------------------ | ---------------------- |
+| AWS S3               | _(empty)_ | _(default)_                                            | `false`                |
+| Google Cloud Storage | `gcs`     | `https://storage.googleapis.com`                       | `true`                 |
+| MinIO                | `minio`   | `http://minio.<ns>.svc.cluster.local:9000`             | `true`                 |
+| Cloudflare R2        | _(empty)_ | `https://<account-id>.r2.cloudflarestorage.com`        | `true`                 |
+| DigitalOcean Spaces  | `do`      | `https://<region>.digitaloceanspaces.com`              | `false`                |
 
-See [Quickwit's storage configuration reference](https://quickwit.io/docs/configuration/storage-config) for the full list of flavors.
+See [Quickwit's storage configuration reference](https://quickwit.io/docs/configuration/storage-config) for the full list of supported flavors and the trade-offs each one applies (e.g. GCS disables multi-object delete and multipart upload).
 
 ## Node Placement
 

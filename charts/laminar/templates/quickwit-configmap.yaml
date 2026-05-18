@@ -25,10 +25,6 @@ data:
         {{- if .Values.quickwit.s3.forcePathStyleAccess }}
         force_path_style_access: true
         {{- end }}
-      {{- if and .Values.quickwit.gcs .Values.quickwit.gcs.credentialPath }}
-      google:
-        credential_path: {{ .Values.quickwit.gcs.credentialPath | quote }}
-      {{- end }}
     metastore_uri: ${QW_METASTORE_URI}
     grpc:
       max_message_size: {{ .Values.quickwit.config.grpcMaxMessageSize | quote }}

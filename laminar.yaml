@@ -70,10 +70,13 @@ quickwit:
   s3:
     defaultIndexRootUri: "s3://your-bucket-name/indexes"
     region: "<region>"
-    # For GCS, switch the URI scheme to `gs://` and use Workload Identity
-    # — no other config needed. See examples/quickwit-gcs-storage.yaml.
-    # For other S3-compatible stores (MinIO, R2, DO Spaces) set `flavor`
-    # and `endpoint` here and supply HMAC keys via `quickwit.extraEnv`.
+    # For GCS / other S3-compatible stores, also set:
+    #   flavor: "gcs"
+    #   endpoint: "https://storage.googleapis.com"
+    #   forcePathStyleAccess: true
+    # And supply HMAC credentials via `quickwit.extraEnv` — Quickwit reads
+    # AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY directly. See
+    # examples/quickwit-gcs-storage.yaml.
 
 appServerConsumer:
   env:
