@@ -1006,9 +1006,6 @@ kubectl create secret generic quickwit-gcs-credentials \
 ```
 
 **3. Configure `laminar.yaml`:**
-
-Note: even though the bucket lives on GCS, the URI uses the `s3://` scheme. Quickwit only recognizes `s3://`, `azure://`, and `file://` URIs; `flavor: gcs` is what actually routes the request to GCS.
-
 ```yaml
 quickwit:
   s3:
