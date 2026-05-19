@@ -1,4 +1,15 @@
 {{- if .Values.quickwit.enabled }}
+{{- /*
+Resolve Quickwit S3 flavor/endpoint with cloud-provider-aware defaults.
+Explicit `quickwit.s3.flavor` / `quickwit.s3.endpoint` always win; when
+left empty, GCP installs are auto-configured for GCS's S3 interop API
+so operators don't have to remember the magic string. AWS installs
+emit no flavor/endpoint, letting the AWS SDK use its defaults.
+*/}}
+{{- $cloudProvider := .Values.global.cloudProvider | default "aws" -}}
+{{- $isGCP := eq $cloudProvider "gcp" -}}
+{{- $flavor := .Values.quickwit.s3.flavor | default ($isGCP | ternary "gcs" "") -}}
+{{- $endpoint := .Values.quickwit.s3.endpoint | default ($isGCP | ternary "https://storage.googleapis.com" "") -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -16,10 +27,10 @@ data:
     storage:
       s3:
         region: {{ .Values.quickwit.s3.region }}
-        {{- with .Values.quickwit.s3.flavor }}
+        {{- with $flavor }}
         flavor: {{ . }}
         {{- end }}
-        {{- with .Values.quickwit.s3.endpoint }}
+        {{- with $endpoint }}
         endpoint: {{ . | quote }}
         {{- end }}
     metastore_uri: ${QW_METASTORE_URI}

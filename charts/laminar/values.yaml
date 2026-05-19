@@ -499,12 +499,20 @@ quickwit:
   s3:
     defaultIndexRootUri: "s3://lmnr-quickwit/indexes"
     region: "us-east-1"
-    # Quickwit storage flavor. Leave empty for AWS S3.
-    # Set to "gcs" for Google Cloud Storage (S3 interoperability mode).
+    # Quickwit storage flavor. When left empty, the chart auto-fills
+    # based on global.cloudProvider:
+    #   aws  -> "" (AWS SDK defaults)
+    #   gcp  -> "gcs" (GCS S3-interop mode)
+    # Set explicitly to override — e.g. "minio", "do" (DigitalOcean Spaces),
+    # or "garage" for other S3-compatible stores. Explicit value always wins.
     # See https://quickwit.io/docs/configuration/storage-config
     flavor: ""
-    # Custom S3 endpoint. Required for non-AWS object stores.
-    #   GCS: https://storage.googleapis.com
+    # Custom S3 endpoint. When left empty, auto-filled from global.cloudProvider:
+    #   aws  -> "" (AWS S3 default endpoint)
+    #   gcp  -> "https://storage.googleapis.com"
+    # Set explicitly for non-AWS/GCP stores, e.g.:
+    #   MinIO:  http://minio.minio.svc.cluster.local:9000
+    #   R2:     https://<account-id>.r2.cloudflarestorage.com
     endpoint: ""
   # Quickwit node.yaml settings
   config:

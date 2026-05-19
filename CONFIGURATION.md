@@ -1021,8 +1021,6 @@ quickwit:
   s3:
     defaultIndexRootUri: "s3://my-quickwit-bucket/indexes"
     region: "us-central1"
-    flavor: "gcs"
-    endpoint: "https://storage.googleapis.com"
   extraEnv:
     - name: AWS_ACCESS_KEY_ID
       valueFrom:
@@ -1036,7 +1034,9 @@ quickwit:
           key: secret-access-key # HMAC Secret
 ```
 
-`flavor: gcs` is the important bit — Quickwit applies it as a bundle that disables multi-object delete and multipart upload, which GCS's S3 interop layer doesn't fully support. `quickwit.extraEnv` is propagated to all five Quickwit components (control-plane, indexer, janitor, metastore, searcher). For overrides that should only apply to one component, use the per-component knob — e.g. `quickwit.indexer.extraEnv` — which is appended after `quickwit.extraEnv`.
+When `global.cloudProvider: gcp`, the chart auto-fills `quickwit.s3.flavor: "gcs"` and `quickwit.s3.endpoint: "https://storage.googleapis.com"` for you — that's the important bit, since Quickwit's `gcs` flavor disables multi-object delete and multipart upload (which GCS's S3 interop layer doesn't fully support). Set either knob explicitly only when you want to override the default, e.g. pointing at MinIO or a custom S3-compatible endpoint.
+
+`quickwit.extraEnv` is propagated to all five Quickwit components (control-plane, indexer, janitor, metastore, searcher). For overrides that should only apply to one component, use the per-component knob — e.g. `quickwit.indexer.extraEnv` — which is appended after `quickwit.extraEnv`.
 
 A complete example also lives in [`examples/quickwit-gcs-storage.yaml`](./examples/quickwit-gcs-storage.yaml).
 

@@ -22,17 +22,16 @@
 #     -f laminar.yaml \
 #     -f examples/quickwit-gcs-storage.yaml
 
+# Assumes laminar.yaml sets `global.cloudProvider: gcp`, which makes the
+# chart auto-fill `quickwit.s3.flavor: "gcs"` and
+# `quickwit.s3.endpoint: "https://storage.googleapis.com"`. Set those two
+# explicitly here only if you need to override the defaults.
 quickwit:
   s3:
     # GCS bucket where Quickwit splits and the metastore index live.
     defaultIndexRootUri: "s3://my-quickwit-bucket/indexes"
     # GCP region of the bucket.
     region: "us-central1"
-    # Tells Quickwit to disable multi-object delete + multipart upload,
-    # which GCS's S3 interop layer doesn't fully support.
-    flavor: "gcs"
-    # GCS S3-interop endpoint.
-    endpoint: "https://storage.googleapis.com"
 
   # HMAC credentials are wired into ALL Quickwit components
   # (control-plane, indexer, janitor, metastore, searcher) via the AWS
