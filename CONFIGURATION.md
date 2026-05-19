@@ -1027,13 +1027,13 @@ quickwit:
     - name: AWS_ACCESS_KEY_ID
       valueFrom:
         secretKeyRef:
-          name: clickhouse-gcs-credentials
-          key: access-key-id
+          name: clickhouse-gcs-credentials 
+          key: access-key-id # HMAC Access ID
     - name: AWS_SECRET_ACCESS_KEY
       valueFrom:
         secretKeyRef:
           name: clickhouse-gcs-credentials
-          key: secret-access-key
+          key: secret-access-key # HMAC Secret
 ```
 
 `flavor: gcs` is the important bit — Quickwit applies it as a bundle that disables multi-object delete and multipart upload, which GCS's S3 interop layer doesn't fully support. `quickwit.extraEnv` is propagated to all five Quickwit components (control-plane, indexer, janitor, metastore, searcher). For overrides that should only apply to one component, use the per-component knob — e.g. `quickwit.indexer.extraEnv` — which is appended after `quickwit.extraEnv`.
