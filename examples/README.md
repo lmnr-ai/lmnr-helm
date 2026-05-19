@@ -35,7 +35,7 @@ helm upgrade -i laminar .. -f ../laminar.yaml -f clickhouse-s3-storage.yaml
 
 Run Quickwit's full-text search index against Google Cloud Storage instead of AWS S3.
 
-**Use case:** Self-hosted Laminar on GKE / GCP. Resolves the IMDS InvalidToken (404) failure operators see when the chart's default AWS S3 config falls through to the EC2 metadata service that doesn't exist on GCP.
+**Use case:** Self-hosted Laminar on GKE / GCP.
 
 **Prerequisites:** GCS bucket and HMAC keys stored in a Kubernetes secret. Auth details inside the example file.
 
