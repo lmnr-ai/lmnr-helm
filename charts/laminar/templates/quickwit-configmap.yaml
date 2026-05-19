@@ -22,9 +22,6 @@ data:
         {{- with .Values.quickwit.s3.endpoint }}
         endpoint: {{ . | quote }}
         {{- end }}
-        {{- if .Values.quickwit.s3.forcePathStyleAccess }}
-        force_path_style_access: true
-        {{- end }}
     metastore_uri: ${QW_METASTORE_URI}
     grpc:
       max_message_size: {{ .Values.quickwit.config.grpcMaxMessageSize | quote }}

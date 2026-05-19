@@ -33,8 +33,6 @@ quickwit:
     flavor: "gcs"
     # GCS S3-interop endpoint.
     endpoint: "https://storage.googleapis.com"
-    # GCS does not support virtual-host-style addressing.
-    forcePathStyleAccess: true
 
   # HMAC credentials are wired into ALL Quickwit components
   # (control-plane, indexer, janitor, metastore, searcher) via the AWS

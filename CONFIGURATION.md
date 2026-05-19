@@ -1013,7 +1013,6 @@ quickwit:
     region: "us-central1"
     flavor: "gcs"
     endpoint: "https://storage.googleapis.com"
-    forcePathStyleAccess: true
   extraEnv:
     - name: AWS_ACCESS_KEY_ID
       valueFrom:
@@ -1027,23 +1026,11 @@ quickwit:
           key: secret-access-key
 ```
 
-`quickwit.extraEnv` is propagated to all five Quickwit components (control-plane, indexer, janitor, metastore, searcher). For overrides that should only apply to one component, use the per-component knob — e.g. `quickwit.indexer.extraEnv` — which is appended after `quickwit.extraEnv`.
+`flavor: gcs` is the important bit — Quickwit applies it as a bundle that disables multi-object delete and multipart upload, which GCS's S3 interop layer doesn't fully support. `quickwit.extraEnv` is propagated to all five Quickwit components (control-plane, indexer, janitor, metastore, searcher). For overrides that should only apply to one component, use the per-component knob — e.g. `quickwit.indexer.extraEnv` — which is appended after `quickwit.extraEnv`.
 
 A complete example also lives in [`examples/quickwit-gcs-storage.yaml`](./examples/quickwit-gcs-storage.yaml).
 
-### Other S3-compatible stores
-
-The same shape works for MinIO, Cloudflare R2, DigitalOcean Spaces, etc. Pick the right `flavor` and `endpoint`; supply HMAC-style credentials via `quickwit.extraEnv`.
-
-| Provider             | `flavor`  | `endpoint`                                             | `forcePathStyleAccess` |
-| -------------------- | --------- | ------------------------------------------------------ | ---------------------- |
-| AWS S3               | _(empty)_ | _(default)_                                            | `false`                |
-| Google Cloud Storage | `gcs`     | `https://storage.googleapis.com`                       | `true`                 |
-| MinIO                | `minio`   | `http://minio.<ns>.svc.cluster.local:9000`             | `true`                 |
-| Cloudflare R2        | _(empty)_ | `https://<account-id>.r2.cloudflarestorage.com`        | `true`                 |
-| DigitalOcean Spaces  | `do`      | `https://<region>.digitaloceanspaces.com`              | `false`                |
-
-See [Quickwit's storage configuration reference](https://quickwit.io/docs/configuration/storage-config) for the full list of supported flavors and the trade-offs each one applies (e.g. GCS disables multi-object delete and multipart upload).
+See [Quickwit's storage configuration reference](https://quickwit.io/docs/configuration/storage-config) for the full list of supported flavors.
 
 ## Node Placement
 
