@@ -70,6 +70,12 @@ quickwit:
   s3:
     defaultIndexRootUri: "s3://your-bucket-name/indexes"
     region: "<region>"
+    # On GCS, `flavor` and `endpoint` are auto-filled from
+    # `global.cloudProvider: gcp` — no need to set them here. Supply HMAC
+    # credentials via `quickwit.extraEnv` (Quickwit reads AWS_ACCESS_KEY_ID
+    # / AWS_SECRET_ACCESS_KEY directly). See examples/quickwit-gcs-storage.yaml.
+    # For non-AWS/GCP S3 stores (MinIO, R2, etc.), set `flavor` and
+    # `endpoint` explicitly here to override the cloud-provider defaults.
 
 appServerConsumer:
   env:

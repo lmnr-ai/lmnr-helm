@@ -15,6 +15,7 @@ This guide covers advanced configuration options for the Laminar Helm chart.
 - [Ingress and DNS](#ingress-and-dns)
 - [Storage Configuration](#storage-configuration)
 - [ClickHouse S3 Storage](#clickhouse-s3-storage)
+- [Quickwit Storage Backend](#quickwit-storage-backend)
 - [Node Placement](#node-placement)
 - [Resource Limits](#resource-limits)
 - [Upgrading the Chart](#upgrading-the-chart)
@@ -975,6 +976,71 @@ clickhouse:
           name: clickhouse-gcs-credentials
           key: secret-access-key
 ```
+
+## Quickwit Storage Backend
+
+Quickwit holds Laminar's full-text search index for spans. By default, the chart points it at AWS S3 in `us-east-1`. The same Quickwit deployment runs against any S3-compatible object store via `quickwit.s3.flavor` and `quickwit.s3.endpoint`.
+
+### Default (AWS S3)
+
+```yaml
+quickwit:
+  s3:
+    defaultIndexRootUri: "s3://my-bucket/indexes"
+    region: "us-east-1"
+```
+
+On EKS, credentials come from the node's IAM instance role via the AWS metadata service — no extra env vars needed.
+
+### Quickwit on GCS (GKE)
+
+Quickwit does not have a native GCP credential path. Use GCS's S3 interoperability layer with **HMAC keys**, fed in as `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`.
+
+This section assumes you've already followed [ClickHouse on GCS](#clickhouse-on-gcs-gcp) and have a `clickhouse-gcs` service account with HMAC keys. The chart is designed for one HMAC key pair to back both ClickHouse and Quickwit — you do **not** need a second SA or a second HMAC key.
+
+**1. Grant the existing service account access to the Quickwit bucket:**
+```bash
+gsutil iam ch \
+  serviceAccount:clickhouse-gcs@YOUR_PROJECT.iam.gserviceaccount.com:objectAdmin \
+  gs://YOUR_QUICKWIT_BUCKET
+```
+
+`objectAdmin` is required — Quickwit deletes objects during split merges and garbage collection, so read-only or create-only roles will fail mid-indexing with `AccessDenied`.
+
+**2. Make sure the HMAC credentials are in a Kubernetes secret.** If you followed step 2b of the ClickHouse section, reuse `clickhouse-gcs-credentials` — the snippet in step 3 below assumes that name. Otherwise, create a Quickwit-specific secret with the same HMAC key pair:
+```bash
+kubectl create secret generic quickwit-gcs-credentials \
+  --from-literal=access-key-id=GOOG1... \
+  --from-literal=secret-access-key=...
+```
+…and use `quickwit-gcs-credentials` as the `secretKeyRef.name` in step 3.
+
+**3. Configure `laminar.yaml`:**
+```yaml
+quickwit:
+  s3:
+    defaultIndexRootUri: "s3://my-quickwit-bucket/indexes"
+    region: "us-central1"
+  extraEnv:
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: clickhouse-gcs-credentials 
+          key: access-key-id # HMAC Access ID
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: clickhouse-gcs-credentials
+          key: secret-access-key # HMAC Secret
+```
+
+When `global.cloudProvider: gcp`, the chart auto-fills `quickwit.s3.flavor: "gcs"` and `quickwit.s3.endpoint: "https://storage.googleapis.com"` for you — that's the important bit, since Quickwit's `gcs` flavor disables multi-object delete and multipart upload (which GCS's S3 interop layer doesn't fully support). Set either knob explicitly only when you want to override the default, e.g. pointing at MinIO or a custom S3-compatible endpoint.
+
+`quickwit.extraEnv` is propagated to all five Quickwit components (control-plane, indexer, janitor, metastore, searcher). For overrides that should only apply to one component, use the per-component knob — e.g. `quickwit.indexer.extraEnv` — which is appended after `quickwit.extraEnv`.
+
+A complete example also lives in [`examples/quickwit-gcs-storage.yaml`](./examples/quickwit-gcs-storage.yaml).
+
+See [Quickwit's storage configuration reference](https://quickwit.io/docs/configuration/storage-config) for the full list of supported flavors.
 
 ## Node Placement
 

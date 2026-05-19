@@ -211,3 +211,16 @@ Generate envFrom for loading secrets from all applicable sources
     name: {{ include "laminar.resourceName" "app-secrets-vault" }}
 {{- end }}
 {{- end }}
+
+{{/*
+Quickwit per-component extraEnv. Renders chart-wide quickwit.extraEnv
+followed by the component's own extraEnv (later wins on duplicate names —
+matches Kubernetes semantics for the env array).
+Usage: {{ include "lmnr.quickwit.extraEnv" (dict "root" . "component" .Values.quickwit.indexer) }}
+*/}}
+{{- define "lmnr.quickwit.extraEnv" -}}
+{{- $envs := concat (.root.Values.quickwit.extraEnv | default list) (.component.extraEnv | default list) -}}
+{{- with $envs }}
+{{- toYaml . }}
+{{- end }}
+{{- end }}

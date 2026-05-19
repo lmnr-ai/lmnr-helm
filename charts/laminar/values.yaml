@@ -473,10 +473,47 @@ quickwit:
   nodeSelector: {}
   affinity: {}
   tolerations: []
-  # S3 storage configuration
+  # Extra environment variables applied to ALL Quickwit components
+  # (control-plane, indexer, janitor, metastore, searcher).
+  #
+  # Primary use case: inject S3 / S3-compatible HMAC credentials for
+  # non-AWS object stores (GCS, MinIO, R2, etc.) via secretKeyRef.
+  # Quickwit reads AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY directly from
+  # the pod environment, so no extra config surface is needed beyond these
+  # vars. See examples/quickwit-gcs-storage.yaml for a full GCS setup.
+  #
+  # Secondary use case: override Quickwit-specific tunables, e.g.
+  # QW_S3_MAX_CONCURRENCY, custom CA bundle paths.
+  extraEnv: []
+  # - name: AWS_ACCESS_KEY_ID
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: quickwit-gcs-credentials
+  #       key: access-key-id
+  # - name: AWS_SECRET_ACCESS_KEY
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: quickwit-gcs-credentials
+  #       key: secret-access-key
+  # S3 / object-store configuration
   s3:
     defaultIndexRootUri: "s3://lmnr-quickwit/indexes"
     region: "us-east-1"
+    # Quickwit storage flavor. When left empty, the chart auto-fills
+    # based on global.cloudProvider:
+    #   aws  -> "" (AWS SDK defaults)
+    #   gcp  -> "gcs" (GCS S3-interop mode)
+    # Set explicitly to override — e.g. "minio", "do" (DigitalOcean Spaces),
+    # or "garage" for other S3-compatible stores. Explicit value always wins.
+    # See https://quickwit.io/docs/configuration/storage-config
+    flavor: ""
+    # Custom S3 endpoint. When left empty, auto-filled from global.cloudProvider:
+    #   aws  -> "" (AWS S3 default endpoint)
+    #   gcp  -> "https://storage.googleapis.com"
+    # Set explicitly for non-AWS/GCP stores, e.g.:
+    #   MinIO:  http://minio.minio.svc.cluster.local:9000
+    #   R2:     https://<account-id>.r2.cloudflarestorage.com
+    endpoint: ""
   # Quickwit node.yaml settings
   config:
     # Increase from Quickwit's 4 MiB default — app-server-consumer can
@@ -494,6 +531,9 @@ quickwit:
       limits:
         cpu: "1.0"
         memory: "1Gi"
+    # Per-component extra env vars, appended to quickwit.extraEnv above.
+    # Use only when a single component needs an override the others don't.
+    extraEnv: []
   janitor:
     replicaCount: 1
     resources:
@@ -503,6 +543,7 @@ quickwit:
       limits:
         cpu: "1.0"
         memory: "1Gi"
+    extraEnv: []
   metastore:
     replicaCount: 1
     resources:
@@ -518,6 +559,7 @@ quickwit:
         - name: postgres
           host: laminar-postgres-service
           port: 5432
+    extraEnv: []
   indexer:
     replicaCount: 1
     resources:
@@ -567,6 +609,7 @@ quickwit:
       size: "20Gi"
     emptyDir:
       sizeLimit: "20Gi"
+    extraEnv: []
   searcher:
     replicaCount: 1
     resources:
@@ -591,6 +634,7 @@ quickwit:
       size: "10Gi"
     emptyDir:
       sizeLimit: "10Gi"
+    extraEnv: []
 
 # Query Engine configuration
 queryEngine:

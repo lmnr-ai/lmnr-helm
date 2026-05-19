@@ -31,6 +31,18 @@ Store ClickHouse data in S3 instead of local EBS volumes.
 helm upgrade -i laminar .. -f ../laminar.yaml -f clickhouse-s3-storage.yaml
 ```
 
+### Quickwit on GCS (`quickwit-gcs-storage.yaml`)
+
+Run Quickwit's full-text search index against Google Cloud Storage instead of AWS S3.
+
+**Use case:** Self-hosted Laminar on GKE / GCP.
+
+**Prerequisites:** GCS bucket and HMAC keys stored in a Kubernetes secret. Auth details inside the example file.
+
+```bash
+helm upgrade -i laminar .. -f ../laminar.yaml -f quickwit-gcs-storage.yaml
+```
+
 ### Mixed Storage Classes (`mixed-storage-classes.yaml`)
 
 Use different storage classes for different services based on performance needs.

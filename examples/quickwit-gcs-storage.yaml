@@ -1,0 +1,49 @@
+# Quickwit on Google Cloud Storage (GKE)
+#
+# Quickwit talks to GCS through GCS's S3 interoperability layer. There is
+# no native GCP-credential path in Quickwit today (no workload identity,
+# no service-account JSON), so the only supported auth is HMAC keys for a
+# GCP service account, fed in as AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY.
+#
+# This example assumes:
+#   1. You have a GCS bucket created (e.g. `my-quickwit-bucket`).
+#   2. You have created HMAC keys for a service account that can read/write
+#      that bucket. See:
+#      https://cloud.google.com/storage/docs/authentication/managing-hmackeys
+#   3. You have stored those keys in a Kubernetes secret in the release
+#      namespace, e.g.:
+#
+#        kubectl create secret generic quickwit-gcs-credentials \
+#          --from-literal=access-key-id=GOOG1...           \
+#          --from-literal=secret-access-key=...
+#
+# Usage:
+#   helm upgrade -i laminar ./charts/laminar \
+#     -f laminar.yaml \
+#     -f examples/quickwit-gcs-storage.yaml
+
+# Assumes laminar.yaml sets `global.cloudProvider: gcp`, which makes the
+# chart auto-fill `quickwit.s3.flavor: "gcs"` and
+# `quickwit.s3.endpoint: "https://storage.googleapis.com"`. Set those two
+# explicitly here only if you need to override the defaults.
+quickwit:
+  s3:
+    # GCS bucket where Quickwit splits and the metastore index live.
+    defaultIndexRootUri: "s3://my-quickwit-bucket/indexes"
+    # GCP region of the bucket.
+    region: "us-central1"
+
+  # HMAC credentials are wired into ALL Quickwit components
+  # (control-plane, indexer, janitor, metastore, searcher) via the AWS
+  # SDK env vars Quickwit reads natively.
+  extraEnv:
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: quickwit-gcs-credentials
+          key: access-key-id
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: quickwit-gcs-credentials
+          key: secret-access-key
