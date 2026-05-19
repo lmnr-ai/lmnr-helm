@@ -994,16 +994,26 @@ On EKS, credentials come from the node's IAM instance role via the AWS metadata 
 
 ### Quickwit on GCS (GKE)
 
-Quickwit does not have a native GCP credential path. Use GCS's S3 interoperability layer with **HMAC keys**, fed in as `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`. Without `flavor: gcs` and the HMAC env vars, the AWS SDK inside Quickwit falls through to the EC2 metadata service, which doesn't exist on GKE — operators see this as `IMDS InvalidToken (404)` in the indexer logs.
+Quickwit does not have a native GCP credential path. Use GCS's S3 interoperability layer with **HMAC keys**, fed in as `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`.
 
-**1. Create HMAC keys** for a service account that can read/write the bucket. See [Managing HMAC keys](https://cloud.google.com/storage/docs/authentication/managing-hmackeys).
+This section assumes you've already followed [ClickHouse on GCS](#clickhouse-on-gcs-gcp) and have a `clickhouse-gcs` service account with HMAC keys. The chart is designed for one HMAC key pair to back both ClickHouse and Quickwit — you do **not** need a second SA or a second HMAC key.
 
-**2. Store them in a Kubernetes secret:**
+**1. Grant the existing service account access to the Quickwit bucket:**
+```bash
+gsutil iam ch \
+  serviceAccount:clickhouse-gcs@YOUR_PROJECT.iam.gserviceaccount.com:objectAdmin \
+  gs://YOUR_QUICKWIT_BUCKET
+```
+
+`objectAdmin` is required — Quickwit deletes objects during split merges and garbage collection, so read-only or create-only roles will fail mid-indexing with `AccessDenied`.
+
+**2. Make sure the HMAC credentials are in a Kubernetes secret.** If you followed step 2b of the ClickHouse section, reuse `clickhouse-gcs-credentials` — the snippet in step 3 below assumes that name. Otherwise, create a Quickwit-specific secret with the same HMAC key pair:
 ```bash
 kubectl create secret generic quickwit-gcs-credentials \
   --from-literal=access-key-id=GOOG1... \
   --from-literal=secret-access-key=...
 ```
+…and use `quickwit-gcs-credentials` as the `secretKeyRef.name` in step 3.
 
 **3. Configure `laminar.yaml`:**
 ```yaml
@@ -1017,12 +1027,12 @@ quickwit:
     - name: AWS_ACCESS_KEY_ID
       valueFrom:
         secretKeyRef:
-          name: quickwit-gcs-credentials
+          name: clickhouse-gcs-credentials
           key: access-key-id
     - name: AWS_SECRET_ACCESS_KEY
       valueFrom:
         secretKeyRef:
-          name: quickwit-gcs-credentials
+          name: clickhouse-gcs-credentials
           key: secret-access-key
 ```
 
