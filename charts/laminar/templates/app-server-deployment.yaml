@@ -39,16 +39,16 @@ spec:
             httpGet:
               path: /health
               port: 8000
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            failureThreshold: 1
+            initialDelaySeconds: {{ .Values.appServer.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.appServer.livenessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.appServer.livenessProbe.failureThreshold }}
           readinessProbe:
             httpGet:
               path: /ready
               port: 8000
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            failureThreshold: 1
+            initialDelaySeconds: {{ .Values.appServer.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.appServer.readinessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.appServer.readinessProbe.failureThreshold }}
           env:
             - name: OPERATION_MODE
               value: "producer"
