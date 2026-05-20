@@ -351,7 +351,7 @@ appServer:
     annotations: {}
   nginx:
     # In-pod proxy_pass target. Override to "127.0.0.1" on dual-stack hosts
-    # hitting `connect() failed` errors, or "::1" for IPv6-only deploys.
+    # hitting `connect() failed` errors, or "[::1]" for IPv6-only deploys.
     proxyUpstreamHost: "localhost"
     resources:
       requests:
