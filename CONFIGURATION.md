@@ -1025,12 +1025,12 @@ quickwit:
     - name: AWS_ACCESS_KEY_ID
       valueFrom:
         secretKeyRef:
-          name: clickhouse-gcs-credentials 
+          name: quickwit-gcs-credentials 
           key: access-key-id # HMAC Access ID
     - name: AWS_SECRET_ACCESS_KEY
       valueFrom:
         secretKeyRef:
-          name: clickhouse-gcs-credentials
+          name: quickwit-gcs-credentials
           key: secret-access-key # HMAC Secret
 ```
 
