@@ -112,10 +112,12 @@ spec:
               value: {{ .Values.global.environment }}
             - name: ENABLE_TRACING
               value: {{ .Values.appServerConsumer.env.enableTracing | quote }}
+            {{- if include "lmnr.quickwit.enabled" . }}
             - name: QUICKWIT_SEARCH_URL
               value: {{ .Values.appServerConsumer.env.quickwitSearchUrl }}
             - name: QUICKWIT_INGEST_URL
               value: {{ .Values.appServerConsumer.env.quickwitIngestUrl }}
+            {{- end }}
             {{- with .Values.appServerConsumer.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

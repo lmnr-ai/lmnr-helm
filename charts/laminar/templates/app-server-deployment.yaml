@@ -80,10 +80,12 @@ spec:
               value: {{ .Values.appServer.env.enableTracing | quote }}
             - name: QUERY_ENGINE_URL
               value: {{ .Values.appServer.env.queryEngineUrl }}
+            {{- if include "lmnr.quickwit.enabled" . }}
             - name: QUICKWIT_SEARCH_URL
               value: {{ .Values.appServer.env.quickwitSearchUrl }}
             - name: QUICKWIT_INGEST_URL
               value: {{ .Values.appServer.env.quickwitIngestUrl }}
+            {{- end }}
             - name: LLM_PROVIDER
               value: {{ .Values.appServer.env.llmProvider | quote }}
             - name: LLM_BASE_URL

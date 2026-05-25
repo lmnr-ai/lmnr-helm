@@ -66,8 +66,10 @@ spec:
               value: {{ .Values.frontend.env.nextPublicUrl }}
             - name: REDIS_URL
               value: {{ .Values.frontend.env.redisUrl }}
+            {{- if include "lmnr.quickwit.enabled" . }}
             - name: QUICKWIT_SEARCH_URL
               value: {{ .Values.frontend.env.quickwitSearchUrl }}
+            {{- end }}
             - name: LLM_PROVIDER
               value: {{ .Values.frontend.env.llmProvider | quote }}
             - name: LLM_BASE_URL

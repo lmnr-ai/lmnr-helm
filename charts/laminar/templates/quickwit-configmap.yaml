@@ -1,4 +1,4 @@
-{{- if .Values.quickwit.enabled }}
+{{- if include "lmnr.quickwit.enabled" . }}
 {{- /*
 Resolve Quickwit S3 flavor/endpoint with cloud-provider-aware defaults.
 Explicit `quickwit.s3.flavor` / `quickwit.s3.endpoint` always win; when
