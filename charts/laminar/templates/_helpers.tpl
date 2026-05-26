@@ -232,12 +232,7 @@ Both conditions must hold:
   - .Values.quickwit.enabled (operator opt-in / explicit disable)
   - .Values.quickwit.s3.defaultIndexRootUri non-empty
 The bucket gate prevents Quickwit from spinning up against a placeholder
-bucket name and silently creating indexes the operator can't write to —
-on first run the frontend would create indexes against the default URI,
-and Quickwit pins each index's storage URI in the metastore at creation
-time, so a later bucket override does not relocate them. Operators must
-either point the URI at a real bucket they own or leave it empty to
-disable Quickwit entirely (search degrades gracefully).
+bucket name and silently creating indexes the operator can't write to.
 */}}
 {{- define "lmnr.quickwit.enabled" -}}
 {{- if and .Values.quickwit.enabled .Values.quickwit.s3.defaultIndexRootUri -}}
