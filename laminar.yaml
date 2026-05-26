@@ -49,6 +49,8 @@ frontend:
     # For OpenAI-compatible gateways (LiteLLM, OpenRouter, vLLM):
     # llmBaseUrl: "http://my-gateway:4000"
     # Optional non-sensitive HTTP headers for LLM provider requests:
+    llmExtraHeaders: {}
+    # Example:
     # llmExtraHeaders:
     #   x-skip-generative-ai-check: "true"
   # Extra environment variables — use to reference pre-existing K8s Secrets
@@ -93,6 +95,8 @@ appServerConsumer:
     # Optional overrides. Per-provider defaults apply when empty.
     # llmBaseUrl: "http://my-gateway:4000"
     # Optional non-sensitive HTTP headers for LLM provider requests:
+    llmExtraHeaders: {}
+    # Example:
     # llmExtraHeaders:
     #   x-skip-generative-ai-check: "true"
     # llmModelSmall: "gemini-3-flash-preview"
