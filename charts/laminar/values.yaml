@@ -253,10 +253,10 @@ frontend:
     # Optional base URL override. Used by openai for OpenAI-compatible gateways
     # (LiteLLM, OpenRouter, vLLM) and by gemini for custom endpoints.
     llmBaseUrl: ""
-    # Optional extra HTTP headers for LLM provider requests. Rendered as
-    # LLM_EXTRA_HEADERS_JSON. For sensitive values, use frontend.extraEnv
-    # to source LLM_EXTRA_HEADERS_JSON from a Kubernetes Secret instead.
-    llmExtraHeaders: {}
+    # Optional default HTTP headers for LLM provider requests. Rendered as
+    # LLM_DEFAULT_HEADERS_JSON. For sensitive values, use frontend.extraEnv
+    # to source LLM_DEFAULT_HEADERS_JSON from a Kubernetes Secret instead.
+    llmDefaultHeaders: {}
     # Optional model overrides per size tier. Per-provider defaults apply when empty.
     llmModelSmall: ""
     llmModelMedium: ""
@@ -383,10 +383,10 @@ appServer:
     llmProvider: "gemini"
     # Optional base URL override (OpenAI-compatible gateways or custom Gemini endpoints).
     llmBaseUrl: ""
-    # Optional extra HTTP headers for LLM provider requests. Rendered as
-    # LLM_EXTRA_HEADERS_JSON. For sensitive values, use appServer.extraEnv
-    # to source LLM_EXTRA_HEADERS_JSON from a Kubernetes Secret instead.
-    llmExtraHeaders: {}
+    # Optional default HTTP headers for LLM provider requests. Rendered as
+    # LLM_DEFAULT_HEADERS_JSON. For sensitive values, use appServer.extraEnv
+    # to source LLM_DEFAULT_HEADERS_JSON from a Kubernetes Secret instead.
+    llmDefaultHeaders: {}
     # Optional model overrides per size tier. Per-provider defaults apply when empty.
     llmModelSmall: ""
     llmModelMedium: ""
@@ -455,10 +455,10 @@ appServerConsumer:
     llmProvider: "gemini"
     # Optional base URL override (OpenAI-compatible gateways or custom Gemini endpoints).
     llmBaseUrl: ""
-    # Optional extra HTTP headers for LLM provider requests. Rendered as
-    # LLM_EXTRA_HEADERS_JSON. For sensitive values, use appServerConsumer.extraEnv
-    # to source LLM_EXTRA_HEADERS_JSON from a Kubernetes Secret instead.
-    llmExtraHeaders: {}
+    # Optional default HTTP headers for LLM provider requests. Rendered as
+    # LLM_DEFAULT_HEADERS_JSON. For sensitive values, use appServerConsumer.extraEnv
+    # to source LLM_DEFAULT_HEADERS_JSON from a Kubernetes Secret instead.
+    llmDefaultHeaders: {}
     # Optional model overrides per size tier. Per-provider defaults apply when empty.
     llmModelSmall: ""
     llmModelMedium: ""
