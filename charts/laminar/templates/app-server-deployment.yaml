@@ -23,6 +23,14 @@ spec:
           image: busybox:latest
           command: ['sh', '-c', 'until nc -z {{ .host }} {{ .port }}; do echo "waiting for {{ .name }}..."; sleep 2; done; echo "{{ .name }} is ready"']
         {{- end }}
+        {{- if include "lmnr.quickwit.enabled" . }}
+        - name: wait-for-quickwit-searcher
+          image: busybox:latest
+          command: ['sh', '-c', 'until nc -z {{ include "laminar.resourceName" "quickwit-searcher" }} 7280; do echo "waiting for quickwit-searcher..."; sleep 2; done; echo "quickwit-searcher is ready"']
+        - name: wait-for-quickwit-indexer
+          image: busybox:latest
+          command: ['sh', '-c', 'until nc -z {{ include "laminar.resourceName" "quickwit-indexer" }} 7281; do echo "waiting for quickwit-indexer..."; sleep 2; done; echo "quickwit-indexer is ready"']
+        {{- end }}
       {{- end }}
       containers:
         - name: app-server
