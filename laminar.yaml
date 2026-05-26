@@ -68,7 +68,12 @@ frontend:
 
 quickwit:
   s3:
-    defaultIndexRootUri: "s3://your-bucket-name/indexes"
+    # REQUIRED to enable Quickwit. Point at a bucket you own; the chart
+    # treats this as the master switch for the whole Quickwit stack
+    # (workloads + QUICKWIT_*_URL env vars on app pods). Leave empty to
+    # disable Quickwit (search is gracefully disabled — the rest of the
+    # platform works as normal).
+    defaultIndexRootUri: ""
     region: "<region>"
     # On GCS, `flavor` and `endpoint` are auto-filled from
     # `global.cloudProvider: gcp` — no need to set them here. Supply HMAC

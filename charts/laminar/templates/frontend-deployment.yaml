@@ -23,6 +23,11 @@ spec:
           image: busybox:latest
           command: ['sh', '-c', 'until nc -z {{ .host }} {{ .port }}; do echo "waiting for {{ .name }}..."; sleep 2; done; echo "{{ .name }} is ready"']
         {{- end }}
+        {{- if include "lmnr.quickwit.enabled" . }}
+        - name: wait-for-quickwit-searcher
+          image: busybox:latest
+          command: ['sh', '-c', 'until nc -z {{ include "laminar.resourceName" "quickwit-searcher" }} 7280; do echo "waiting for quickwit-searcher..."; sleep 2; done; echo "quickwit-searcher is ready"']
+        {{- end }}
         {{- range .Values.frontend.waitForDependencies.httpChecks }}
         - name: http-wait-for-{{ .name }}
           image: curlimages/curl:8.5.0
@@ -66,8 +71,10 @@ spec:
               value: {{ .Values.frontend.env.nextPublicUrl }}
             - name: REDIS_URL
               value: {{ .Values.frontend.env.redisUrl }}
+            {{- if include "lmnr.quickwit.enabled" . }}
             - name: QUICKWIT_SEARCH_URL
               value: {{ .Values.frontend.env.quickwitSearchUrl }}
+            {{- end }}
             - name: LLM_PROVIDER
               value: {{ .Values.frontend.env.llmProvider | quote }}
             - name: LLM_BASE_URL

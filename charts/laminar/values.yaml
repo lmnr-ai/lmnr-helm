@@ -497,7 +497,15 @@ quickwit:
   #       key: secret-access-key
   # S3 / object-store configuration
   s3:
-    defaultIndexRootUri: "s3://lmnr-quickwit/indexes"
+    # Quickwit's index root URI. MUST be set to a bucket you own
+    # (e.g. "s3://my-laminar-quickwit/indexes"); leave empty to disable
+    # Quickwit entirely. Quickwit pins each index's storage URI in the
+    # metastore at creation time, so the chart treats this value as the
+    # opt-in gate for the whole Quickwit stack — an empty value skips
+    # the Quickwit workloads AND the QUICKWIT_SEARCH_URL / QUICKWIT_INGEST_URL
+    # env vars on frontend / app-server / app-server-consumer. Search
+    # degrades gracefully when Quickwit is off.
+    defaultIndexRootUri: ""
     region: "us-east-1"
     # Quickwit storage flavor. When left empty, the chart auto-fills
     # based on global.cloudProvider:

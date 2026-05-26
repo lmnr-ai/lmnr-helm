@@ -224,3 +224,18 @@ Usage: {{ include "lmnr.quickwit.extraEnv" (dict "root" . "component" .Values.qu
 {{- toYaml . }}
 {{- end }}
 {{- end }}
+
+{{/*
+Quickwit master gate. Returns "true" when Quickwit should be deployed AND
+the app pods should advertise QUICKWIT_SEARCH_URL / QUICKWIT_INGEST_URL.
+Both conditions must hold:
+  - .Values.quickwit.enabled (operator opt-in / explicit disable)
+  - .Values.quickwit.s3.defaultIndexRootUri non-empty
+The bucket gate prevents Quickwit from spinning up against a placeholder
+bucket name and silently creating indexes the operator can't write to.
+*/}}
+{{- define "lmnr.quickwit.enabled" -}}
+{{- if and .Values.quickwit.enabled .Values.quickwit.s3.defaultIndexRootUri -}}
+true
+{{- end -}}
+{{- end }}

@@ -1,4 +1,4 @@
-{{- if .Values.quickwit.enabled }}
+{{- if include "lmnr.quickwit.enabled" . }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
