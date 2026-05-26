@@ -98,6 +98,10 @@ spec:
               value: {{ .Values.appServer.env.llmProvider | quote }}
             - name: LLM_BASE_URL
               value: {{ .Values.appServer.env.llmBaseUrl | quote }}
+            {{- with .Values.appServer.env.llmExtraHeaders }}
+            - name: LLM_EXTRA_HEADERS_JSON
+              value: {{ toJson . | quote }}
+            {{- end }}
             - name: LLM_MODEL_SMALL
               value: {{ .Values.appServer.env.llmModelSmall | quote }}
             - name: LLM_MODEL_MEDIUM
