@@ -70,13 +70,11 @@ quickwit:
   s3:
     # REQUIRED to enable Quickwit. Point at a bucket you own; the chart
     # treats this as the master switch for the whole Quickwit stack
-    # (workloads + QUICKWIT_*_URL env vars on app pods). Quickwit pins the
-    # bucket per-index in its metastore at creation time, so once an
-    # index is created against the wrong URI, switching here later will
-    # not relocate it. Leave commented to disable Quickwit (search is
-    # gracefully disabled — the rest of the platform works as normal).
-    defaultIndexRootUri: "s3://your-bucket-name/indexes"
-    region: "<region>"
+    # (workloads + QUICKWIT_*_URL env vars on app pods). Leave commented
+    # to disable Quickwit (search is gracefully disabled — the rest of
+    # the platform works as normal).
+    # defaultIndexRootUri: "s3://your-bucket-name/indexes"
+    # region: "<region>"
     # On GCS, `flavor` and `endpoint` are auto-filled from
     # `global.cloudProvider: gcp` — no need to set them here. Supply HMAC
     # credentials via `quickwit.extraEnv` (Quickwit reads AWS_ACCESS_KEY_ID
