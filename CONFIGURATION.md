@@ -981,8 +981,6 @@ clickhouse:
 
 Quickwit holds Laminar's full-text search index for spans. The chart treats `quickwit.s3.defaultIndexRootUri` as the master switch for the Quickwit stack: leave it empty and the Quickwit workloads are skipped, the `QUICKWIT_*_URL` env vars are dropped from the app pods, and search degrades gracefully (the rest of the platform is unaffected). Set it to a bucket you own to enable Quickwit. The same Quickwit deployment runs against any S3-compatible object store via `quickwit.s3.flavor` and `quickwit.s3.endpoint`.
 
-> **Why the URI is the gate.** Quickwit pins each index's storage URI in the metastore at index-creation time. If the chart spun Quickwit up against a placeholder bucket, the frontend's first-boot index initialization would create indexes against that placeholder; later switching `defaultIndexRootUri` to the real bucket has no effect on existing indexes — they keep pointing at the original (likely non-existent) location, and ingestion silently fails. Forcing operators to set the URI explicitly avoids that footgun.
-
 ### Default (AWS S3)
 
 ```yaml
