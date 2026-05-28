@@ -515,6 +515,10 @@ of environment variables:
 - `LLM_API_KEY` — key for `gemini` or `openai`. Set via `secrets.data`.
 - `LLM_BASE_URL` — optional, for OpenAI-compatible gateways (LiteLLM,
   OpenRouter, vLLM) or custom Gemini endpoints. Set via `*.env.llmBaseUrl`.
+- `LLM_DEFAULT_HEADERS_JSON` — optional JSON object of default HTTP headers
+  to send with LLM provider requests. Set non-sensitive values via
+  `*.env.llmDefaultHeaders`; for sensitive header values, set
+  `LLM_DEFAULT_HEADERS_JSON` through `*.extraEnv` and a Kubernetes Secret.
 - `LLM_MODEL_SMALL` / `LLM_MODEL_MEDIUM` / `LLM_MODEL_LARGE` — optional
   per-tier model overrides. Per-provider defaults apply when unset. For
   Bedrock, these values are Inference Profile IDs.
@@ -543,18 +547,40 @@ frontend:
     llmProvider: "openai"
     # Optional: OpenAI-compatible gateway (LiteLLM, OpenRouter, vLLM)
     # llmBaseUrl: "http://my-gateway:4000"
+    # Optional: default non-sensitive HTTP headers for provider requests
+    # llmDefaultHeaders:
+    #   x-skip-generative-ai-check: "true"
 
 appServer:
   env:
     llmProvider: "openai"
+    # Optional: default non-sensitive HTTP headers for provider requests
+    # llmDefaultHeaders:
+    #   x-skip-generative-ai-check: "true"
 
 appServerConsumer:
   env:
     llmProvider: "openai"
+    # Optional: default non-sensitive HTTP headers for provider requests
+    # llmDefaultHeaders:
+    #   x-skip-generative-ai-check: "true"
 
 secrets:
   data:
     LLM_API_KEY: "your-openai-or-gateway-key"
+```
+
+For sensitive header values, store the full JSON object in a Kubernetes Secret
+and inject it with `extraEnv` instead of putting the values in `laminar.yaml`:
+
+```yaml
+appServerConsumer:
+  extraEnv:
+    - name: LLM_DEFAULT_HEADERS_JSON
+      valueFrom:
+        secretKeyRef:
+          name: llm-default-headers
+          key: headers-json
 ```
 
 ### AWS Bedrock

@@ -104,6 +104,10 @@ spec:
               value: {{ .Values.appServerConsumer.env.llmProvider | quote }}
             - name: LLM_BASE_URL
               value: {{ .Values.appServerConsumer.env.llmBaseUrl | quote }}
+            {{- with .Values.appServerConsumer.env.llmDefaultHeaders }}
+            - name: LLM_DEFAULT_HEADERS_JSON
+              value: {{ toJson . | quote }}
+            {{- end }}
             - name: LLM_MODEL_SMALL
               value: {{ .Values.appServerConsumer.env.llmModelSmall | quote }}
             - name: LLM_MODEL_MEDIUM
