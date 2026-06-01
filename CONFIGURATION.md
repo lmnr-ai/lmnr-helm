@@ -16,6 +16,7 @@ This guide covers advanced configuration options for the Laminar Helm chart.
 - [Storage Configuration](#storage-configuration)
 - [ClickHouse S3 Storage](#clickhouse-s3-storage)
 - [Quickwit Storage Backend](#quickwit-storage-backend)
+- [PII Redaction](#pii-redaction)
 - [Node Placement](#node-placement)
 - [Resource Limits](#resource-limits)
 - [Upgrading the Chart](#upgrading-the-chart)
@@ -1067,6 +1068,71 @@ When `global.cloudProvider: gcp`, the chart auto-fills `quickwit.s3.flavor: "gcs
 A complete example also lives in [`examples/quickwit-gcs-storage.yaml`](./examples/quickwit-gcs-storage.yaml).
 
 See [Quickwit's storage configuration reference](https://quickwit.io/docs/configuration/storage-config) for the full list of supported flavors.
+
+## PII Redaction
+
+The PII redactor is an optional CPU-only gRPC service that strips personally identifiable information from spans before they are persisted. It is **disabled by default**. The detection model is baked into the image, so the service has no database or secret dependencies.
+
+When enabled, the chart injects `PII_REDACTOR_URL` into both the `app-server` and `app-server-consumer` pods, which activates redaction (the consumer is where redaction actually runs during span processing).
+
+Enable it in your `laminar.yaml`:
+
+```yaml
+piiRedactor:
+  enabled: true
+```
+
+### Pinning to a dedicated node
+
+PII detection is CPU-intensive ONNX inference, so you will typically want to run it on a dedicated compute-optimized machine. Use the standard `nodeSelector` / `affinity` / `tolerations` knobs (same pattern as every other service) to attach it to a specific node:
+
+```yaml
+piiRedactor:
+  enabled: true
+  nodeSelector:
+    node.kubernetes.io/instance-type: c8i.2xlarge
+  tolerations:
+    - key: "dedicated"
+      operator: "Equal"
+      value: "pii-redactor"
+      effect: "NoSchedule"
+```
+
+Or pin to an eksctl node group via affinity:
+
+```yaml
+piiRedactor:
+  enabled: true
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: alpha.eksctl.io/nodegroup-name
+            operator: In
+            values:
+            - pii-redactor
+```
+
+### Tuning
+
+Sizing and runtime behavior are configurable. The `env` values map to the service's `PII_*` environment variables; commented entries fall back to the service's own defaults:
+
+```yaml
+piiRedactor:
+  enabled: true
+  resources:
+    requests:
+      cpu: "2"
+      memory: "4Gi"
+    limits:
+      cpu: "8"
+      memory: "16Gi"
+  env:
+    port: 8910
+    maxBatchSize: 16
+    maxQueueDelayMs: 10
+```
 
 ## Node Placement
 

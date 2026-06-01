@@ -130,6 +130,10 @@ spec:
             - name: QUICKWIT_INGEST_URL
               value: {{ .Values.appServerConsumer.env.quickwitIngestUrl }}
             {{- end }}
+            {{- if .Values.piiRedactor.enabled }}
+            - name: PII_REDACTOR_URL
+              value: http://{{ include "laminar.resourceName" "pii-redactor-service" }}:{{ .Values.piiRedactor.service.port }}
+            {{- end }}
             {{- with .Values.appServerConsumer.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
