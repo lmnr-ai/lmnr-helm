@@ -27,29 +27,29 @@ spec:
           env:
             - name: PII_PORT
               value: {{ .Values.piiRedactor.env.port | quote }}
-            {{- with .Values.piiRedactor.env.chunkSize }}
+            {{- if not (kindIs "invalid" .Values.piiRedactor.env.chunkSize) }}
             - name: PII_CHUNK_SIZE
-              value: {{ . | quote }}
+              value: {{ .Values.piiRedactor.env.chunkSize | quote }}
             {{- end }}
-            {{- with .Values.piiRedactor.env.chunkOverlap }}
+            {{- if not (kindIs "invalid" .Values.piiRedactor.env.chunkOverlap) }}
             - name: PII_CHUNK_OVERLAP
-              value: {{ . | quote }}
+              value: {{ .Values.piiRedactor.env.chunkOverlap | quote }}
             {{- end }}
-            {{- with .Values.piiRedactor.env.maxTokensPerText }}
+            {{- if not (kindIs "invalid" .Values.piiRedactor.env.maxTokensPerText) }}
             - name: PII_MAX_TOKENS_PER_TEXT
-              value: {{ . | quote }}
+              value: {{ .Values.piiRedactor.env.maxTokensPerText | quote }}
             {{- end }}
-            {{- with .Values.piiRedactor.env.maxBatchSize }}
+            {{- if not (kindIs "invalid" .Values.piiRedactor.env.maxBatchSize) }}
             - name: PII_MAX_BATCH_SIZE
-              value: {{ . | quote }}
+              value: {{ .Values.piiRedactor.env.maxBatchSize | quote }}
             {{- end }}
-            {{- with .Values.piiRedactor.env.maxQueueDelayMs }}
+            {{- if not (kindIs "invalid" .Values.piiRedactor.env.maxQueueDelayMs) }}
             - name: PII_MAX_QUEUE_DELAY_MS
-              value: {{ . | quote }}
+              value: {{ .Values.piiRedactor.env.maxQueueDelayMs | quote }}
             {{- end }}
-            {{- with .Values.piiRedactor.env.maxTextsPerRequest }}
+            {{- if not (kindIs "invalid" .Values.piiRedactor.env.maxTextsPerRequest) }}
             - name: PII_MAX_TEXTS_PER_REQUEST
-              value: {{ . | quote }}
+              value: {{ .Values.piiRedactor.env.maxTextsPerRequest | quote }}
             {{- end }}
             {{- if not (kindIs "invalid" .Values.piiRedactor.env.intraThreads) }}
             - name: PII_INTRA_THREADS
