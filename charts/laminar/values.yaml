@@ -27,6 +27,9 @@ images:
   queryEngine:
     name: "query-engine-ee"
     tag: "latest"
+  piiRedactor:
+    name: "pii-redactor-ee"
+    tag: "latest"
   redis:
     repository: "valkey/valkey"
     tag: "latest"
@@ -675,6 +678,54 @@ queryEngine:
     type: ClusterIP
     port: 8903
     targetPort: 8903
+
+# PII Redactor configuration (optional, off by default)
+# CPU-only ONNX gRPC service that strips PII from spans before persistence.
+# When enabled, PII_REDACTOR_URL is injected into the app-server and
+# app-server-consumer pods, which activates the redaction feature.
+# The model is baked into the image, so this service has no external deps.
+piiRedactor:
+  enabled: false
+  replicaCount: 1
+  # PII detection is CPU-intensive ONNX inference; size generously and
+  # consider pinning to a dedicated compute-optimized node (see scheduling below).
+  resources:
+    requests:
+      cpu: "2"
+      memory: "4Gi"
+    limits:
+      cpu: "8"
+      memory: "16Gi"
+  # Node scheduling configuration — set these to attach the PII redactor to a
+  # specific machine / node group (e.g. a compute-optimized instance).
+  # Example:
+  #   nodeSelector:
+  #     node.kubernetes.io/instance-type: c8i.2xlarge
+  #   tolerations:
+  #     - key: "dedicated"
+  #       operator: "Equal"
+  #       value: "pii-redactor"
+  #       effect: "NoSchedule"
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  service:
+    type: ClusterIP
+    port: 8910
+  # Runtime tuning (passed through as env vars). Defaults match the service's
+  # own built-in defaults; override only when needed.
+  env:
+    port: 8910
+    # chunkSize: 512
+    # chunkOverlap: 64
+    # maxTokensPerText: 24576
+    # maxBatchSize: 16
+    # maxQueueDelayMs: 10
+    # maxTextsPerRequest: 1024
+    # intraThreads: 0
+    # interThreads: 1
+  # Extra environment variables appended to the container (later wins on dupes).
+  extraEnv: []
 
 # PostgreSQL configuration
 postgres:
