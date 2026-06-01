@@ -712,7 +712,6 @@ piiRedactor:
   service:
     type: ClusterIP
     port: 8910
-    targetPort: 8910
   # Runtime tuning (passed through as env vars). Defaults match the service's
   # own built-in defaults; override only when needed.
   env:

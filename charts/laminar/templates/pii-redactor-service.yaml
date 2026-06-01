@@ -9,6 +9,6 @@ spec:
   ports:
     - protocol: TCP
       port: {{ .Values.piiRedactor.service.port }}
-      targetPort: {{ .Values.piiRedactor.service.targetPort }}
+      targetPort: {{ .Values.piiRedactor.env.port }}
   type: {{ .Values.piiRedactor.service.type }}
 {{- end }}
