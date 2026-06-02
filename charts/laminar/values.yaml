@@ -266,6 +266,8 @@ frontend:
     llmModelLarge: ""
     # Enables the Signals feature in the frontend. Requires llmProvider (+ creds).
     signalsEnabled: "true"
+    # Enables the chat-with-trace feature in the frontend. Requires llmProvider (+ creds).
+    agentChatEnabled: "true"
   # First launch runs all migrations to prepare databases, which can take several minutes.
   # Larger initial delays are set to account for this.
   readinessProbe:
