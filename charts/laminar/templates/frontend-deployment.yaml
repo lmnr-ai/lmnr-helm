@@ -91,6 +91,8 @@ spec:
               value: {{ .Values.frontend.env.llmModelLarge | quote }}
             - name: SIGNALS_ENABLED
               value: {{ .Values.frontend.env.signalsEnabled | quote }}
+            - name: AGENT_CHAT_ENABLED
+              value: {{ .Values.frontend.env.agentChatEnabled | quote }}
             {{- with .Values.frontend.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

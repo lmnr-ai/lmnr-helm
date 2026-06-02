@@ -526,9 +526,9 @@ of environment variables:
 - `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` — used by
   `bedrock` instead of `LLM_API_KEY`. Set via `secrets.data`.
 
-`signalsEnabled` on the frontend defaults to `"true"`; AI features in the
-frontend are active as soon as `LLM_API_KEY` (or AWS credentials for
-Bedrock) is populated.
+`signalsEnabled` and `agentChatEnabled` on the frontend default to `"true"`;
+AI features in the frontend are active as soon as `LLM_API_KEY` (or AWS
+credentials for Bedrock) is populated.
 
 ### Gemini (default)
 
@@ -629,6 +629,16 @@ Signals are enabled by default in the frontend. To disable:
 frontend:
   env:
     signalsEnabled: "false"
+```
+
+### Disabling chat-with-trace
+
+The chat-with-trace feature is enabled by default in the frontend. To disable:
+
+```yaml
+frontend:
+  env:
+    agentChatEnabled: "false"
 ```
 
 ## Ingress and DNS
