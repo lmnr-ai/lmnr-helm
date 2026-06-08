@@ -31,7 +31,7 @@ The whole Quickwit stack (workloads + `QUICKWIT_*_URL` env vars on the three app
 
 ## Slack integration (self-hosters)
 
-Two mutually exclusive wirings, both via `secrets.data`: brokered (`SLACK_BROKER_URL` + `LMNR_LICENSE_KEY`, uses Laminar Cloud's Slack app — recommended) or bring-your-own (`SLACK_CLIENT_ID`/`SECRET`/`SIGNING_SECRET`/`REDIRECT_URL`). `LMNR_LICENSE_KEY` is the general enterprise license key (reused by other paid features), authenticated broker-side via SHA3-256 hash lookup against the instance's `slack_broker_instances` table. Documented under "Slack Integration" in CONFIGURATION.md.
+Self-hosters use the brokered OAuth flow via `secrets.data`: `SLACK_BROKER_URL` (= `https://laminar.sh`, Laminar Cloud's origin) + `LMNR_LICENSE_KEY`. This uses Laminar Cloud's official Slack app, so self-hosters don't recreate the Slack app or set `SLACK_CLIENT_ID`/`SECRET`/`SIGNING_SECRET`/`REDIRECT_URL` (those were removed from the chart — bring-your-own is no longer supported). `LMNR_LICENSE_KEY` is the general enterprise license key (reused by other paid features), authenticated broker-side via SHA3-256 hash lookup against the Cloud `slack_broker_instances` table. Documented under "Slack Integration" in CONFIGURATION.md.
 
 ## Object storage (Quickwit + ClickHouse)
 

@@ -508,44 +508,26 @@ helm upgrade -i laminar . -f laminar.yaml
 
 ## Slack Integration
 
-Laminar can post notifications and signal alerts to Slack. Self-hosters have two
-ways to wire it up.
-
-### Option 1: Brokered (recommended)
-
-With the broker, your instance uses **Laminar Cloud's official Slack app** — you
-do not register a Slack app of your own. Laminar Cloud runs both legs of the
-OAuth flow on your behalf; the bot token is returned to your instance
-server-to-server and is encrypted at rest. Your instance authenticates to the
-broker with an **enterprise license key** issued by Laminar.
+Laminar can post notifications and signal alerts to Slack. Self-hosters connect
+Slack through Laminar Cloud's **broker**: your instance uses Laminar Cloud's
+official Slack app — you do not register a Slack app of your own. Laminar Cloud
+runs both legs of the OAuth flow on your behalf; the bot token is returned to
+your instance server-to-server and is encrypted at rest. Your instance
+authenticates to the broker with an **enterprise license key** issued by Laminar.
 
 Set the broker URL and your license key in `laminar.yaml`:
 
 ```yaml
 secrets:
   data:
-    SLACK_BROKER_URL: "https://api.lmnr.ai"
+    SLACK_BROKER_URL: "https://laminar.sh"
     LMNR_LICENSE_KEY: "your-enterprise-license-key"
 ```
 
-`LMNR_LICENSE_KEY` is the same key used to gate other paid features — request one
-from Laminar. When both `SLACK_BROKER_URL` and `LMNR_LICENSE_KEY` are set, the
-"Connect Slack" button in the workspace settings uses the brokered flow; the
-bring-your-own credentials below are not needed.
-
-### Option 2: Bring your own Slack app
-
-Register your own Slack app at https://api.slack.com/apps with redirect URL
-`https://app.yourdomain.com/api/integrations/slack/callback`, then set:
-
-```yaml
-secrets:
-  data:
-    SLACK_CLIENT_ID: "your-slack-client-id"
-    SLACK_CLIENT_SECRET: "your-slack-client-secret"
-    SLACK_SIGNING_SECRET: "your-slack-signing-secret"
-    SLACK_REDIRECT_URL: "https://app.yourdomain.com/api/integrations/slack/callback"
-```
+`SLACK_BROKER_URL` is Laminar Cloud's frontend origin (`https://laminar.sh`),
+which hosts the broker routes. `LMNR_LICENSE_KEY` is the same key used to gate
+other paid features — request one from Laminar. When both are set, the "Connect
+Slack" button in workspace settings uses the brokered flow.
 
 ### Token encryption key
 
