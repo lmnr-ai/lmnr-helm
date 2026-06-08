@@ -25,6 +25,14 @@ A common failure mode: two `toYaml` blocks emitted back-to-back into a `env:` ar
 
 The whole Quickwit stack (workloads + `QUICKWIT_*_URL` env vars on the three app pods) is gated on the `lmnr.quickwit.enabled` helper, which returns true only when BOTH `quickwit.enabled: true` AND `quickwit.s3.defaultIndexRootUri` is non-empty. The bucket gate is the important one: Quickwit pins each index's storage URI in the metastore at index-creation time, so the frontend's first-boot `initializeQuickwitIndexes` against a placeholder bucket will permanently bake the wrong URI in — later overriding `defaultIndexRootUri` does not relocate existing indexes (LAM-1649). Default is empty string; operators MUST point it at their bucket to enable Quickwit. When adding a new resource that depends on Quickwit, gate it with `{{- if include "lmnr.quickwit.enabled" . }}`, not `{{- if .Values.quickwit.enabled }}` — the latter would let the resource render against a placeholder bucket.
 
+## Derived secrets in secrets.yaml
+
+`secrets.yaml` auto-generates a few values when the operator hasn't set them and they aren't sourced from an external store (AWS Secrets Manager / Vault). The guard pattern is always: `not <key in $awsKeys/$vaultKeys>` plus `not .Values.secrets.data.<KEY>` for the target, then emit. `DATABASE_URL`/`CLICKHOUSE_URL`/`RABBITMQ_URL` follow this; so does `SLACK_ENCRYPTION_KEY`, which defaults to `AEAD_SECRET_KEY` (instance uses one at-rest key, not two). When adding a derived secret, check the target key isn't already in `secrets.data` so an explicit operator value wins and isn't emitted twice into the same Secret `data:` map.
+
+## Slack integration (self-hosters)
+
+Two mutually exclusive wirings, both via `secrets.data`: brokered (`SLACK_BROKER_URL` + `LMNR_LICENSE_KEY`, uses Laminar Cloud's Slack app — recommended) or bring-your-own (`SLACK_CLIENT_ID`/`SECRET`/`SIGNING_SECRET`/`REDIRECT_URL`). `LMNR_LICENSE_KEY` is the general enterprise license key (reused by other paid features), authenticated broker-side via SHA3-256 hash lookup against the instance's `slack_broker_instances` table. Documented under "Slack Integration" in CONFIGURATION.md.
+
 ## Object storage (Quickwit + ClickHouse)
 
 The chart configures both Quickwit and ClickHouse on GCS through GCS's S3 interoperability layer using HMAC keys, so the auth model is identical across the two services. Configuration is parallel but not identical:

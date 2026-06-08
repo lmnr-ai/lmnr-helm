@@ -165,10 +165,21 @@ secrets:
     DATA_EXPORTER_URL: ""
     DATA_EXPORTER_SECRET_KEY: ""
     # Frontend secrets - Slack
+    # Two ways to wire Slack:
+    #  1. Brokered (recommended for self-hosters): set SLACK_BROKER_URL +
+    #     LMNR_LICENSE_KEY below. The instance uses Laminar Cloud's official
+    #     Slack app via the broker; no Slack app of your own is required.
+    #  2. Bring-your-own Slack app: set SLACK_CLIENT_ID / SLACK_CLIENT_SECRET /
+    #     SLACK_SIGNING_SECRET / SLACK_REDIRECT_URL instead.
     SLACK_CLIENT_ID: ""
     SLACK_CLIENT_SECRET: ""
     SLACK_SIGNING_SECRET: ""
     SLACK_REDIRECT_URL: ""
+    # Brokered Slack OAuth (self-hosters). SLACK_BROKER_URL is Laminar Cloud's
+    # broker endpoint; LMNR_LICENSE_KEY is your enterprise license key, which
+    # the broker uses to authenticate this instance. Leave empty to disable.
+    SLACK_BROKER_URL: ""
+    LMNR_LICENSE_KEY: ""
     # Frontend secrets - Other
     OPENAI_API_KEY: ""
     # Quickwit secrets

@@ -11,6 +11,7 @@ This guide covers advanced configuration options for the Laminar Helm chart.
 - [Secrets Management](#secrets-management)
 - [Extra Environment Variables](#extra-environment-variables)
 - [OAuth setup](#oauth-setup)
+- [Slack Integration](#slack-integration)
 - [LLM Provider](#llm-provider)
 - [Ingress and DNS](#ingress-and-dns)
 - [Storage Configuration](#storage-configuration)
@@ -504,6 +505,58 @@ helm upgrade -i laminar . -f laminar.yaml
 ```
 
 **Note:** Ensure callback/redirect URLs match your `nextauthUrl` exactly. Omit provider credentials to disable that provider
+
+## Slack Integration
+
+Laminar can post notifications and signal alerts to Slack. Self-hosters have two
+ways to wire it up.
+
+### Option 1: Brokered (recommended)
+
+With the broker, your instance uses **Laminar Cloud's official Slack app** — you
+do not register a Slack app of your own. Laminar Cloud runs both legs of the
+OAuth flow on your behalf; the bot token is returned to your instance
+server-to-server and is encrypted at rest. Your instance authenticates to the
+broker with an **enterprise license key** issued by Laminar.
+
+Set the broker URL and your license key in `laminar.yaml`:
+
+```yaml
+secrets:
+  data:
+    SLACK_BROKER_URL: "https://api.lmnr.ai"
+    LMNR_LICENSE_KEY: "your-enterprise-license-key"
+```
+
+`LMNR_LICENSE_KEY` is the same key used to gate other paid features — request one
+from Laminar. When both `SLACK_BROKER_URL` and `LMNR_LICENSE_KEY` are set, the
+"Connect Slack" button in the workspace settings uses the brokered flow; the
+bring-your-own credentials below are not needed.
+
+### Option 2: Bring your own Slack app
+
+Register your own Slack app at https://api.slack.com/apps with redirect URL
+`https://app.yourdomain.com/api/integrations/slack/callback`, then set:
+
+```yaml
+secrets:
+  data:
+    SLACK_CLIENT_ID: "your-slack-client-id"
+    SLACK_CLIENT_SECRET: "your-slack-client-secret"
+    SLACK_SIGNING_SECRET: "your-slack-signing-secret"
+    SLACK_REDIRECT_URL: "https://app.yourdomain.com/api/integrations/slack/callback"
+```
+
+### Token encryption key
+
+Slack bot tokens are encrypted at rest with `SLACK_ENCRYPTION_KEY` (a 64-char
+hex string), read by both the frontend and the app-server-consumer. You do not
+normally set this: when left empty, the chart defaults it to your
+`AEAD_SECRET_KEY` so there is one encryption key to manage. Set
+`SLACK_ENCRYPTION_KEY` explicitly in `secrets.data` only if you want Slack tokens
+encrypted under a separate key. If `AEAD_SECRET_KEY` (or `SLACK_ENCRYPTION_KEY`)
+comes from AWS Secrets Manager or Vault, the auto-default is skipped — provide
+`SLACK_ENCRYPTION_KEY` through the same external store.
 
 ## LLM Provider
 
