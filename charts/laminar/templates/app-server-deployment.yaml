@@ -70,6 +70,8 @@ spec:
               value: {{ .Values.appServer.env.databaseMaxConnections | quote }}
             - name: RABBITMQ_MAX_CHANNEL_POOL_SIZE
               value: {{ .Values.appServer.env.rabbitmqMaxChannelPoolSize | quote }}
+            - name: RABBITMQ_AUTO_RECONNECT
+              value: {{ .Values.appServer.env.rabbitmqAutoReconnect | quote }}
             - name: DB_WRITE_SPAN_BATCH_SIZE
               value: {{ .Values.appServer.env.dbWriteSpanBatchSize | quote }}
             - name: MAX_DB_SPAN_PAYLOAD_BYTES

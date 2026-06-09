@@ -118,6 +118,8 @@ spec:
               value: {{ .Values.appServerConsumer.env.signalsAlwaysUseRealtime | quote }}
             - name: RABBITMQ_MAX_CHANNEL_POOL_SIZE
               value: {{ .Values.appServerConsumer.env.rabbitmqMaxChannelPoolSize | quote }}
+            - name: RABBITMQ_AUTO_RECONNECT
+              value: {{ .Values.appServerConsumer.env.rabbitmqAutoReconnect | quote }}
             - name: REDIS_URL
               value: {{ .Values.appServerConsumer.env.redisUrl }}
             - name: ENVIRONMENT
