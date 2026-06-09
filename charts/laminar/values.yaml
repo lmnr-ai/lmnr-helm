@@ -164,7 +164,7 @@ secrets:
     # broker endpoint (https://laminar.sh); LMNR_LICENSE_KEY is your enterprise
     # license key, which the broker uses to authenticate this instance. Set both
     # to enable Slack; leave empty to disable.
-    SLACK_BROKER_URL: ""
+    SLACK_BROKER_URL: "https://laminar.sh"
     LMNR_LICENSE_KEY: ""
     # Quickwit secrets
     QUICKWIT_DATABASE_URL: "postgres://lmnr:lmnr123@laminar-postgres-service:5432/postgres"
