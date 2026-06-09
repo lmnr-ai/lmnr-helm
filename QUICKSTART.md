@@ -155,6 +155,6 @@ kubectl describe svc laminar-frontend-service
 
 - **HTTPS / TLS** — see [CONFIGURATION.md — Ingress and DNS](./CONFIGURATION.md#ingress-and-dns) for cert-manager (automatic), ACM (AWS), or importing your own certificate
 - **GCS storage for ClickHouse on GCP** — see [CONFIGURATION.md — ClickHouse S3 Storage](./CONFIGURATION.md#clickhouse-s3-storage)
-- **Slack notifications** — to post notifications and signal alerts to Slack, you use Laminar Cloud's official Slack app through a broker, so you don't register your own. This requires an enterprise license key. Contact **founders@lmnr.ai** to obtain one, then set `LMNR_LICENSE_KEY` in `laminar.yaml`. See [CONFIGURATION.md — Slack Integration](./CONFIGURATION.md#slack-integration).
+- **Slack notifications** — set an enterprise license key (`LMNR_LICENSE_KEY`) in `laminar.yaml` to enable Slack notifications and alerts. To get a license key, contact **founders@lmnr.ai**.
 - See [CONFIGURATION.md](./CONFIGURATION.md) for all production settings, secrets management, and storage
 - See [DEPENDENCIES.md](./DEPENDENCIES.md) for understanding service startup order
