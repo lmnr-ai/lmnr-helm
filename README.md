@@ -14,11 +14,18 @@ Deploy Laminar on Kubernetes with a single command.
 
 ## Quick Start
 
-First, either clone this repository and `cd` into the directory or add it to helm directly.
+First, add the Laminar Helm repository:
 
 ```bash
 helm repo add laminar https://lmnr-ai.github.io/lmnr-helm
 helm repo update
+```
+
+Then clone this repository to get the `laminar.yaml` values file, which you'll edit and pass to the chart:
+
+```bash
+git clone https://github.com/lmnr-ai/lmnr-helm.git
+cd lmnr-helm
 ```
 
 Then, follow the steps below to install Laminar.
@@ -29,13 +36,13 @@ Then, follow the steps below to install Laminar.
 #    See "Minimal Configuration" below for details.
 
 # 2. Install
-helm upgrade -i laminar ./charts/laminar -f laminar.yaml
+helm upgrade -i laminar laminar/laminar -f laminar.yaml
 
 # 3. Get ALB URL (wait 1-2 minutes for provisioning)
 ALB_URL=$(kubectl get ingress laminar-frontend-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
 # 4. Configure frontend URLs
-helm upgrade -i laminar ./charts/laminar -f laminar.yaml \
+helm upgrade -i laminar laminar/laminar -f laminar.yaml \
   --set frontend.env.nextauthUrl="http://$ALB_URL" \
   --set frontend.env.nextPublicUrl="http://$ALB_URL"
 

@@ -690,11 +690,11 @@ piiRedactor:
   # consider pinning to a dedicated compute-optimized node (see scheduling below).
   resources:
     requests:
+      cpu: "1"
+      memory: "2Gi"
+    limits:
       cpu: "2"
       memory: "4Gi"
-    limits:
-      cpu: "8"
-      memory: "16Gi"
   # Node scheduling configuration — set these to attach the PII redactor to a
   # specific machine / node group (e.g. a compute-optimized instance).
   # Example:
