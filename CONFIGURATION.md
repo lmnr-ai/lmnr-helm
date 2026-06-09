@@ -11,6 +11,7 @@ This guide covers advanced configuration options for the Laminar Helm chart.
 - [Secrets Management](#secrets-management)
 - [Extra Environment Variables](#extra-environment-variables)
 - [OAuth setup](#oauth-setup)
+- [Slack Integration](#slack-integration)
 - [LLM Provider](#llm-provider)
 - [Ingress and DNS](#ingress-and-dns)
 - [Storage Configuration](#storage-configuration)
@@ -504,6 +505,41 @@ helm upgrade -i laminar . -f laminar.yaml
 ```
 
 **Note:** Ensure callback/redirect URLs match your `nextauthUrl` exactly. Omit provider credentials to disable that provider
+
+## Slack Integration
+
+Laminar can post notifications and signal alerts to Slack. Self-hosters connect
+Slack through Laminar Cloud's **broker**: your instance uses Laminar Cloud's
+official Slack app — you do not register a Slack app of your own. Laminar Cloud
+runs both legs of the OAuth flow on your behalf; the bot token is returned to
+your instance server-to-server and is encrypted at rest. Your instance
+authenticates to the broker with an **enterprise license key** issued by Laminar.
+
+Set the broker URL and your license key in `laminar.yaml`:
+
+```yaml
+secrets:
+  data:
+    SLACK_BROKER_URL: "https://laminar.sh"
+    LMNR_LICENSE_KEY: "your-enterprise-license-key"
+```
+
+`SLACK_BROKER_URL` is Laminar Cloud's frontend origin (`https://laminar.sh`) and
+defaults to that value, so you normally only set `LMNR_LICENSE_KEY`. The license
+key is the same key used to gate other paid features — to obtain one, contact
+**founders@lmnr.ai**. When the license key is set, the "Connect Slack" button in
+workspace settings uses the brokered flow.
+
+### Token encryption key
+
+Slack bot tokens are encrypted at rest with `SLACK_ENCRYPTION_KEY` (a 64-char
+hex string), read by both the frontend and the app-server-consumer. You do not
+normally set this: when left empty, the chart defaults it to your
+`AEAD_SECRET_KEY` so there is one encryption key to manage. Set
+`SLACK_ENCRYPTION_KEY` explicitly in `secrets.data` only if you want Slack tokens
+encrypted under a separate key. If `AEAD_SECRET_KEY` (or `SLACK_ENCRYPTION_KEY`)
+comes from AWS Secrets Manager or Vault, the auto-default is skipped — provide
+`SLACK_ENCRYPTION_KEY` through the same external store.
 
 ## LLM Provider
 

@@ -132,8 +132,6 @@ secrets:
     DATABASE_SSL_ROOT_CERT: "<DATABASE_SSL_ROOT_CERT--MULTILINE_PEM_ENCODED>"
     # App Server Consumer secrets
     SLACK_ENCRYPTION_KEY: ""
-    CLUSTER_ENDPOINT: ""
-    CLUSTER_ENDPOINT_KEY: ""
     # Frontend secrets - Auth providers
     ## github
     AUTH_GITHUB_ID: ""
@@ -154,23 +152,20 @@ secrets:
     AUTH_KEYCLOAK_SECRET: ""
     AUTH_KEYCLOAK_ISSUER: ""
     # Frontend secrets - Integrations
-    STRIPE_SECRET_KEY: ""
-    STRIPE_WEBHOOK_ENDPOINT_SECRET: ""
-    RESEND_API_KEY: ""
     GITHUB_TOKEN: ""
-    LMNR_PROJECT_API_KEY: ""
     # Frontend secrets - Worker URLs
     DATASET_EXPORT_WORKER_URL: ""
     DATASET_EXPORT_SECRET_KEY: ""
     DATA_EXPORTER_URL: ""
     DATA_EXPORTER_SECRET_KEY: ""
-    # Frontend secrets - Slack
-    SLACK_CLIENT_ID: ""
-    SLACK_CLIENT_SECRET: ""
-    SLACK_SIGNING_SECRET: ""
-    SLACK_REDIRECT_URL: ""
-    # Frontend secrets - Other
-    OPENAI_API_KEY: ""
+    # Frontend secrets - Slack (brokered OAuth for self-hosters).
+    # The instance uses Laminar Cloud's official Slack app via the broker, so
+    # no Slack app of your own is required. SLACK_BROKER_URL is Laminar Cloud's
+    # broker endpoint (https://laminar.sh); LMNR_LICENSE_KEY is your enterprise
+    # license key, which the broker uses to authenticate this instance. Set both
+    # to enable Slack; leave empty to disable.
+    SLACK_BROKER_URL: "https://laminar.sh"
+    LMNR_LICENSE_KEY: ""
     # Quickwit secrets
     QUICKWIT_DATABASE_URL: "postgres://lmnr:lmnr123@laminar-postgres-service:5432/postgres"
 

@@ -37,6 +37,8 @@ secrets:
     LLM_API_KEY: "AIzaSy..." # your Gemini / OpenAI / OpenAI-compatible key that will be used both in the frontend and app-server-consumer
     AEAD_SECRET_KEY: "your-aead-secret (can be generated with `openssl rand -hex 32`)" # aead secret used to encrypt Laminar project api keys and model API keys for playground
     # Check out charts/laminar/values.yaml for full list of secrets
+    # To enable integration with official Laminar Slack app, set the license key below
+    # LMNR_LICENSE_KEY: "<your-license-key>"
     # Refer to QUICKSTART.md for more details
 
 frontend:
