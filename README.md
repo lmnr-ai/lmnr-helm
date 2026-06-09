@@ -152,6 +152,23 @@ For production deployments, additionally configure:
 
 See [CONFIGURATION.md](./CONFIGURATION.md) for complete configuration reference.
 
+### Slack Notifications (optional)
+
+Laminar can post notifications and signal alerts to Slack. Self-hosters connect
+through Laminar Cloud's broker and use Laminar Cloud's official Slack app, so
+there's no Slack app to register. This requires an **enterprise license key** —
+contact **founders@lmnr.ai** to obtain one. Once you have it, set
+`LMNR_LICENSE_KEY` in `secrets.data` (the broker URL defaults to
+`https://laminar.sh`):
+
+```yaml
+secrets:
+  data:
+    LMNR_LICENSE_KEY: "your-enterprise-license-key"
+```
+
+See [CONFIGURATION.md — Slack Integration](./CONFIGURATION.md#slack-integration) for details.
+
 ## Common Operations
 
 ### Check Status

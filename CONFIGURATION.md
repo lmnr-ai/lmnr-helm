@@ -524,10 +524,11 @@ secrets:
     LMNR_LICENSE_KEY: "your-enterprise-license-key"
 ```
 
-`SLACK_BROKER_URL` is Laminar Cloud's frontend origin (`https://laminar.sh`),
-which hosts the broker routes. `LMNR_LICENSE_KEY` is the same key used to gate
-other paid features — request one from Laminar. When both are set, the "Connect
-Slack" button in workspace settings uses the brokered flow.
+`SLACK_BROKER_URL` is Laminar Cloud's frontend origin (`https://laminar.sh`) and
+defaults to that value, so you normally only set `LMNR_LICENSE_KEY`. The license
+key is the same key used to gate other paid features — to obtain one, contact
+**founders@lmnr.ai**. When the license key is set, the "Connect Slack" button in
+workspace settings uses the brokered flow.
 
 ### Token encryption key
 
