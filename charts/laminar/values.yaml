@@ -367,6 +367,7 @@ appServer:
     grpcPort: "8001"
     databaseMaxConnections: "64"
     rabbitmqMaxChannelPoolSize: "128"
+    rabbitmqAutoReconnect: "true"
     dbWriteSpanBatchSize: "24"
     maxDbSpanPayloadBytes: "262144"
     httpPayloadLimit: "26214400"
@@ -450,6 +451,7 @@ appServerConsumer:
     numReportsWorkers: "2"
     spansIndexerQueuePrefetchCount: "1"
     rabbitmqMaxChannelPoolSize: "128"
+    rabbitmqAutoReconnect: "true"
     # LLM provider for signals (one of "openai" | "gemini" | "bedrock").
     # openai/gemini read LLM_API_KEY; bedrock reads AWS_* creds from secrets.
     llmProvider: "gemini"
