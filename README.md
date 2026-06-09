@@ -155,7 +155,8 @@ See [CONFIGURATION.md](./CONFIGURATION.md) for complete configuration reference.
 ### Slack Notifications (optional)
 
 To enable Slack notifications and alerts, set an enterprise license key in
-`secrets.data`:
+`secrets.data`. This connects your self-hosted instance to the official Laminar
+Slack app:
 
 ```yaml
 secrets:
