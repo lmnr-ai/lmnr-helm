@@ -45,7 +45,7 @@ frontend:
   env:
     nextauthUrl: "http://localhost:3000"
     nextPublicUrl: "http://localhost:3000"
-    # LLM provider for AI features (chat-with-trace, SQL-with-AI, signals).
+    # LLM provider for AI features (SQL-with-AI).
     # One of: "openai" | "gemini" | "bedrock".
     llmProvider: "gemini"
     # For OpenAI-compatible gateways (LiteLLM, OpenRouter, vLLM):
@@ -91,26 +91,53 @@ quickwit:
 
 appServerConsumer:
   env:
-    # LLM provider for signals consumer-side worker.
+    # LLM provider for Signals feature.
     # One of: "openai" | "gemini" | "bedrock".
     llmProvider: "gemini"
-    # Optional overrides. Per-provider defaults apply when empty.
+    # Optional base URL override. Used with llmProvider: openai for OpenAI-compatible gateways
     # llmBaseUrl: "http://my-gateway:4000"
+    #
     # Optional non-sensitive HTTP headers for LLM provider requests:
-    llmDefaultHeaders: {}
-    # Example:
     # llmDefaultHeaders:
     #   x-skip-generative-ai-check: "true"
+    #
+    # Optional model overrides per size tier. Per-provider defaults apply when empty.
     # llmModelSmall: "gemini-3-flash-preview"
     # llmModelMedium: "gemini-3-flash-preview"
     # llmModelLarge: "gemini-3-pro-preview"
-  # Extra environment variables for app-server-consumer (same format as frontend.extraEnv)
-  # extraEnv:
-  #   - name: CUSTOM_VAR
-  #     valueFrom:
-  #       secretKeyRef:
-  #         name: my-secret
-  #         key: my-key
+    #
+    # Extra environment variables for app-server-consumer (same format as frontend.extraEnv)
+    # extraEnv:
+    #   - name: CUSTOM_VAR
+    #     valueFrom:
+    #       secretKeyRef:
+    #         name: my-secret
+    #         key: my-key
+
+appServer:
+  env:
+    # LLM provider for platform agent features (chat with trace, etc.).
+    # One of: "openai" | "gemini" | "bedrock".
+    llmProvider: "gemini"
+    # Optional base URL override. Used with llmProvider: openai for OpenAI-compatible gateways
+    # llmBaseUrl: "http://my-gateway:4000"
+    #
+    # Optional non-sensitive HTTP headers for LLM provider requests:
+    # llmDefaultHeaders:
+    #   x-skip-generative-ai-check: "true"
+    #
+    # Optional model overrides per size tier. Per-provider defaults apply when empty.
+    # llmModelSmall: "gemini-3-flash-preview"
+    # llmModelMedium: "gemini-3-flash-preview"
+    # llmModelLarge: "gemini-3-pro-preview"
+    #
+    # Extra environment variables for app-server-consumer (same format as frontend.extraEnv)
+    # extraEnv:
+    #   - name: CUSTOM_VAR
+    #     valueFrom:
+    #       secretKeyRef:
+    #         name: my-secret
+    #         key: my-key
 
 clickhouse:
   s3:
@@ -130,3 +157,30 @@ storage:
     # For GCP, you can often leave this empty or comment it out.
     zones:
       - "us-east-1a"
+
+# PII Redactor configuration (optional, off by default)
+# CPU-only ONNX gRPC service that strips PII from spans before persistence.
+# When enabled, PII_REDACTOR_URL is injected into the app-server and
+# app-server-consumer pods, which activates the redaction feature.
+piiRedactor:
+  enabled: false
+  # PII detection is CPU-intensive ONNX inference; size generously and
+  # consider pinning to a dedicated compute-optimized node.
+  # resources:
+  #   requests:
+  #     cpu: "2"
+  #     memory: "4Gi"
+  #   limits:
+  #     cpu: "4"
+  #     memory: "8Gi"
+  # Node scheduling configuration — set these to attach the PII redactor to a
+  # specific machine / node group (e.g. a compute-optimized instance).
+  # Example:
+  #   nodeSelector:
+  #     node.kubernetes.io/instance-type: c8i.2xlarge
+  #   tolerations:
+  #     - key: "dedicated"
+  #       operator: "Equal"
+  #       value: "pii-redactor"
+  #       effect: "NoSchedule"
+  
