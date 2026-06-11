@@ -114,6 +114,10 @@ spec:
             - name: PII_REDACTOR_URL
               value: http://{{ include "laminar.resourceName" "pii-redactor-service" }}:{{ .Values.piiRedactor.service.port }}
             {{- end }}
+            {{- if .Values.frontend.enabled }}
+            - name: NEXT_INTERNAL_URL
+              value: http://{{ include "laminar.resourceName" "frontend-service" }}:{{ .Values.frontend.service.port }}
+            {{- end }}
             {{- with .Values.appServer.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
