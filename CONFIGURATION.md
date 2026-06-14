@@ -874,6 +874,35 @@ appServer:
 
 > **Note:** gRPC traffic (port 8443) is not handled by the Ingress. On AWS, the NLB (`appServer.loadBalancer`) handles gRPC regardless of whether you also use the Ingress.
 
+### Serving under a sub-path (reverse proxy)
+
+If you already terminate a domain for another app and want to expose Laminar under a sub-path of it (e.g. `https://app.yourdomain.com/lmnr`) instead of giving Laminar its own hostname, use the sub-path image.
+
+The sub-path is **baked into the frontend image at build time** — it cannot be flipped purely at runtime, because Next.js inlines the prefix into the bundle's asset URLs. The chart ships a dedicated `frontend-ee-basepath` image built with `/lmnr`. Select it and set `frontend.basePath` to the matching value:
+
+```yaml
+images:
+  frontend:
+    name: "frontend-ee-basepath"   # built with NEXT_PUBLIC_BASE_PATH=/lmnr
+
+frontend:
+  basePath: "/lmnr"                 # MUST match the image's baked sub-path
+  ingress:
+    hostname: "app.yourdomain.com"
+    # ingress.path defaults to basePath ("/lmnr"); override only if your proxy
+    # rewrites the prefix before forwarding.
+  env:
+    # The public URLs MUST include the sub-path.
+    nextauthUrl: "https://app.yourdomain.com/lmnr"
+    nextPublicUrl: "https://app.yourdomain.com/lmnr"
+```
+
+Notes:
+
+- `frontend.basePath` only tells the chart how to scope the ingress path and is informational for the running container — the actual prefix lives in the image. Pointing `basePath` at a value the image was not built with will route the ingress to a path the app does not serve. Today `/lmnr` is the only published sub-path.
+- The ingress `path` automatically follows `frontend.basePath`, so the proxy forwards `/lmnr` (and everything under it) to the frontend service. Override `frontend.ingress.path` only if your reverse proxy strips or rewrites the prefix before it reaches this cluster's ingress.
+- Leave `frontend.basePath: ""` and `images.frontend.name: "frontend-ee"` for the default root-served deployment.
+
 ## Storage Configuration
 
 ### Default Storage Class

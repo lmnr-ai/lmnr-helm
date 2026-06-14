@@ -43,6 +43,10 @@ The chart configures both Quickwit and ClickHouse on GCS through GCS's S3 intero
 
 When adding new Quickwit storage knobs, render them into `quickwit-configmap.yaml` only. The configmap is mounted at `/quickwit/node.yaml` via `subPath`, which the kubelet does not live-update; every Quickwit workload template carries `checksum/config` in its pod annotations so a `helm upgrade` that edits the configmap forces a rolling restart.
 
+## Frontend base path (sub-path serving)
+
+`frontend.basePath` lets self-hosters serve Laminar under a sub-path of an existing domain (e.g. `app.company.com/lmnr`) instead of a dedicated hostname (LAM-1749, for OpenHands' bundled deployment). The prefix is **baked into the frontend image at build time** (Next.js `basePath` inlines it into the standalone bundle's asset URLs — it can't be flipped purely at runtime), so the chart ships a separate `frontend-ee-basepath` image built with `/lmnr`. Operators MUST pair `images.frontend.name: "frontend-ee-basepath"` with `frontend.basePath: "/lmnr"` — the value tells the chart how to scope the ingress, it does NOT change the running container, so pointing `basePath` at a value the image wasn't built with silently routes the ingress to a path the app doesn't serve. `frontend.ingress.path` defaults to `frontend.basePath` (or `/` when empty), so a sub-path deploy routes correctly with no extra config; override only when the upstream proxy rewrites the prefix. Operators must also set `frontend.env.nextauthUrl`/`nextPublicUrl` to include the prefix. Default is `""` (root-served, regular `frontend-ee` image, byte-identical to before). The OSS `frontend-ee-basepath` image target is built in `lmnr-private` CI, not here.
+
 ## Per-component knobs
 
 For services with multiple workloads (Quickwit, ClickHouse), expose `extraEnv` both at the parent level and at each component. The parent-level value covers the common case (cloud-wide credentials); the per-component value is for overrides like indexer-only tuning. Use `concat` in the helper so duplicates fall through Kubernetes' "later wins" semantics on the env array.
