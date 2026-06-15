@@ -9,6 +9,7 @@ This guide covers advanced configuration options for the Laminar Helm chart.
 - [Cloud Provider](#cloud-provider)
 - [Container Images](#container-images)
 - [Secrets Management](#secrets-management)
+- [Postgres Schema](#postgres-schema)
 - [Extra Environment Variables](#extra-environment-variables)
 - [OAuth setup](#oauth-setup)
 - [Slack Integration](#slack-integration)
@@ -320,6 +321,31 @@ Install with:
 ```bash
 helm upgrade -i laminar . -f laminar.yaml
 ```
+
+## Postgres Schema
+
+By default Laminar puts all of its tables in the `public` schema. If you need Laminar to share a Postgres database with another service, point it at a dedicated schema with `global.postgresSchema`:
+
+```yaml
+global:
+  postgresSchema: "laminar"
+```
+
+This single value is dispatched to all three application pods (`app-server`, `app-server-consumer`, and `frontend`) as the `POSTGRES_SCHEMA` env var, so every pod resolves the same `search_path`. All three services must agree on the schema — set it only via `global.postgresSchema`, never per-pod.
+
+On first boot the frontend runs `CREATE SCHEMA IF NOT EXISTS` for a non-`public` schema and tracks its migrations inside it. If the schema is pre-provisioned or the DB role lacks `CREATE` privileges, disable that step:
+
+```yaml
+frontend:
+  env:
+    postgresCreateSchema: "false"
+```
+
+Notes:
+
+- A `public` value (any case) is treated as the default schema: it is never created and migrations stay in the standard `drizzle` tracker schema, so existing deployments are untouched.
+- `postgresCreateSchema` only has an effect for a non-`public` schema.
+- Changing the schema of an already-populated database does not move existing tables; set it before the first deploy.
 
 ## Extra Environment Variables
 

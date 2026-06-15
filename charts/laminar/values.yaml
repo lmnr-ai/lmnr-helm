@@ -3,6 +3,12 @@ global:
   # Cloud provider: "aws" or "gcp"
   cloudProvider: "aws"
   environment: "FULL"
+  # Postgres schema that holds all Laminar tables. Dispatched to app-server,
+  # app-server-consumer, and frontend as POSTGRES_SCHEMA so every pod resolves
+  # the same search_path. Leave as "public" unless you need Laminar to coexist
+  # with another service in the same database. The frontend creates this schema
+  # on first boot (see frontend.env.postgresCreateSchema).
+  postgresSchema: "public"
   # Namespace for all resources (default: default)
   # When installing the chart, you can specify a custom namespace with --namespace flag
   # If you want a dedicated namespace, use: helm install laminar . --namespace laminar --create-namespace
@@ -263,6 +269,10 @@ frontend:
     signalsEnabled: "true"
     # Enables the chat-with-trace feature in the frontend. Requires llmProvider (+ creds).
     agentChatEnabled: "true"
+    # Whether the frontend should CREATE SCHEMA for global.postgresSchema on first
+    # boot. Only takes effect for a non-"public" schema. Set to "false" if the
+    # schema is pre-provisioned or the DB role lacks CREATE privileges.
+    postgresCreateSchema: "true"
   # First launch runs all migrations to prepare databases, which can take several minutes.
   # Larger initial delays are set to account for this.
   readinessProbe:
