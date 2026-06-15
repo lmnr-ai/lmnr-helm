@@ -46,3 +46,7 @@ When adding new Quickwit storage knobs, render them into `quickwit-configmap.yam
 ## Per-component knobs
 
 For services with multiple workloads (Quickwit, ClickHouse), expose `extraEnv` both at the parent level and at each component. The parent-level value covers the common case (cloud-wide credentials); the per-component value is for overrides like indexer-only tuning. Use `concat` in the helper so duplicates fall through Kubernetes' "later wins" semantics on the env array.
+
+## Postgres schema
+
+`global.postgresSchema` (default `"public"`) is dispatched as `POSTGRES_SCHEMA` into all three app pods (app-server, app-server-consumer, frontend) so they share one `search_path` — it MUST be a single global, never per-pod, since the services would silently diverge otherwise. `POSTGRES_CREATE_SCHEMA` (`frontend.env.postgresCreateSchema`) is frontend-only because only the frontend runs migrations / `CREATE SCHEMA` on boot. A `public` value (any case) is the default schema: never created, migrations stay in the standard `drizzle` tracker. Documented under "Postgres Schema" in CONFIGURATION.md.

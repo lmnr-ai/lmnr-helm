@@ -67,6 +67,10 @@ spec:
               value: {{ .Values.frontend.env.nextauthUrl }}
             - name: ENVIRONMENT
               value: {{ .Values.global.environment }}
+            - name: POSTGRES_SCHEMA
+              value: {{ .Values.global.postgresSchema | quote }}
+            - name: POSTGRES_CREATE_SCHEMA
+              value: {{ .Values.frontend.env.postgresCreateSchema | quote }}
             - name: NEXT_PUBLIC_URL
               value: {{ .Values.frontend.env.nextPublicUrl }}
             - name: REDIS_URL

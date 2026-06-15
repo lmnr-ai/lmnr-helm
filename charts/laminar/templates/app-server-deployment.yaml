@@ -80,6 +80,8 @@ spec:
               value: {{ .Values.appServer.env.redisUrl }}
             - name: ENVIRONMENT
               value: {{ .Values.global.environment }}
+            - name: POSTGRES_SCHEMA
+              value: {{ .Values.global.postgresSchema | quote }}
             - name: HTTP_PAYLOAD_LIMIT
               value: {{ .Values.appServer.env.httpPayloadLimit | quote }}
             - name: GRPC_PAYLOAD_LIMIT

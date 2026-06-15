@@ -124,6 +124,8 @@ spec:
               value: {{ .Values.appServerConsumer.env.redisUrl }}
             - name: ENVIRONMENT
               value: {{ .Values.global.environment }}
+            - name: POSTGRES_SCHEMA
+              value: {{ .Values.global.postgresSchema | quote }}
             - name: ENABLE_TRACING
               value: {{ .Values.appServerConsumer.env.enableTracing | quote }}
             {{- if include "lmnr.quickwit.enabled" . }}
