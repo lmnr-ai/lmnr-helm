@@ -25,9 +25,9 @@ images:
   repository: "ghcr.io/lmnr-ai"
   pullPolicy: Always
   frontend:
-    # Use "frontend-ee-basepath" (instead of "frontend-ee") to serve the app
-    # under a sub-path. That image is built with NEXT_PUBLIC_BASE_PATH=/lmnr
-    # baked in, so it must be paired with frontend.basePath: "/lmnr" below.
+    # Root-served image. To serve under a sub-path, do NOT change this — set
+    # frontend.subPath.enabled: true below, which auto-selects the prebuilt
+    # frontend-ee-basepath image (baked with NEXT_PUBLIC_BASE_PATH=/lmnr).
     name: "frontend-ee"
     tag: "latest"
   appServer:
@@ -179,16 +179,16 @@ secrets:
 frontend:
   enabled: true
   replicaCount: 1
-  # Sub-path the frontend is served under behind a reverse proxy (e.g. "/lmnr"),
-  # so Laminar can share a domain with another app instead of needing its own.
-  # Leave "" for root-served (the default frontend-ee image).
-  # IMPORTANT: the sub-path is baked into the image at build time, so this must
-  # match the NEXT_PUBLIC_BASE_PATH the chosen image was built with. Set
-  # images.frontend.name to "frontend-ee-basepath" (built with /lmnr) and this
-  # to "/lmnr". When set, frontend.env.nextauthUrl / nextPublicUrl MUST include
-  # the prefix (e.g. "https://app.example.com/lmnr"), and the ingress path is
-  # auto-scoped to this sub-path (override via frontend.ingress.path).
-  basePath: ""
+  # Serve Laminar under a fixed "/lmnr" sub-path behind a reverse proxy, so it
+  # can share a domain with another app instead of needing its own hostname.
+  # When enabled, the chart auto-selects the prebuilt frontend-ee-basepath image
+  # (the sub-path is baked into the image at build time and can't be flipped at
+  # runtime) and scopes the ingress path to "/lmnr". You MUST also set
+  # frontend.env.nextauthUrl / nextPublicUrl to include the prefix
+  # (e.g. "https://app.example.com/lmnr"). The prefix is fixed to "/lmnr"
+  # because that's the only published image build; it is not configurable here.
+  subPath:
+    enabled: false
   resources:
     requests:
       cpu: "0.1"
@@ -226,9 +226,9 @@ frontend:
     enabled: true
     # If left empty, will be set based on global.cloudProvider (aws -> alb, gcp -> gce)
     className: ""
-    # Path the ingress routes to the frontend service. Defaults to frontend.basePath
-    # (or "/" when basePath is empty), so a sub-path deployment routes correctly
-    # without extra config. Override only if your proxy needs a different prefix.
+    # Path the ingress routes to the frontend service. Defaults to "/lmnr" when
+    # frontend.subPath.enabled is true, else "/", so a sub-path deployment routes
+    # correctly without extra config. Override only if your proxy needs a different prefix.
     path: ""
     # Optional: Set a custom hostname for your ingress
     # If set, this will be used in the ingress rules and can be used with external-dns

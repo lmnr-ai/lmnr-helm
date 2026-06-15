@@ -36,7 +36,7 @@ spec:
       {{- end }}
       containers:
         - name: frontend
-          image: {{ .Values.images.repository }}/{{ .Values.images.frontend.name }}:{{ .Values.images.frontend.tag }}
+          image: {{ .Values.images.repository }}/{{ include "lmnr.frontend.imageName" . }}:{{ .Values.images.frontend.tag }}
           imagePullPolicy: {{ .Values.images.pullPolicy }}
           ports:
             - containerPort: 3000

@@ -1,6 +1,6 @@
 {{- $cloudProvider := .Values.global.cloudProvider | default "aws" -}}
 {{- $hasHostname := .Values.frontend.ingress.hostname -}}
-{{- $ingressPath := .Values.frontend.ingress.path | default (.Values.frontend.basePath | default "/") -}}
+{{- $ingressPath := .Values.frontend.ingress.path | default (include "lmnr.frontend.subPath" . | default "/") -}}
 {{- if and .Values.frontend.enabled .Values.frontend.ingress.enabled (or (eq $cloudProvider "aws") $hasHostname) }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
