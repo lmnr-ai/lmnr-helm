@@ -1,3 +1,4 @@
+{{- include "lmnr.validateAppServerVersion" . }}
 {{- if .Values.appServer.enabled }}
 apiVersion: apps/v1
 kind: Deployment

@@ -73,6 +73,8 @@ images:
 
 Available tags are listed under the [Packages tab on GitHub](https://github.com/orgs/lmnr-ai/packages). The frontend and app server are released together — keep their tags in sync.
 
+Chart `0.2.0+` requires an app-server tag of `0.1.628` or newer (the query-engine was folded into the app-server image). The chart hard-fails at render time if you pin an older semver tag. See [CHANGELOG.md](CHANGELOG.md).
+
 When pinning to a tag that does not change content, you can also drop `pullPolicy: Always` to avoid an extra registry round-trip on every pod start:
 
 ```yaml
@@ -1341,6 +1343,8 @@ helm upgrade -i laminar ./charts/laminar -f laminar.yaml
 ```
 
 For routine upgrades within a minor (`0.1.x` → `0.1.y`), this is enough — Deployments roll over and StatefulSets restart their pods one at a time.
+
+> **Before a major/minor bump, check [CHANGELOG.md](CHANGELOG.md).** It records breaking changes only — chart versions that require operator action or drop compatibility with older image tags.
 
 ### Upgrading from <= 0.1.11 to >= 0.1.12
 
