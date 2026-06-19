@@ -90,8 +90,6 @@ spec:
               value: {{ .Values.appServer.env.aggregateTraces | quote }}
             - name: ENABLE_TRACING
               value: {{ .Values.appServer.env.enableTracing | quote }}
-            - name: QUERY_ENGINE_URL
-              value: {{ .Values.appServer.env.queryEngineUrl }}
             {{- if include "lmnr.quickwit.enabled" . }}
             - name: QUICKWIT_SEARCH_URL
               value: {{ .Values.appServer.env.quickwitSearchUrl }}

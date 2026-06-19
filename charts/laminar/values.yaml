@@ -30,9 +30,6 @@ images:
   appServer:
     name: "app-server-ee"
     tag: "latest"
-  queryEngine:
-    name: "query-engine-ee"
-    tag: "latest"
   piiRedactor:
     name: "pii-redactor-ee"
     tag: "latest"
@@ -384,7 +381,6 @@ appServer:
     grpcPayloadLimit: "26214400"
     aggregateTraces: "true"
     enableTracing: "true"
-    queryEngineUrl: "http://laminar-query-engine-service:8903"
     quickwitSearchUrl: "http://laminar-quickwit-searcher:7280"
     quickwitIngestUrl: "http://laminar-quickwit-indexer:7281"
     redisUrl: "redis://laminar-redis-service:6379"
@@ -667,26 +663,6 @@ quickwit:
     emptyDir:
       sizeLimit: "10Gi"
     extraEnv: []
-
-# Query Engine configuration
-queryEngine:
-  enabled: true
-  replicaCount: 1
-  resources:
-    requests:
-      cpu: "0.1"
-      memory: "128Mi"
-    limits:
-      cpu: "0.5"
-      memory: "256Mi"
-  # Node scheduling configuration
-  nodeSelector: {}
-  affinity: {}
-  tolerations: []
-  service:
-    type: ClusterIP
-    port: 8903
-    targetPort: 8903
 
 # PII Redactor configuration (optional, off by default)
 # CPU-only ONNX gRPC service that strips PII from spans before persistence.
