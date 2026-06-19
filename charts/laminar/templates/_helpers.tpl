@@ -239,3 +239,26 @@ bucket name and silently creating indexes the operator can't write to.
 true
 {{- end -}}
 {{- end }}
+
+{{/*
+Enforce the minimum app-server image tag. Chart 0.2.0 folded the former
+query-engine workload into the app-server image; tags below 0.1.628 ship
+without it and would break at runtime (see CHANGELOG.md).
+
+Only enforced when the tag is a recognizable semver. The core X.Y.Z is
+compared in isolation, ignoring any -prerelease / +build suffix, so our own
+decorated tags (0.1.628-post.1, 0.1.628-alpha, 0.1.628-canary.3, ...) pass on
+their core version rather than sorting below the floor under strict semver
+precedence. Non-semver tags ("latest", branch names, digests) are trusted and
+skipped — pinning those is the operator's responsibility.
+*/}}
+{{- define "lmnr.validateAppServerVersion" -}}
+{{- $tag := .Values.images.appServer.tag | toString -}}
+{{- $min := "0.1.628" -}}
+{{- if regexMatch "^v?(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$" $tag -}}
+{{- $core := regexFind "[0-9]+\\.[0-9]+\\.[0-9]+" $tag -}}
+{{- if semverCompare (printf "< %s" $min) $core -}}
+{{- fail (printf "images.appServer.tag %q is incompatible with chart %s: chart >= 0.2.0 requires app-server >= %s (the query-engine was folded into the app-server image; older tags omit it). Set images.appServer.tag to %s or newer, or to \"latest\". See CHANGELOG.md." $tag .Chart.Version $min $min) -}}
+{{- end -}}
+{{- end -}}
+{{- end }}

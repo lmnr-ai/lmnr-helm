@@ -107,7 +107,6 @@ laminar-app-server-consumer-xxx                   1/1     Running   5m
 laminar-clickhouse-0                              1/1     Running   5m
 laminar-frontend-xxx                              1/1     Running   5m
 laminar-postgres-0                                1/1     Running   5m
-laminar-query-engine-xxx                          1/1     Running   5m
 laminar-quickwit-control-plane-xxx                1/1     Running   5m
 laminar-quickwit-indexer-0                        1/1     Running   5m
 laminar-quickwit-janitor-xxx                      1/1     Running   5m

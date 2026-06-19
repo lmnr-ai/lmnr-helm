@@ -42,7 +42,7 @@ global:
 
 ## Container Images
 
-The three Laminar containers — frontend, app server (used by both `app-server` and `app-server-consumer`), and query engine — are pulled from `ghcr.io/lmnr-ai`:
+The two Laminar images — frontend and app-server (used by both `app-server` and `app-server-consumer`) — are pulled from `ghcr.io/lmnr-ai`:
 
 ```yaml
 # values.yaml (defaults)
@@ -55,9 +55,6 @@ images:
   appServer:
     name: "app-server-ee"
     tag: "latest"
-  queryEngine:
-    name: "query-engine-ee"
-    tag: "latest"
 ```
 
 `ghcr.io/lmnr-ai/*-ee` images are public — `helm install` pulls them on its own and most users never need to think about this section.
@@ -69,14 +66,14 @@ images:
 ```yaml
 images:
   frontend:
-    tag: "0.1.546"
+    tag: "0.1.628"
   appServer:
-    tag: "0.1.546"
-  queryEngine:
-    tag: "0.1.546"
+    tag: "0.1.628"
 ```
 
-Available tags are listed under the [Packages tab on GitHub](https://github.com/orgs/lmnr-ai/packages). The frontend, app server, and query engine are released together — keep their tags in sync.
+Available tags are listed under the [Packages tab on GitHub](https://github.com/orgs/lmnr-ai/packages). The frontend and app server are released together — keep their tags in sync.
+
+Chart `0.2.0+` requires an app-server tag of `0.1.628` or newer (the query-engine was folded into the app-server image). The chart hard-fails at render time if you pin an older semver tag. See [CHANGELOG.md](CHANGELOG.md).
 
 When pinning to a tag that does not change content, you can also drop `pullPolicy: Always` to avoid an extra registry round-trip on every pod start:
 
@@ -92,16 +89,15 @@ If your nodes have no outbound internet access, or you want to mirror images int
 ```bash
 docker pull ghcr.io/lmnr-ai/frontend-ee:latest
 docker pull ghcr.io/lmnr-ai/app-server-ee:latest
-docker pull ghcr.io/lmnr-ai/query-engine-ee:latest
 ```
 
 Replace `latest` with the tag you intend to deploy. To use a private mirror, retag and push each image, then point the chart at it:
 
 ```bash
 # Example: mirror to your own registry
-docker tag ghcr.io/lmnr-ai/frontend-ee:0.1.546 my-registry.example.com/laminar/frontend-ee:0.1.546
-docker push my-registry.example.com/laminar/frontend-ee:0.1.546
-# Repeat for app-server-ee and query-engine-ee
+docker tag ghcr.io/lmnr-ai/frontend-ee:0.1.546 my-registry.example.com/laminar/frontend-ee:0.1.628
+docker push my-registry.example.com/laminar/frontend-ee:0.1.628
+# Repeat for app-server-ee
 ```
 
 ```yaml
@@ -112,9 +108,7 @@ images:
   frontend:
     tag: "0.1.546"
   appServer:
-    tag: "0.1.546"
-  queryEngine:
-    tag: "0.1.546"
+    tag: "0.1.628"
 ```
 
 If the mirror requires authentication, the pods need an `imagePullSecrets` entry on the ServiceAccount they run as. The chart does not template this today — create a `docker-registry` secret and patch the default ServiceAccount manually:
@@ -1349,6 +1343,8 @@ helm upgrade -i laminar ./charts/laminar -f laminar.yaml
 ```
 
 For routine upgrades within a minor (`0.1.x` → `0.1.y`), this is enough — Deployments roll over and StatefulSets restart their pods one at a time.
+
+> **Before a major/minor bump, check [CHANGELOG.md](CHANGELOG.md).** It records breaking changes only — chart versions that require operator action or drop compatibility with older image tags.
 
 ### Upgrading from <= 0.1.11 to >= 0.1.12
 
