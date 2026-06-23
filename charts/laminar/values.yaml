@@ -398,6 +398,14 @@ appServer:
     llmModelSmall: ""
     llmModelMedium: ""
     llmModelLarge: ""
+  livenessProbe:
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    failureThreshold: 1
+  readinessProbe:
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    failureThreshold: 1
   # Additional environment variables for the app-server container.
   # Supports all Kubernetes env var formats including valueFrom.secretKeyRef.
   # These take precedence over values injected via envFrom (secrets.data).
@@ -479,6 +487,14 @@ appServerConsumer:
     enableReports: "false"
     quickwitSearchUrl: "http://laminar-quickwit-searcher:7280"
     quickwitIngestUrl: "http://laminar-quickwit-indexer:7281"
+  livenessProbe:
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    failureThreshold: 1
+  readinessProbe:
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    failureThreshold: 1
   # Additional environment variables for the app-server-consumer container.
   # Supports all Kubernetes env var formats including valueFrom.secretKeyRef.
   # These take precedence over values injected via envFrom (secrets.data).
