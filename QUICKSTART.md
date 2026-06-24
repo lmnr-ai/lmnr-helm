@@ -57,7 +57,7 @@ Update `laminar.yaml` with the URL/IP or upgrade directly:
 URL=$(kubectl get ingress laminar-frontend-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 helm upgrade -i laminar ./charts/laminar -f laminar.yaml \
   --set frontend.env.nextauthUrl="http://$URL" \
-  --set frontend.env.nextPublicUrl="http://$URL"
+  --set global.nextPublicUrl="http://$URL"
 ```
 
 **For GCP:**
@@ -65,7 +65,7 @@ helm upgrade -i laminar ./charts/laminar -f laminar.yaml \
 IP=$(kubectl get svc laminar-frontend-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 helm upgrade -i laminar ./charts/laminar -f laminar.yaml \
   --set frontend.env.nextauthUrl="http://$IP" \
-  --set frontend.env.nextPublicUrl="http://$IP"
+  --set global.nextPublicUrl="http://$IP"
 ```
 
 ### Step 5: Access the Application
