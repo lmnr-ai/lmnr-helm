@@ -874,6 +874,31 @@ appServer:
 
 > **Note:** gRPC traffic (port 8443) is not handled by the Ingress. On AWS, the NLB (`appServer.loadBalancer`) handles gRPC regardless of whether you also use the Ingress.
 
+### Serving under a sub-path (reverse proxy)
+
+If you already terminate a domain for another app and want to expose Laminar under a sub-path of it (e.g. `https://app.yourdomain.com/lmnr`) instead of giving Laminar its own hostname, enable sub-path serving.
+
+The sub-path is **baked into the frontend image at build time** — it cannot be flipped purely at runtime, because Next.js inlines the prefix into the bundle's asset URLs. The chart ships a dedicated `frontend-ee-basepath` image built with `/lmnr`. Set `frontend.subPath.enabled: true` and the chart selects that image and scopes the ingress for you:
+
+```yaml
+frontend:
+  subPath:
+    enabled: true                   # serves under /lmnr; auto-selects frontend-ee-basepath
+  ingress:
+    hostname: "app.yourdomain.com"
+    # ingress.path defaults to "/lmnr"; override only if your proxy
+    # rewrites the prefix before forwarding.
+  env:
+    # The public URL MUST include the sub-path.
+    nextPublicUrl: "https://app.yourdomain.com/lmnr"
+```
+
+Notes:
+
+- The sub-path is fixed to `/lmnr` — that's the prefix the published `frontend-ee-basepath` image is built with, and it can't be changed from the chart (the prefix lives in the image, not in config). `frontend.subPath.enabled` selects that image and scopes the ingress in one switch, so the two can't disagree.
+- The ingress `path` automatically follows `frontend.subPath.enabled`, so the proxy forwards `/lmnr` (and everything under it) to the frontend service. Override `frontend.ingress.path` only if your reverse proxy strips or rewrites the prefix before it reaches this cluster's ingress.
+- Leave `frontend.subPath.enabled: false` (the default) for the default root-served deployment on the `frontend-ee` image.
+
 ## Storage Configuration
 
 ### Default Storage Class

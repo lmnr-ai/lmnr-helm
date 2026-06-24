@@ -262,3 +262,24 @@ skipped — pinning those is the operator's responsibility.
 {{- end -}}
 {{- end -}}
 {{- end }}
+
+{{/*
+Frontend sub-path prefix (LAM-1749). Returns the fixed "/lmnr" when
+frontend.subPath.enabled is true, else empty. The prefix is baked into the
+frontend image at build time (Next.js inlines it into the standalone bundle's
+asset URLs — it can't be flipped at runtime), so it's fixed to match the
+published frontend-ee-basepath image and is NOT operator-configurable.
+*/}}
+{{- define "lmnr.frontend.subPath" -}}
+{{- if .Values.frontend.subPath.enabled -}}/lmnr{{- end -}}
+{{- end }}
+
+{{/*
+Frontend image name. Forces the prebuilt frontend-ee-basepath image (baked
+with NEXT_PUBLIC_BASE_PATH=/lmnr) when sub-path serving is enabled, else uses
+the configured images.frontend.name. Driving both the image and the ingress
+path from one bool removes the old footgun where they could disagree.
+*/}}
+{{- define "lmnr.frontend.imageName" -}}
+{{- if .Values.frontend.subPath.enabled -}}frontend-ee-basepath{{- else -}}{{ .Values.images.frontend.name }}{{- end -}}
+{{- end }}

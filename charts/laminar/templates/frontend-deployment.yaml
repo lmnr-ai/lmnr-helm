@@ -36,21 +36,23 @@ spec:
       {{- end }}
       containers:
         - name: frontend
-          image: {{ .Values.images.repository }}/{{ .Values.images.frontend.name }}:{{ .Values.images.frontend.tag }}
+          image: {{ .Values.images.repository }}/{{ include "lmnr.frontend.imageName" . }}:{{ .Values.images.frontend.tag }}
           imagePullPolicy: {{ .Values.images.pullPolicy }}
           ports:
             - containerPort: 3000
           # First launch runs all migrations to prepare databases, which can take several minutes.
           # Larger initial delays are set to account for this.
+          # Probe the sub-path root: under frontend.subPath.enabled Next.js serves
+          # the app at /lmnr and returns 404 for /, which would fail the probes.
           readinessProbe:
             httpGet:
-              path: /
+              path: {{ include "lmnr.frontend.subPath" . | default "/" }}
               port: 3000
             initialDelaySeconds: {{ .Values.frontend.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.frontend.readinessProbe.periodSeconds }}
           livenessProbe:
             httpGet:
-              path: /
+              path: {{ include "lmnr.frontend.subPath" . | default "/" }}
               port: 3000
             initialDelaySeconds: {{ .Values.frontend.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.frontend.livenessProbe.periodSeconds }}

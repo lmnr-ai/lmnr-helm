@@ -25,6 +25,9 @@ images:
   repository: "ghcr.io/lmnr-ai"
   pullPolicy: Always
   frontend:
+    # Root-served image. To serve under a sub-path, do NOT change this — set
+    # frontend.subPath.enabled: true below, which auto-selects the prebuilt
+    # frontend-ee-basepath image (baked with NEXT_PUBLIC_BASE_PATH=/lmnr).
     name: "frontend-ee"
     tag: "latest"
   appServer:
@@ -176,6 +179,14 @@ secrets:
 frontend:
   enabled: true
   replicaCount: 1
+  # Serve Laminar under a fixed "/lmnr" sub-path behind a reverse proxy, so it
+  # can share a domain with another app instead of needing its own hostname.
+  # When enabled, the chart auto-selects the prebuilt frontend-ee-basepath image
+  # (the sub-path is baked into the image at build time and can't be flipped at
+  # runtime) and scopes the ingress path to "/lmnr". The prefix is fixed to "/lmnr"
+  # because that's the only published image build; it is not configurable here.
+  subPath:
+    enabled: false
   resources:
     requests:
       cpu: "0.1"
@@ -213,6 +224,10 @@ frontend:
     enabled: true
     # If left empty, will be set based on global.cloudProvider (aws -> alb, gcp -> gce)
     className: ""
+    # Path the ingress routes to the frontend service. Defaults to "/lmnr" when
+    # frontend.subPath.enabled is true, else "/", so a sub-path deployment routes
+    # correctly without extra config. Override only if your proxy needs a different prefix.
+    path: ""
     # Optional: Set a custom hostname for your ingress
     # If set, this will be used in the ingress rules and can be used with external-dns
     # Example: "app.yourdomain.com"

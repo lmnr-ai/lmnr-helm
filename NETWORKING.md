@@ -30,6 +30,9 @@ The frontend is a Next.js app served by a Kubernetes `Deployment`. How it is exp
 - TLS can be configured via cert-manager or a pre-existing certificate secret (see [TLS section](#tls) below).
 - DNS can be automated via external-dns or set manually.
 
+**Under a sub-path of an existing domain (`frontend.subPath.enabled: true`):**
+- Set `frontend.subPath.enabled: true` to serve Laminar at e.g. `https://app.yourdomain.com/lmnr` without a dedicated hostname. The chart auto-selects the `frontend-ee-basepath` image (baked with the fixed `/lmnr` prefix) and scopes the ingress path automatically. See [Serving under a sub-path](./CONFIGURATION.md#serving-under-a-sub-path-reverse-proxy) in CONFIGURATION.md.
+
 ---
 
 ## App Server
