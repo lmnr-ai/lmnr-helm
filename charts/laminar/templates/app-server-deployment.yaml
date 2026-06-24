@@ -83,6 +83,8 @@ spec:
               value: {{ .Values.global.environment }}
             - name: POSTGRES_SCHEMA
               value: {{ .Values.global.postgresSchema | quote }}
+            - name: NEXT_PUBLIC_URL
+              value: {{ include "lmnr.nextPublicUrl" (dict "service" .Values.appServer.env "global" .Values.global) }}
             - name: HTTP_PAYLOAD_LIMIT
               value: {{ .Values.appServer.env.httpPayloadLimit | quote }}
             - name: GRPC_PAYLOAD_LIMIT

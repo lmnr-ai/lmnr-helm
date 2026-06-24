@@ -10,6 +10,7 @@ This guide covers advanced configuration options for the Laminar Helm chart.
 - [Container Images](#container-images)
 - [Secrets Management](#secrets-management)
 - [Postgres Schema](#postgres-schema)
+- [Frontend URL (NEXT_PUBLIC_URL)](#frontend-url-next_public_url)
 - [Extra Environment Variables](#extra-environment-variables)
 - [OAuth setup](#oauth-setup)
 - [Slack Integration](#slack-integration)
@@ -145,10 +146,12 @@ secrets:
     AWS_REGION: "us-east-1"
     # ... other secrets
 
+global:
+  nextPublicUrl: "https://localhost:3000"
+
 frontend:
   env:
     nextauthUrl: "https://localhost:3000"
-    nextPublicUrl: "https://localhost:3000"
 ```
 
 Install with:
@@ -341,6 +344,22 @@ Notes:
 - `postgresCreateSchema` only has an effect for a non-`public` schema.
 - Changing the schema of an already-populated database does not move existing tables; set it before the first deploy.
 
+## Frontend URL (NEXT_PUBLIC_URL)
+
+`global.nextPublicUrl` sets the public URL of your Laminar frontend. It is dispatched to all three application pods (`app-server`, `app-server-consumer`, and `frontend`) as `NEXT_PUBLIC_URL`:
+
+- **Frontend** — used by Next.js for constructing absolute URLs.
+- **App Server / App Server Consumer** — used when crafting frontend URLs in alert and signal notifications, and for authenticating `lmnr-cli` requests.
+
+```yaml
+global:
+  nextPublicUrl: "https://app.yourdomain.com"
+```
+
+All three pods must agree on this value — set it only via `global.nextPublicUrl`. If you need to override it for one pod in an unusual setup, use the per-pod override (e.g. `frontend.env.nextPublicUrl`, `appServer.env.nextPublicUrl`), but this is rarely needed.
+
+> When serving under a sub-path, the URL must include the prefix: `"https://app.yourdomain.com/lmnr"`. See [Serving under a sub-path](#serving-under-a-sub-path-reverse-proxy).
+
 ## Extra Environment Variables
 
 The `extraEnv` field lets you inject additional environment variables into any of the main deployments (`frontend`, `appServer`, `appServerConsumer`). It accepts a list of standard [Kubernetes env var definitions](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#envvar-v1-core), supporting:
@@ -512,10 +531,12 @@ secrets:
     AUTH_KEYCLOAK_SECRET: "your-keycloak-secret"
     AUTH_KEYCLOAK_ISSUER: "https://your-keycloak-domain.com/realms/My_Realm"
 
+global:
+  nextPublicUrl: "https://app.yourdomain.com"
+
 frontend:
   env:
     nextauthUrl: "https://app.yourdomain.com"
-    nextPublicUrl: "https://app.yourdomain.com"
 ```
 
 Install or upgrade:
@@ -706,6 +727,9 @@ frontend:
 Add to your `laminar.yaml`:
 
 ```yaml
+global:
+  nextPublicUrl: "https://app.yourdomain.com"
+
 frontend:
   ingress:
     hostname: "app.yourdomain.com"
@@ -713,7 +737,6 @@ frontend:
       enabled: true
   env:
     nextauthUrl: "https://app.yourdomain.com"
-    nextPublicUrl: "https://app.yourdomain.com"
 ```
 
 Install with:
@@ -730,6 +753,9 @@ helm upgrade -i laminar . -f laminar.yaml
 Add to your `laminar.yaml`:
 
 ```yaml
+global:
+  nextPublicUrl: "https://app.yourdomain.com"
+
 frontend:
   ingress:
     hostname: "app.yourdomain.com"
@@ -739,7 +765,6 @@ frontend:
       alb.ingress.kubernetes.io/ssl-redirect: '443'
   env:
     nextauthUrl: "https://app.yourdomain.com"
-    nextPublicUrl: "https://app.yourdomain.com"
 ```
 
 Install with:
@@ -808,6 +833,7 @@ spec:
 ```yaml
 global:
   cloudProvider: "gcp"
+  nextPublicUrl: "https://app.yourdomain.com"
 
 frontend:
   ingress:
@@ -819,7 +845,6 @@ frontend:
       secretName: "laminar-frontend-tls"
   env:
     nextauthUrl: "https://app.yourdomain.com"
-    nextPublicUrl: "https://app.yourdomain.com"
 ```
 
 > **Note:** When `frontend.ingress.hostname` is set on GCP, the frontend Service automatically uses `ClusterIP` instead of `LoadBalancer` — the Ingress handles external exposure.
@@ -881,6 +906,10 @@ If you already terminate a domain for another app and want to expose Laminar und
 The sub-path is **baked into the frontend image at build time** — it cannot be flipped purely at runtime, because Next.js inlines the prefix into the bundle's asset URLs. The chart ships a dedicated `frontend-ee-basepath` image built with `/lmnr`. Set `frontend.subPath.enabled: true` and the chart selects that image and scopes the ingress for you:
 
 ```yaml
+global:
+  # The public URL MUST include the sub-path.
+  nextPublicUrl: "https://app.yourdomain.com/lmnr"
+
 frontend:
   subPath:
     enabled: true                   # serves under /lmnr; auto-selects frontend-ee-basepath
@@ -888,9 +917,6 @@ frontend:
     hostname: "app.yourdomain.com"
     # ingress.path defaults to "/lmnr"; override only if your proxy
     # rewrites the prefix before forwarding.
-  env:
-    # The public URL MUST include the sub-path.
-    nextPublicUrl: "https://app.yourdomain.com/lmnr"
 ```
 
 Notes:

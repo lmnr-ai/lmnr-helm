@@ -18,6 +18,10 @@ global:
   # Cloud provider: "aws" or "gcp"
   cloudProvider: "aws"
   environment: "FULL"
+  # Frontend URL dispatched to all pods as NEXT_PUBLIC_URL. Used for crafting
+  # frontend URLs in alert/signal notifications and for lmnr-cli auth.
+  # Set to your actual frontend URL (same value as nextauthUrl below).
+  nextPublicUrl: "http://localhost:3000"
   # # Namespace for all resources (default: default)
   # # Uncomment the below line to use a custom namespace (e.g., "laminar")
   # namespace: "laminar"
@@ -44,7 +48,6 @@ secrets:
 frontend:
   env:
     nextauthUrl: "http://localhost:3000"
-    nextPublicUrl: "http://localhost:3000"
     # LLM provider for AI features (SQL-with-AI).
     # One of: "openai" | "gemini" | "bedrock".
     llmProvider: "gemini"

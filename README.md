@@ -44,7 +44,7 @@ ALB_URL=$(kubectl get ingress laminar-frontend-ingress -o jsonpath='{.status.loa
 # 4. Configure frontend URLs
 helm upgrade -i laminar laminar/laminar -f laminar.yaml \
   --set frontend.env.nextauthUrl="http://$ALB_URL" \
-  --set frontend.env.nextPublicUrl="http://$ALB_URL"
+  --set global.nextPublicUrl="http://$ALB_URL"
 
 # 5. Get the LMNR_BASE_URL (to send traces to)
 LMNR_BASE_URL=$(kubectl get svc laminar-app-server-load-balancer -o jsonpath='{.status.loadBalancer.ingress[0].hostname}') && echo $LMNR_BASE_URL

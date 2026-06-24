@@ -264,6 +264,22 @@ skipped — pinning those is the operator's responsibility.
 {{- end }}
 
 {{/*
+Resolve NEXT_PUBLIC_URL for a given service. Accepts a dict with keys
+"service" (the per-service .env map) and "global" (.Values.global).
+Returns the per-service override when non-empty, else falls back to
+global.nextPublicUrl. The same value is dispatched to frontend,
+app-server, and app-server-consumer so alert/notification URLs and
+lmnr-cli auth all agree.
+*/}}
+{{- define "lmnr.nextPublicUrl" -}}
+{{- if .service.nextPublicUrl -}}
+{{- .service.nextPublicUrl -}}
+{{- else -}}
+{{- .global.nextPublicUrl -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Frontend sub-path prefix (LAM-1749). Returns the fixed "/lmnr" when
 frontend.subPath.enabled is true, else empty. The prefix is baked into the
 frontend image at build time (Next.js inlines it into the standalone bundle's
