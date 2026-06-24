@@ -9,6 +9,11 @@ global:
   # with another service in the same database. The frontend creates this schema
   # on first boot (see frontend.env.postgresCreateSchema).
   postgresSchema: "public"
+  # Frontend URL dispatched to all three app pods as NEXT_PUBLIC_URL.
+  # Used for crafting frontend URLs in alert/signal notifications and for
+  # lmnr-cli authentication. Per-service overrides: frontend.env.nextPublicUrl,
+  # appServer.env.nextPublicUrl, appServerConsumer.env.nextPublicUrl.
+  nextPublicUrl: "https://localhost:3000"
   # Namespace for all resources (default: default)
   # When installing the chart, you can specify a custom namespace with --namespace flag
   # If you want a dedicated namespace, use: helm install laminar . --namespace laminar --create-namespace
@@ -258,7 +263,8 @@ frontend:
     # If ingress.hostname is set, you can use "http://<hostname>" or "https://<hostname>"
     # Otherwise, set the ALB DNS name after initial deployment (see QUICKSTART.md)
     nextauthUrl: "https://localhost:3000"
-    nextPublicUrl: "https://localhost:3000"
+    # Override global.nextPublicUrl for the frontend pod only. Leave empty to use global.nextPublicUrl.
+    nextPublicUrl: ""
     redisUrl: "redis://laminar-redis-service:6379"
     quickwitSearchUrl: "http://laminar-quickwit-searcher:7280"
     # LLM provider for AI features (chat-with-trace, SQL-with-AI, signals).
@@ -399,6 +405,8 @@ appServer:
     quickwitSearchUrl: "http://laminar-quickwit-searcher:7280"
     quickwitIngestUrl: "http://laminar-quickwit-indexer:7281"
     redisUrl: "redis://laminar-redis-service:6379"
+    # Override global.nextPublicUrl for the app-server pod only. Leave empty to use global.nextPublicUrl.
+    nextPublicUrl: ""
     # LLM provider (one of "openai" | "gemini" | "bedrock"). Required when the
     # signals feature is enabled. openai/gemini read LLM_API_KEY; bedrock reads
     # AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_REGION from secrets.
@@ -490,6 +498,8 @@ appServerConsumer:
     # globally by this control
     signalsAlwaysUseRealtime: "false"
     redisUrl: "redis://laminar-redis-service:6379"
+    # Override global.nextPublicUrl for the app-server-consumer pod only. Leave empty to use global.nextPublicUrl.
+    nextPublicUrl: ""
     enableTracing: "false"
     enableReports: "false"
     quickwitSearchUrl: "http://laminar-quickwit-searcher:7280"

@@ -74,7 +74,7 @@ spec:
             - name: POSTGRES_CREATE_SCHEMA
               value: {{ .Values.frontend.env.postgresCreateSchema | quote }}
             - name: NEXT_PUBLIC_URL
-              value: {{ .Values.frontend.env.nextPublicUrl }}
+              value: {{ include "lmnr.nextPublicUrl" (dict "service" .Values.frontend.env "global" .Values.global) }}
             - name: REDIS_URL
               value: {{ .Values.frontend.env.redisUrl }}
             {{- if include "lmnr.quickwit.enabled" . }}

@@ -127,6 +127,8 @@ spec:
               value: {{ .Values.global.environment }}
             - name: POSTGRES_SCHEMA
               value: {{ .Values.global.postgresSchema | quote }}
+            - name: NEXT_PUBLIC_URL
+              value: {{ include "lmnr.nextPublicUrl" (dict "service" .Values.appServerConsumer.env "global" .Values.global) }}
             - name: ENABLE_TRACING
               value: {{ .Values.appServerConsumer.env.enableTracing | quote }}
             {{- if include "lmnr.quickwit.enabled" . }}
