@@ -183,9 +183,7 @@ frontend:
   # can share a domain with another app instead of needing its own hostname.
   # When enabled, the chart auto-selects the prebuilt frontend-ee-basepath image
   # (the sub-path is baked into the image at build time and can't be flipped at
-  # runtime) and scopes the ingress path to "/lmnr". You MUST also set
-  # frontend.env.nextauthUrl / nextPublicUrl to include the prefix
-  # (e.g. "https://app.example.com/lmnr"). The prefix is fixed to "/lmnr"
+  # runtime) and scopes the ingress path to "/lmnr". The prefix is fixed to "/lmnr"
   # because that's the only published image build; it is not configurable here.
   subPath:
     enabled: false

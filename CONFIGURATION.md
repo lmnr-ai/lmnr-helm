@@ -889,8 +889,7 @@ frontend:
     # ingress.path defaults to "/lmnr"; override only if your proxy
     # rewrites the prefix before forwarding.
   env:
-    # The public URLs MUST include the sub-path.
-    nextauthUrl: "https://app.yourdomain.com/lmnr"
+    # The public URL MUST include the sub-path.
     nextPublicUrl: "https://app.yourdomain.com/lmnr"
 ```
 

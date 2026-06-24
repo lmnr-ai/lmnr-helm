@@ -261,7 +261,9 @@ skipped — pinning those is the operator's responsibility.
 {{- fail (printf "images.appServer.tag %q is incompatible with chart %s: chart >= 0.2.0 requires app-server >= %s (the query-engine was folded into the app-server image; older tags omit it). Set images.appServer.tag to %s or newer, or to \"latest\". See CHANGELOG.md." $tag .Chart.Version $min $min) -}}
 {{- end -}}
 {{- end -}}
+{{- end }}
 
+{{/*
 Frontend sub-path prefix (LAM-1749). Returns the fixed "/lmnr" when
 frontend.subPath.enabled is true, else empty. The prefix is baked into the
 frontend image at build time (Next.js inlines it into the standalone bundle's
