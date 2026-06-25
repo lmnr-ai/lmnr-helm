@@ -102,6 +102,14 @@ spec:
             {{- with .Values.frontend.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+          {{- with .Values.frontend.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.frontend.extraVolumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- include "laminar.nodeSelector" (dict "service" .Values.frontend "global" .Values.global) | nindent 6 }}
       {{- include "laminar.affinity" (dict "service" .Values.frontend "global" .Values.global) | nindent 6 }}
       {{- include "laminar.tolerations" (dict "service" .Values.frontend "global" .Values.global) | nindent 6 }}

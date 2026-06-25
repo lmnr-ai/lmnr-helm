@@ -62,6 +62,14 @@ spec:
             {{- with .Values.piiRedactor.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+          {{- with .Values.piiRedactor.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.piiRedactor.extraVolumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- include "laminar.nodeSelector" (dict "service" .Values.piiRedactor "global" .Values.global) | nindent 6 }}
       {{- include "laminar.affinity" (dict "service" .Values.piiRedactor "global" .Values.global) | nindent 6 }}
       {{- include "laminar.tolerations" (dict "service" .Values.piiRedactor "global" .Values.global) | nindent 6 }}
