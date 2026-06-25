@@ -831,10 +831,6 @@ clickhouse:
   # Extra environment variables to inject into the ClickHouse container.
   # Useful for loading S3 credentials from Kubernetes secrets via secretKeyRef.
   extraEnv: []
-  # Additional volumes and volumeMounts for the ClickHouse container, mirroring
-  # extraEnv. Useful for mounting a Secret or ConfigMap (e.g. a custom CA bundle).
-  extraVolumes: []
-  extraVolumeMounts: []
   # - name: GCS_HMAC_KEY
   #   valueFrom:
   #     secretKeyRef:

@@ -71,9 +71,6 @@ spec:
               mountPath: "/mnt/secrets-store-vault"
               readOnly: true
             {{- end }}
-            {{- with .Values.clickhouse.extraVolumeMounts }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
           livenessProbe:
             httpGet:
               path: /ping
@@ -125,9 +122,6 @@ spec:
             readOnly: true
             volumeAttributes:
               secretProviderClass: lmnr-secrets-vault
-        {{- end }}
-        {{- with .Values.clickhouse.extraVolumes }}
-        {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- include "laminar.nodeSelector" (dict "service" .Values.clickhouse "global" .Values.global) | nindent 6 }}
       {{- include "laminar.affinity" (dict "service" .Values.clickhouse "global" .Values.global) | nindent 6 }}

@@ -411,12 +411,12 @@ See also: [`examples/secrets/extra-env.yaml`](./examples/secrets/extra-env.yaml)
 
 ## Extra Volumes and Volume Mounts
 
-The `extraVolumes` and `extraVolumeMounts` fields let you attach additional volumes to a workload's pod and mount them into its main container. They mirror [`extraEnv`](#extra-environment-variables) and are available on `frontend`, `appServer`, `appServerConsumer`, `clickhouse`, and `piiRedactor`.
+The `extraVolumes` and `extraVolumeMounts` fields let you attach additional volumes to a workload's pod and mount them into its main container. They mirror [`extraEnv`](#extra-environment-variables) and are available on `frontend`, `appServer`, `appServerConsumer`, and `piiRedactor`.
 
 - `extraVolumes` accepts a list of standard [Kubernetes volume definitions](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#volume-v1-core) and is added to the pod's `volumes`.
 - `extraVolumeMounts` accepts a list of standard [Kubernetes volumeMount definitions](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#volumemount-v1-core) and is added to the main container's `volumeMounts`.
 
-Both lists are **appended** to the volumes and mounts the chart already manages (e.g. the `app-server` nginx config, ClickHouse storage) — they never replace chart-managed entries.
+Both lists are **appended** to the volumes and mounts the chart already manages (e.g. the `app-server` nginx config) - they never replace chart-managed entries.
 
 A common use is mounting a ConfigMap or Secret, such as a private CA bundle the workload's TLS stack should trust, and pointing the relevant runtime at the mounted path via `extraEnv`:
 
