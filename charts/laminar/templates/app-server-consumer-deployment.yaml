@@ -144,6 +144,14 @@ spec:
             {{- with .Values.appServerConsumer.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+          {{- with .Values.appServerConsumer.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.appServerConsumer.extraVolumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- include "laminar.nodeSelector" (dict "service" .Values.appServerConsumer "global" .Values.global) | nindent 6 }}
       {{- include "laminar.affinity" (dict "service" .Values.appServerConsumer "global" .Values.global) | nindent 6 }}
       {{- include "laminar.tolerations" (dict "service" .Values.appServerConsumer "global" .Values.global) | nindent 6 }}

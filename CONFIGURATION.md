@@ -12,6 +12,7 @@ This guide covers advanced configuration options for the Laminar Helm chart.
 - [Postgres Schema](#postgres-schema)
 - [Frontend URL (NEXT_PUBLIC_URL)](#frontend-url-next_public_url)
 - [Extra Environment Variables](#extra-environment-variables)
+- [Extra Volumes and Volume Mounts](#extra-volumes-and-volume-mounts)
 - [OAuth setup](#oauth-setup)
 - [Slack Integration](#slack-integration)
 - [LLM Provider](#llm-provider)
@@ -407,6 +408,33 @@ appServer:
 ```
 
 See also: [`examples/secrets/extra-env.yaml`](./examples/secrets/extra-env.yaml)
+
+## Extra Volumes and Volume Mounts
+
+The `extraVolumes` and `extraVolumeMounts` fields let you attach additional volumes to a workload's pod and mount them into its main container. They mirror [`extraEnv`](#extra-environment-variables) and are available on `frontend`, `appServer`, `appServerConsumer`, `clickhouse`, and `piiRedactor`.
+
+- `extraVolumes` accepts a list of standard [Kubernetes volume definitions](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#volume-v1-core) and is added to the pod's `volumes`.
+- `extraVolumeMounts` accepts a list of standard [Kubernetes volumeMount definitions](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#volumemount-v1-core) and is added to the main container's `volumeMounts`.
+
+Both lists are **appended** to the volumes and mounts the chart already manages (e.g. the `app-server` nginx config, ClickHouse storage) — they never replace chart-managed entries.
+
+A common use is mounting a ConfigMap or Secret, such as a private CA bundle the workload's TLS stack should trust, and pointing the relevant runtime at the mounted path via `extraEnv`:
+
+```yaml
+frontend:
+  extraVolumes:
+    - name: ca-bundle
+      configMap:
+        name: my-ca-bundle
+  extraVolumeMounts:
+    - name: ca-bundle
+      mountPath: /etc/ssl/custom
+      readOnly: true
+  extraEnv:
+    # The frontend runs on Node.js, which reads NODE_EXTRA_CA_CERTS.
+    - name: NODE_EXTRA_CA_CERTS
+      value: /etc/ssl/custom/ca-bundle.crt
+```
 
 ## OAuth setup
 

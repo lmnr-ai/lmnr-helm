@@ -313,6 +313,10 @@ frontend:
   #     - name: AUTH_KEYCLOAK_ISSUER
   #       value: "https://keycloak.example.com/realms/my-realm"
   extraEnv: []
+  # Additional volumes and volumeMounts for the frontend container, mirroring
+  # extraEnv. Useful for mounting a Secret or ConfigMap (e.g. a custom CA bundle).
+  extraVolumes: []
+  extraVolumeMounts: []
 
 # App Server configuration
 appServer:
@@ -425,6 +429,10 @@ appServer:
   # Supports all Kubernetes env var formats including valueFrom.secretKeyRef.
   # These take precedence over values injected via envFrom (secrets.data).
   extraEnv: []
+  # Additional volumes and volumeMounts for the app-server container, mirroring
+  # extraEnv. Useful for mounting a Secret or ConfigMap (e.g. a custom CA bundle).
+  extraVolumes: []
+  extraVolumeMounts: []
 
 # App Server Consumer configuration
 appServerConsumer:
@@ -508,6 +516,10 @@ appServerConsumer:
   # Supports all Kubernetes env var formats including valueFrom.secretKeyRef.
   # These take precedence over values injected via envFrom (secrets.data).
   extraEnv: []
+  # Additional volumes and volumeMounts for the app-server-consumer container,
+  # mirroring extraEnv. Useful for mounting a Secret or ConfigMap (e.g. a CA bundle).
+  extraVolumes: []
+  extraVolumeMounts: []
 
 # Quickwit configuration
 quickwit:
@@ -736,6 +748,10 @@ piiRedactor:
     # interThreads: 1
   # Extra environment variables appended to the container (later wins on dupes).
   extraEnv: []
+  # Additional volumes and volumeMounts for the pii-redactor container, mirroring
+  # extraEnv. Useful for mounting a Secret or ConfigMap (e.g. a custom CA bundle).
+  extraVolumes: []
+  extraVolumeMounts: []
 
 # PostgreSQL configuration
 postgres:
@@ -815,6 +831,10 @@ clickhouse:
   # Extra environment variables to inject into the ClickHouse container.
   # Useful for loading S3 credentials from Kubernetes secrets via secretKeyRef.
   extraEnv: []
+  # Additional volumes and volumeMounts for the ClickHouse container, mirroring
+  # extraEnv. Useful for mounting a Secret or ConfigMap (e.g. a custom CA bundle).
+  extraVolumes: []
+  extraVolumeMounts: []
   # - name: GCS_HMAC_KEY
   #   valueFrom:
   #     secretKeyRef:
