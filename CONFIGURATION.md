@@ -174,6 +174,7 @@ Fetch secrets from AWS Secrets Manager using the Secrets Store CSI Driver.
 **Prerequisites:**
 
 1. Install Secrets Store CSI Driver:
+
    ```bash
     helm repo add secrets-store-csi-driver https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts
     helm upgrade --install -n kube-system --set syncSecret.enabled=true --set enableSecretRotation=true csi-secrets-store secrets-store-csi-driver/secrets-store-csi-driver
@@ -184,6 +185,7 @@ Fetch secrets from AWS Secrets Manager using the Secrets Store CSI Driver.
    ```
 
 2. Create policy to read secrets. Name it LaminarSecretsPolicy:
+
 ```
 {
     "Version": "2012-10-17",
@@ -198,11 +200,13 @@ Fetch secrets from AWS Secrets Manager using the Secrets Store CSI Driver.
 ```
 
 2. Install AWS provider:
+
    ```bash
    kubectl apply -f https://raw.githubusercontent.com/aws/secrets-store-csi-driver-provider-aws/main/deployment/aws-provider-installer.yaml
    ```
 
 3. Create IRSA:
+
    ```bash
    eksctl create iamserviceaccount \
      --name lmnr-secrets-sa \
@@ -228,9 +232,9 @@ secrets:
     enabled: true
     region: "us-east-1"
     serviceAccount:
-      create: false  # Using eksctl-created SA
+      create: false # Using eksctl-created SA
       name: "lmnr-secrets-sa"
-    clusterName: "production"  # Secret name: production/lmnr-secrets
+    clusterName: "production" # Secret name: production/lmnr-secrets
     secretKeys:
       - NEXTAUTH_SECRET
       - POSTGRES_PASSWORD
@@ -543,7 +547,7 @@ secrets:
     AWS_ACCESS_KEY_ID: "your-aws-access-key"
     AWS_SECRET_ACCESS_KEY: "your-aws-secret-key"
     AWS_REGION: "us-east-1"
-    
+
     # OAuth Providers (optional, configure as needed)
     AUTH_GITHUB_ID: "your-github-client-id"
     AUTH_GITHUB_SECRET: "your-github-client-secret"
@@ -775,7 +779,6 @@ helm upgrade -i laminar . -f laminar.yaml
 
 ### HTTPS with ACM Certificate
 
-
 **AWS example**
 
 Add to your `laminar.yaml`:
@@ -790,7 +793,7 @@ frontend:
     annotations:
       alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
       alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:region:account:certificate/xxx"
-      alb.ingress.kubernetes.io/ssl-redirect: '443'
+      alb.ingress.kubernetes.io/ssl-redirect: "443"
   env:
     nextauthUrl: "https://app.yourdomain.com"
 ```
@@ -816,11 +819,13 @@ frontend:
 After deployment, create a CNAME record pointing to the ALB:
 
 **For AWS:**
+
 ```bash
 kubectl get ingress laminar-frontend-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 ```
 
 **For GCP:**
+
 ```bash
 kubectl get ingress laminar-frontend-ingress -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
@@ -830,6 +835,7 @@ kubectl get ingress laminar-frontend-ingress -o jsonpath='{.status.loadBalancer.
 cert-manager automatically provisions and renews free Let's Encrypt certificates. This works on any provider with an ingress controller (Traefik, nginx, etc.).
 
 **1. Install cert-manager:**
+
 ```bash
 helm repo add jetstack https://charts.jetstack.io && helm repo update
 helm upgrade -i cert-manager jetstack/cert-manager \
@@ -838,6 +844,7 @@ helm upgrade -i cert-manager jetstack/cert-manager \
 ```
 
 **2. Create a ClusterIssuer** (apply with `kubectl apply -f`):
+
 ```yaml
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -846,18 +853,19 @@ metadata:
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: your-email@example.com   # replace with your email
+    email: your-email@example.com # replace with your email
     privateKeySecretRef:
       name: letsencrypt-account-key
     solvers:
       - http01:
           ingress:
-            ingressClassName: traefik  # match your ingress controller
+            ingressClassName: traefik # match your ingress controller
 ```
 
 > The hostname must be publicly DNS-resolvable before deploying, so Let's Encrypt can complete the HTTP-01 challenge.
 
 **3. Add to your `laminar.yaml`:**
+
 ```yaml
 global:
   cloudProvider: "gcp"
@@ -901,7 +909,7 @@ frontend:
     tls:
       enabled: true
       secretName: "laminar-frontend-tls"
-      clusterIssuer: ""  # leave empty — cert-manager not needed
+      clusterIssuer: "" # leave empty — cert-manager not needed
 ```
 
 ### App Server Ingress (GCP and other providers)
@@ -916,9 +924,9 @@ Add to your `laminar.yaml`:
 appServer:
   ingress:
     hostname: "api.yourdomain.com"
-    className: "traefik"   # your ingress controller class
+    className: "traefik" # your ingress controller class
     externalDns:
-      enabled: true        # optional: requires external-dns
+      enabled: true # optional: requires external-dns
     tls:
       enabled: true
       clusterIssuer: "letsencrypt"
@@ -940,7 +948,7 @@ global:
 
 frontend:
   subPath:
-    enabled: true                   # serves under /lmnr; auto-selects frontend-ee-basepath
+    enabled: true # serves under /lmnr; auto-selects frontend-ee-basepath
   ingress:
     hostname: "app.yourdomain.com"
     # ingress.path defaults to "/lmnr"; override only if your proxy
@@ -962,7 +970,7 @@ The chart creates a default EBS storage class with configurable availability zon
 ```yaml
 storage:
   zones:
-    - "us-east-1b"  # Single AZ deployment
+    - "us-east-1b" # Single AZ deployment
 ```
 
 The full storage class configuration is in `values.yaml` and can be overridden:
@@ -971,11 +979,11 @@ The full storage class configuration is in `values.yaml` and can be overridden:
 storage:
   storageClass:
     name: "ebs-sc"
-    type: "gp3"  # EBS volume type
-    reclaimPolicy: "Retain"  # Keep volumes after deletion
+    type: "gp3" # EBS volume type
+    reclaimPolicy: "Retain" # Keep volumes after deletion
     volumeBindingMode: "WaitForFirstConsumer"
     zones:
-      - "us-east-1b"  # Single AZ deployment
+      - "us-east-1b" # Single AZ deployment
 ```
 
 **Multi-AZ Configuration:**
@@ -999,7 +1007,7 @@ Each service can use a different storage class. Add to your `laminar.yaml`:
 ```yaml
 postgres:
   persistence:
-    storageClass: "io2"  # High IOPS for database
+    storageClass: "io2" # High IOPS for database
     size: "100Gi"
 
 clickhouse:
@@ -1050,13 +1058,13 @@ Store ClickHouse data in S3 for cost efficiency and scalability. The `laminar.ya
 ```yaml
 clickhouse:
   persistence:
-    enabled: false  # Disable local storage (optional)
+    enabled: false # Disable local storage (optional)
 
   s3:
     enabled: true
     endpoint: "https://my-bucket.s3.us-east-1.amazonaws.com/"
     region: "us-east-1"
-    useEnvironmentCredentials: true  # Use IAM role
+    useEnvironmentCredentials: true # Use IAM role
     cache:
       enabled: true
       maxSize: "50Gi"
@@ -1067,11 +1075,18 @@ clickhouse:
 ```json
 {
   "Version": "2012-10-17",
-  "Statement": [{
-    "Effect": "Allow",
-    "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"],
-    "Resource": ["arn:aws:s3:::my-bucket", "arn:aws:s3:::my-bucket/*"]
-  }]
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:ListBucket"
+      ],
+      "Resource": ["arn:aws:s3:::my-bucket", "arn:aws:s3:::my-bucket/*"]
+    }
+  ]
 }
 ```
 
@@ -1087,12 +1102,14 @@ kubectl exec laminar-clickhouse-0 -- clickhouse-client --query "SELECT * FROM sy
 GCS supports an S3-compatible API but requires **HMAC credentials** — `useEnvironmentCredentials` does not work because the GKE metadata server returns OAuth2 tokens, which GCS's S3 API does not accept.
 
 **1. Create a service account and generate HMAC keys:**
+
 ```bash
 gcloud iam service-accounts create clickhouse-gcs --project=YOUR_PROJECT
 
-gsutil iam ch \
-  serviceAccount:clickhouse-gcs@YOUR_PROJECT.iam.gserviceaccount.com:objectAdmin \
-  gs://YOUR_BUCKET_NAME
+gcloud storage buckets add-iam-policy-binding \
+  gs:://YOUR_BUCKET_NAME \
+  --member=serviceAccount:clickhouse-gcs@YOUR_PROJECT.iam.gserviceaccount.com \
+  --role=roles/storage.objectAdmin
 
 gcloud storage hmac create clickhouse-gcs@YOUR_PROJECT.iam.gserviceaccount.com \
   --project=YOUR_PROJECT
@@ -1100,14 +1117,15 @@ gcloud storage hmac create clickhouse-gcs@YOUR_PROJECT.iam.gserviceaccount.com \
 ```
 
 **2a. Inline credentials in `laminar.yaml` (simple, but credentials in values):**
+
 ```yaml
 clickhouse:
   s3:
     enabled: true
     endpoint: "https://storage.googleapis.com/YOUR_BUCKET_NAME/"
-    region: ""  # not needed for GCS
-    accessKeyId: "GOOG1E..."       # HMAC Access ID from above
-    secretAccessKey: "..."         # HMAC Secret from above
+    region: "" # not needed for GCS
+    accessKeyId: "GOOG1E..." # HMAC Access ID from above
+    secretAccessKey: "..." # HMAC Secret from above
     useEnvironmentCredentials: false
     cache:
       enabled: true
@@ -1117,6 +1135,7 @@ clickhouse:
 **2b. Load credentials from a Kubernetes Secret (recommended):**
 
 Create the secret once:
+
 ```bash
 kubectl create secret generic clickhouse-gcs-credentials \
   --from-literal=access-key-id=GOOG1E... \
@@ -1124,14 +1143,15 @@ kubectl create secret generic clickhouse-gcs-credentials \
 ```
 
 Then reference it in `laminar.yaml`:
+
 ```yaml
 clickhouse:
   s3:
     enabled: true
     endpoint: "https://storage.googleapis.com/YOUR_BUCKET_NAME/"
     region: ""
-    accessKeyIdFrom: "GCS_HMAC_KEY"        # env var name to read the key from
-    secretAccessKeyFrom: "GCS_HMAC_SECRET"  # env var name to read the secret from
+    accessKeyIdFrom: "GCS_HMAC_KEY" # env var name to read the key from
+    secretAccessKeyFrom: "GCS_HMAC_SECRET" # env var name to read the secret from
     useEnvironmentCredentials: false
     cache:
       enabled: true
@@ -1171,23 +1191,28 @@ Quickwit does not have a native GCP credential path. Use GCS's S3 interoperabili
 This section assumes you've already followed [ClickHouse on GCS](#clickhouse-on-gcs-gcp) and have a `clickhouse-gcs` service account with HMAC keys. The chart is designed for one HMAC key pair to back both ClickHouse and Quickwit — you do **not** need a second SA or a second HMAC key.
 
 **1. Grant the existing service account access to the Quickwit bucket:**
+
 ```bash
-gsutil iam ch \
-  serviceAccount:clickhouse-gcs@YOUR_PROJECT.iam.gserviceaccount.com:objectAdmin \
-  gs://YOUR_QUICKWIT_BUCKET
+gcloud storage buckets add-iam-policy-binding \
+  gs://YOUR_QUICKWIT_BUCKET \
+  --member=serviceAccount:clickhouse-gcs@YOUR_PROJECT.iam.gserviceaccount.com \
+  --role=roles/storage.objectAdmin
 ```
 
 `objectAdmin` is required — Quickwit deletes objects during split merges and garbage collection, so read-only or create-only roles will fail mid-indexing with `AccessDenied`.
 
 **2. Make sure the HMAC credentials are in a Kubernetes secret.** If you followed step 2b of the ClickHouse section, reuse `clickhouse-gcs-credentials` — the snippet in step 3 below assumes that name. Otherwise, create a Quickwit-specific secret with the same HMAC key pair:
+
 ```bash
 kubectl create secret generic quickwit-gcs-credentials \
   --from-literal=access-key-id=GOOG1... \
   --from-literal=secret-access-key=...
 ```
+
 …and use `quickwit-gcs-credentials` as the `secretKeyRef.name` in step 3.
 
 **3. Configure `laminar.yaml`:**
+
 ```yaml
 quickwit:
   s3:
@@ -1197,7 +1222,7 @@ quickwit:
     - name: AWS_ACCESS_KEY_ID
       valueFrom:
         secretKeyRef:
-          name: clickhouse-gcs-credentials 
+          name: clickhouse-gcs-credentials
           key: access-key-id # HMAC Access ID
     - name: AWS_SECRET_ACCESS_KEY
       valueFrom:
@@ -1252,11 +1277,11 @@ piiRedactor:
     nodeAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
         nodeSelectorTerms:
-        - matchExpressions:
-          - key: alpha.eksctl.io/nodegroup-name
-            operator: In
-            values:
-            - pii-redactor
+          - matchExpressions:
+              - key: alpha.eksctl.io/nodegroup-name
+                operator: In
+                values:
+                  - pii-redactor
 ```
 
 ### Tuning
@@ -1302,11 +1327,11 @@ appServer:
     nodeAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
         nodeSelectorTerms:
-        - matchExpressions:
-          - key: alpha.eksctl.io/nodegroup-name
-            operator: In
-            values:
-            - compute-optimized
+          - matchExpressions:
+              - key: alpha.eksctl.io/nodegroup-name
+                operator: In
+                values:
+                  - compute-optimized
 ```
 
 ## Resource Limits
@@ -1353,7 +1378,6 @@ Use examples as additional override files:
 ```bash
 helm upgrade -i laminar . -f laminar.yaml -f examples/mixed-storage-classes.yaml
 ```
-
 
 ## ClickHouse Logging
 
