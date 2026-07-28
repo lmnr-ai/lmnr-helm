@@ -30,7 +30,7 @@ data:
 
         # Forward only /v1/* requests
         location ~* ^/v1/ {
-          proxy_pass http://localhost:{{ .Values.appServer.env.port }};
+          proxy_pass http://{{ .Values.appServer.nginx.proxyUpstreamHost }}:{{ .Values.appServer.env.port }};
           proxy_set_header Host $host;
           proxy_set_header X-Real-IP $remote_addr;
           proxy_buffering off;
@@ -40,7 +40,7 @@ data:
 
         # Health check endpoint
         location /health {
-          proxy_pass http://localhost:{{ .Values.appServer.env.port }};
+          proxy_pass http://{{ .Values.appServer.nginx.proxyUpstreamHost }}:{{ .Values.appServer.env.port }};
           proxy_set_header Host $host;
           proxy_set_header X-Real-IP $remote_addr;
         }
