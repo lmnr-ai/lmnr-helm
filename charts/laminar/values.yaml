@@ -925,6 +925,10 @@ rabbitmq:
 # Storage configuration
 storage:
   storageClass:
+    # Create a cluster-wide StorageClass managed by this chart. Disable this in
+    # clusters where operators cannot create cluster-scoped resources. Persistent
+    # services with no explicit storageClass then use the cluster default class.
+    enabled: true
     # Name of the storage class created by this chart
     name: "laminar-sc"
     # If left empty, will be set based on global.cloudProvider:

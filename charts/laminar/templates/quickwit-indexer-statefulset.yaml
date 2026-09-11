@@ -21,7 +21,10 @@ spec:
     - metadata:
         name: data
       spec:
-        storageClassName: {{ .Values.quickwit.indexer.persistence.storageClass | default (include "laminar.resourceName" .Values.storage.storageClass.name) }}
+        {{- $storageClassName := include "lmnr.storageClassName" (dict "root" . "persistence" .Values.quickwit.indexer.persistence) }}
+        {{- if $storageClassName }}
+        storageClassName: {{ $storageClassName }}
+        {{- end }}
         accessModes:
           - ReadWriteOnce
         resources:
