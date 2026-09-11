@@ -965,19 +965,12 @@ Notes:
 
 ### Default Storage Class
 
-The chart creates a default EBS storage class with configurable availability zones. In your `laminar.yaml`:
-
-```yaml
-storage:
-  zones:
-    - "us-east-1b" # Single AZ deployment
-```
-
-The full storage class configuration is in `values.yaml` and can be overridden:
+By default, the chart creates a cluster-wide storage class with provider-specific defaults and configurable availability zones. The full configuration is in `values.yaml` and can be overridden:
 
 ```yaml
 storage:
   storageClass:
+    enabled: true
     name: "ebs-sc"
     type: "gp3" # EBS volume type
     reclaimPolicy: "Retain" # Keep volumes after deletion
@@ -986,16 +979,29 @@ storage:
       - "us-east-1b" # Single AZ deployment
 ```
 
+If your cluster does not permit chart users to create cluster-scoped `StorageClass` resources, disable creation:
+
+```yaml
+storage:
+  storageClass:
+    enabled: false
+```
+
+Persistence remains enabled for each service. When a service's `persistence.storageClass` is empty, the chart omits `storageClassName` from its PVC template and Kubernetes selects a default StorageClass already installed in the cluster. If the cluster has no default StorageClass, set `persistence.storageClass` explicitly for every persistent service or the PVCs will remain pending.
+
+An explicit per-service StorageClass always takes precedence, regardless of `storage.storageClass.enabled`.
+
 **Multi-AZ Configuration:**
 
 For high availability across multiple zones in your `laminar.yaml`:
 
 ```yaml
 storage:
-  zones:
-    - "us-east-1a"
-    - "us-east-1b"
-    - "us-east-1c"
+  storageClass:
+    zones:
+      - "us-east-1a"
+      - "us-east-1b"
+      - "us-east-1c"
 ```
 
 **Important:** Ensure your Kubernetes nodes are running in the zones you specify. Pods with persistent volumes can only be scheduled on nodes in the same zone as their volume.
