@@ -99,6 +99,8 @@ spec:
               value: {{ .Values.appServerConsumer.env.enableReports | quote }}
             - name: NUM_SIGNAL_JOB_REALTIME_WORKERS
               value: {{ .Values.appServerConsumer.env.numSignalJobRealtimeWorkers | quote }}
+            - name: NUM_SIGNAL_JOB_BACKFILL_WORKERS
+              value: {{ .Values.appServerConsumer.env.numSignalJobBackfillWorkers | quote }}
             - name: NUM_REPORTS_WORKERS
               value: {{ .Values.appServerConsumer.env.numReportsWorkers | quote }}
             - name: LLM_PROVIDER
