@@ -117,6 +117,10 @@ spec:
               value: {{ .Values.appServerConsumer.env.llmModelLarge | quote }}
             - name: SIGNALS_ALWAYS_USE_REALTIME
               value: {{ .Values.appServerConsumer.env.signalsAlwaysUseRealtime | quote }}
+            - name: SIGNALS_REALTIME_QUEUE_PREFETCH_COUNT
+              value: {{ .Values.appServerConsumer.env.signalsRealtimeQueuePrefetchCount | quote }}
+            - name: SIGNALS_BACKFILL_QUEUE_PREFETCH_COUNT
+              value: {{ .Values.appServerConsumer.env.signalsBackfillQueuePrefetchCount | quote }}
             - name: RABBITMQ_MAX_CHANNEL_POOL_SIZE
               value: {{ .Values.appServerConsumer.env.rabbitmqMaxChannelPoolSize | quote }}
             - name: RABBITMQ_AUTO_RECONNECT

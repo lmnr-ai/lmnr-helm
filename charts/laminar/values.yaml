@@ -487,6 +487,8 @@ appServerConsumer:
     numSignalJobRealtimeWorkers: "4"
     numReportsWorkers: "2"
     spansIndexerQueuePrefetchCount: "1"
+    signalsRealtimeQueuePrefetchCount: "1"
+    signalsBackfillQueuePrefetchCount: "1"
     rabbitmqMaxChannelPoolSize: "128"
     rabbitmqAutoReconnect: "true"
     # LLM provider for signals (one of "openai" | "gemini" | "bedrock").
