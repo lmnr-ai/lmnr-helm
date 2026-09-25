@@ -485,8 +485,12 @@ appServerConsumer:
     signalJobMaxAllowedSteps: "10"
     signalJobWaitingQueueTtlMs: "300000"
     numSignalJobRealtimeWorkers: "4"
+    numSignalJobBackfillWorkers: "4"
     numReportsWorkers: "2"
     spansIndexerQueuePrefetchCount: "1"
+    eventClusteringBatchQueuePrefetchCount: "2"
+    signalsRealtimeQueuePrefetchCount: "1"
+    signalsBackfillQueuePrefetchCount: "1"
     rabbitmqMaxChannelPoolSize: "128"
     rabbitmqAutoReconnect: "true"
     # LLM provider for signals (one of "openai" | "gemini" | "bedrock").
