@@ -79,6 +79,8 @@ spec:
               value: {{ .Values.appServerConsumer.env.numNotificationWorkers | quote }}
             - name: NUM_CLUSTERING_WORKERS
               value: {{ .Values.appServerConsumer.env.numClusteringWorkers | quote }}
+            - name: EVENT_CLUSTERING_BATCH_QUEUE_PREFETCH_COUNT
+              value: {{ .Values.appServerConsumer.env.eventClusteringBatchQueuePrefetchCount | quote }}
             - name: NUM_SEMANTIC_EVENT_WORKERS
               value: {{ .Values.appServerConsumer.env.numSemanticEventWorkers | quote }}
             - name: NUM_SPANS_INDEXER_WORKERS

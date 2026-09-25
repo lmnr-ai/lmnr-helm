@@ -488,6 +488,7 @@ appServerConsumer:
     numSignalJobBackfillWorkers: "4"
     numReportsWorkers: "2"
     spansIndexerQueuePrefetchCount: "1"
+    eventClusteringBatchQueuePrefetchCount: "2"
     signalsRealtimeQueuePrefetchCount: "1"
     signalsBackfillQueuePrefetchCount: "1"
     rabbitmqMaxChannelPoolSize: "128"
