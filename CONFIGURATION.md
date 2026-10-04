@@ -23,6 +23,7 @@ This guide covers advanced configuration options for the Laminar Helm chart.
 - [PII Redaction](#pii-redaction)
 - [Node Placement](#node-placement)
 - [Resource Limits](#resource-limits)
+- [Frontend Graceful Shutdown](#frontend-graceful-shutdown)
 - [Upgrading the Chart](#upgrading-the-chart)
 
 ## Cloud Provider
@@ -1357,6 +1358,22 @@ postgres:
       cpu: "2"
       memory: "4Gi"
 ```
+
+## Frontend Graceful Shutdown
+
+When a rollout (e.g. `helm upgrade`) replaces a frontend pod, Kubernetes sends it SIGTERM and removes it from the load balancer at the same time. Next.js stops accepting connections as soon as it gets SIGTERM, but the load balancer (AWS ALB or GKE NEG) keeps routing requests to the pod for a few seconds until removal takes effect. Those requests fail with `502 Bad Gateway`.
+
+To close that window, the frontend pod runs a `preStop` sleep before SIGTERM is delivered, so it keeps serving until the load balancer has stopped sending it traffic:
+
+```yaml
+frontend:
+  # Seconds to keep serving after termination starts. 0 disables the preStop hook.
+  preStopSleepSeconds: 20
+  # Total shutdown budget, including the sleep. Must be greater than preStopSleepSeconds.
+  terminationGracePeriodSeconds: 60
+```
+
+The defaults add about 20 seconds per frontend pod to a rollout. If your load balancer takes longer to deregister targets, raise `preStopSleepSeconds` (and `terminationGracePeriodSeconds` with it). The chart fails to render if `terminationGracePeriodSeconds` is not greater than `preStopSleepSeconds`.
 
 ## All Configuration Options
 
