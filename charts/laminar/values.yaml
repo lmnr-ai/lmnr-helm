@@ -299,6 +299,14 @@ frontend:
   livenessProbe:
     initialDelaySeconds: 150
     periodSeconds: 20
+  # Graceful shutdown during rollouts. On termination the pod sleeps for
+  # preStopSleepSeconds before Next.js receives SIGTERM, so the load balancer
+  # has time to stop routing new requests to it (otherwise users see 502s
+  # during `helm upgrade`). Set preStopSleepSeconds to 0 to disable.
+  # terminationGracePeriodSeconds covers the sleep plus in-flight requests and
+  # must be greater than preStopSleepSeconds.
+  preStopSleepSeconds: 20
+  terminationGracePeriodSeconds: 60
   # Additional environment variables for the frontend container.
   # Supports all Kubernetes env var formats including valueFrom.secretKeyRef
   # to reference pre-existing Kubernetes secrets.

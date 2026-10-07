@@ -54,3 +54,7 @@ For services with multiple workloads (Quickwit, ClickHouse), expose `extraEnv` b
 ## Postgres schema
 
 `global.postgresSchema` (default `"public"`) is dispatched as `POSTGRES_SCHEMA` into all three app pods (app-server, app-server-consumer, frontend) so they share one `search_path` — it MUST be a single global, never per-pod, since the services would silently diverge otherwise. `POSTGRES_CREATE_SCHEMA` (`frontend.env.postgresCreateSchema`) is frontend-only because only the frontend runs migrations / `CREATE SCHEMA` on boot. A `public` value (any case) is the default schema: never created, migrations stay in the standard `drizzle` tracker. Documented under "Postgres Schema" in CONFIGURATION.md.
+
+## Frontend graceful shutdown
+
+`frontend.preStopSleepSeconds` (default 20) renders a `preStop` `sleep` on the frontend container and `frontend.terminationGracePeriodSeconds` (default 60) sets the pod's grace period (LAM-2327). Next.js closes its listener immediately on SIGTERM, while ALB/NEG target deregistration lags by seconds, so without the sleep every rollout 502s. The grace period includes the sleep, so the template `fail`s at render time unless `terminationGracePeriodSeconds > preStopSleepSeconds`. `sleep` comes from the Alpine base of both `frontend-ee` and `frontend-ee-basepath`; if the image base ever changes to distroless, switch to the native `preStop.sleep` action.
