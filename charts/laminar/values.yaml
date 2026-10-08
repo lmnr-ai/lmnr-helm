@@ -56,6 +56,9 @@ images:
   clickhouse:
     repository: "clickhouse/clickhouse-server"
     tag: "25.10"
+  curl:
+    repository: "curlimages/curl"
+    tag: "8.22.0"
 
 # Secrets configuration (K8s secrets)
 secrets:
@@ -299,6 +302,14 @@ frontend:
   livenessProbe:
     initialDelaySeconds: 150
     periodSeconds: 20
+  # Graceful shutdown during rollouts. On termination the pod sleeps for
+  # preStopSleepSeconds before Next.js receives SIGTERM, so the load balancer
+  # has time to stop routing new requests to it (otherwise users see 502s
+  # during `helm upgrade`). Set preStopSleepSeconds to 0 to disable.
+  # terminationGracePeriodSeconds covers the sleep plus in-flight requests and
+  # must be greater than preStopSleepSeconds.
+  preStopSleepSeconds: 20
+  terminationGracePeriodSeconds: 60
   # Additional environment variables for the frontend container.
   # Supports all Kubernetes env var formats including valueFrom.secretKeyRef
   # to reference pre-existing Kubernetes secrets.
@@ -386,6 +397,9 @@ appServer:
     # Additional annotations for the ingress
     annotations: {}
   nginx:
+    # In-pod proxy_pass target. Override to "127.0.0.1" on dual-stack hosts
+    # hitting `connect() failed` errors, or "[::1]" for IPv6-only deploys.
+    proxyUpstreamHost: "localhost"
     resources:
       requests:
         cpu: "100m"
@@ -425,6 +439,14 @@ appServer:
     llmModelSmall: ""
     llmModelMedium: ""
     llmModelLarge: ""
+  livenessProbe:
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    failureThreshold: 1
+  readinessProbe:
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    failureThreshold: 1
   # Additional environment variables for the app-server container.
   # Supports all Kubernetes env var formats including valueFrom.secretKeyRef.
   # These take precedence over values injected via envFrom (secrets.data).
@@ -485,8 +507,12 @@ appServerConsumer:
     signalJobMaxAllowedSteps: "10"
     signalJobWaitingQueueTtlMs: "300000"
     numSignalJobRealtimeWorkers: "4"
+    numSignalJobBackfillWorkers: "4"
     numReportsWorkers: "2"
     spansIndexerQueuePrefetchCount: "1"
+    eventClusteringBatchQueuePrefetchCount: "2"
+    signalsRealtimeQueuePrefetchCount: "1"
+    signalsBackfillQueuePrefetchCount: "1"
     rabbitmqMaxChannelPoolSize: "128"
     rabbitmqAutoReconnect: "true"
     # LLM provider for signals (one of "openai" | "gemini" | "bedrock").
@@ -512,6 +538,14 @@ appServerConsumer:
     enableReports: "false"
     quickwitSearchUrl: "http://laminar-quickwit-searcher:7280"
     quickwitIngestUrl: "http://laminar-quickwit-indexer:7281"
+  livenessProbe:
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    failureThreshold: 1
+  readinessProbe:
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    failureThreshold: 1
   # Additional environment variables for the app-server-consumer container.
   # Supports all Kubernetes env var formats including valueFrom.secretKeyRef.
   # These take precedence over values injected via envFrom (secrets.data).

@@ -16,6 +16,12 @@ spec:
         app: {{ include "laminar.resourceName" "frontend" }}
     spec:
       serviceAccountName: {{ include "lmnr.secrets.serviceAccountName" . }}
+      {{- $preStopSleep := int .Values.frontend.preStopSleepSeconds }}
+      {{- $gracePeriod := int .Values.frontend.terminationGracePeriodSeconds }}
+      {{- if ge $preStopSleep $gracePeriod }}
+      {{- fail (printf "frontend.terminationGracePeriodSeconds (%d) must be greater than frontend.preStopSleepSeconds (%d), otherwise the pod is killed before it finishes in-flight requests" $gracePeriod $preStopSleep) }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ $gracePeriod }}
       {{- if .Values.frontend.waitForDependencies.enabled }}
       initContainers:
         {{- range .Values.frontend.waitForDependencies.services }}
@@ -30,7 +36,7 @@ spec:
         {{- end }}
         {{- range .Values.frontend.waitForDependencies.httpChecks }}
         - name: http-wait-for-{{ .name }}
-          image: curlimages/curl:8.5.0
+          image: {{ $.Values.images.curl.repository }}:{{ $.Values.images.curl.tag }}
           command: ['sh', '-c', 'until curl -f {{ .url }}; do echo "waiting for {{ .name }}..."; sleep 2; done; echo "{{ .name }} is ready"']
         {{- end }}
       {{- end }}
@@ -56,6 +62,15 @@ spec:
               port: 3000
             initialDelaySeconds: {{ .Values.frontend.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.frontend.livenessProbe.periodSeconds }}
+          {{- if gt $preStopSleep 0 }}
+          # Keep serving until the load balancer stops routing to this pod:
+          # Next.js stops accepting connections immediately on SIGTERM, which
+          # otherwise races target deregistration and yields 502s on rollout.
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "{{ $preStopSleep }}"]
+          {{- end }}
           resources:
             {{- toYaml .Values.frontend.resources | nindent 12 }}
           envFrom:

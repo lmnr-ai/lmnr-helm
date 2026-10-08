@@ -44,7 +44,7 @@ initContainers:
 ```yaml
 initContainers:
   - name: wait-for-app-server
-    image: curlimages/curl:8.5.0
+    image: curlimages/curl:8.22.0
     command: ['sh', '-c', 'until curl -f http://app-server-service:8000/health; do echo waiting...; sleep 2; done']
 ```
 
