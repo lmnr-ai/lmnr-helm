@@ -77,7 +77,22 @@ Usage: {{ include "laminar.resourceName" "frontend" }}
 {{- else -}}
 {{- printf "laminar-%s" $name -}}
 {{- end -}}
+{{- end }}
+
+{{/*
+Resolve the StorageClass for a persistent service. An explicit per-service
+class wins. Otherwise, use the chart-managed class when it is enabled. Return
+an empty string when it is disabled so storageClassName can be omitted and
+Kubernetes can select a cluster default StorageClass.
+Usage: {{ include "lmnr.storageClassName" (dict "root" . "persistence" .Values.postgres.persistence) }}
+*/}}
+{{- define "lmnr.storageClassName" -}}
+{{- if .persistence.storageClass -}}
+{{- .persistence.storageClass -}}
+{{- else if ne .root.Values.storage.storageClass.enabled false -}}
+{{- include "laminar.resourceName" .root.Values.storage.storageClass.name -}}
 {{- end -}}
+{{- end }}
 
 {{/*
 Node selector - merges service-specific with global defaults
