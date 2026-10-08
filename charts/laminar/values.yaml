@@ -56,6 +56,9 @@ images:
   clickhouse:
     repository: "clickhouse/clickhouse-server"
     tag: "25.10"
+  curl:
+    repository: "curlimages/curl"
+    tag: "8.22.0"
 
 # Secrets configuration (K8s secrets)
 secrets:
