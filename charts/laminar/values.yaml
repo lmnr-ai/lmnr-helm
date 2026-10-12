@@ -59,6 +59,9 @@ images:
   curl:
     repository: "curlimages/curl"
     tag: "8.22.0"
+  quickwit:
+    repository: "quickwit/quickwit"
+    tag: "v0.9.1"
 
 # Secrets configuration (K8s secrets)
 secrets:
@@ -558,7 +561,6 @@ appServerConsumer:
 # Quickwit configuration
 quickwit:
   enabled: true
-  version: "v0.8.2"
   clusterId: "default-quickwit"
   # Node scheduling configuration
   nodeSelector: {}

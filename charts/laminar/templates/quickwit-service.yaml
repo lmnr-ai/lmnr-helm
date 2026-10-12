@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: quickwit
     app.kubernetes.io/instance: quickwit
-    app.kubernetes.io/version: {{ .Values.quickwit.version | quote }}
+    app.kubernetes.io/version: {{ .Values.images.quickwit.tag | quote }}
 spec:
   type: ClusterIP
   ports:
@@ -29,7 +29,7 @@ metadata:
   labels:
     app.kubernetes.io/name: quickwit
     app.kubernetes.io/instance: quickwit
-    app.kubernetes.io/version: {{ .Values.quickwit.version | quote }}
+    app.kubernetes.io/version: {{ .Values.images.quickwit.tag | quote }}
 spec:
   type: ClusterIP
   clusterIP: None
@@ -55,7 +55,7 @@ metadata:
   labels:
     app.kubernetes.io/name: quickwit
     app.kubernetes.io/instance: quickwit
-    app.kubernetes.io/version: {{ .Values.quickwit.version | quote }}
+    app.kubernetes.io/version: {{ .Values.images.quickwit.tag | quote }}
 spec:
   type: ClusterIP
   ports:
@@ -78,7 +78,7 @@ metadata:
   labels:
     app.kubernetes.io/name: quickwit
     app.kubernetes.io/instance: quickwit
-    app.kubernetes.io/version: {{ .Values.quickwit.version | quote }}
+    app.kubernetes.io/version: {{ .Values.images.quickwit.tag | quote }}
 spec:
   type: ClusterIP
   ports:
@@ -101,7 +101,7 @@ metadata:
   labels:
     app.kubernetes.io/name: quickwit
     app.kubernetes.io/instance: quickwit
-    app.kubernetes.io/version: {{ .Values.quickwit.version | quote }}
+    app.kubernetes.io/version: {{ .Values.images.quickwit.tag | quote }}
 spec:
   type: ClusterIP
   ports:
@@ -124,7 +124,7 @@ metadata:
   labels:
     app.kubernetes.io/name: quickwit
     app.kubernetes.io/instance: quickwit
-    app.kubernetes.io/version: {{ .Values.quickwit.version | quote }}
+    app.kubernetes.io/version: {{ .Values.images.quickwit.tag | quote }}
 spec:
   type: ClusterIP
   ports:
