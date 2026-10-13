@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: quickwit
     app.kubernetes.io/instance: quickwit
-    app.kubernetes.io/version: {{ .Values.quickwit.version | quote }}
+    app.kubernetes.io/version: {{ .Values.images.quickwit.tag | quote }}
 spec:
   replicas: {{ .Values.quickwit.metastore.replicaCount }}
   selector:
@@ -39,7 +39,7 @@ spec:
           securityContext:
             runAsNonRoot: true
             runAsUser: 1005
-          image: "quickwit/quickwit:{{ .Values.quickwit.version }}"
+          image: {{ .Values.images.quickwit.repository }}:{{ .Values.images.quickwit.tag }}
           imagePullPolicy: IfNotPresent
           args: ["run", "--service", "metastore"]
           envFrom:
@@ -83,11 +83,11 @@ spec:
               containerPort: 7282
               protocol: UDP
           startupProbe:
-            failureThreshold: 12
             httpGet:
               path: /health/livez
               port: rest
-            periodSeconds: 5
+            periodSeconds: {{ .Values.quickwit.metastore.startupProbe.periodSeconds }}
+            failureThreshold: {{ .Values.quickwit.metastore.startupProbe.failureThreshold }}
           livenessProbe:
             httpGet:
               path: /health/livez

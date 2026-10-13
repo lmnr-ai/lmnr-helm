@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: quickwit
     app.kubernetes.io/instance: quickwit
-    app.kubernetes.io/version: {{ .Values.quickwit.version | quote }}
+    app.kubernetes.io/version: {{ .Values.images.quickwit.tag | quote }}
 spec:
   replicas: {{ .Values.quickwit.janitor.replicaCount }}
   selector:
@@ -33,7 +33,7 @@ spec:
           securityContext:
             runAsNonRoot: true
             runAsUser: 1005
-          image: "quickwit/quickwit:{{ .Values.quickwit.version }}"
+          image: {{ .Values.images.quickwit.repository }}:{{ .Values.images.quickwit.tag }}
           imagePullPolicy: IfNotPresent
           args: ["run", "--service", "janitor"]
           envFrom:

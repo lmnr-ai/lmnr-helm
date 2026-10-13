@@ -17,7 +17,7 @@ metadata:
   labels:
     app.kubernetes.io/name: quickwit
     app.kubernetes.io/instance: quickwit
-    app.kubernetes.io/version: {{ .Values.quickwit.version | quote }}
+    app.kubernetes.io/version: {{ .Values.images.quickwit.tag | quote }}
 data:
   node.yaml: |-
     data_dir: /quickwit/qwdata
