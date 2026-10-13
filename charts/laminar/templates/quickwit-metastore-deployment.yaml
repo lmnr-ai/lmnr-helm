@@ -83,11 +83,11 @@ spec:
               containerPort: 7282
               protocol: UDP
           startupProbe:
-            failureThreshold: 12
             httpGet:
               path: /health/livez
               port: rest
-            periodSeconds: 5
+            periodSeconds: {{ .Values.quickwit.metastore.startupProbe.periodSeconds }}
+            failureThreshold: {{ .Values.quickwit.metastore.startupProbe.failureThreshold }}
           livenessProbe:
             httpGet:
               path: /health/livez

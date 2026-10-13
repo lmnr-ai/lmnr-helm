@@ -660,6 +660,14 @@ quickwit:
         - name: postgres
           host: laminar-postgres-service
           port: 5432
+    # Startup probe budget (periodSeconds × failureThreshold = 300s). Upon
+    # migration to quickwit 0.9, the metastore runs migrations against
+    # Postgres on boot, which can take a while when there are many
+    # splits. A probe timeout midway kills the pod and leaves migrations
+    # partially applied.
+    startupProbe:
+      periodSeconds: 5
+      failureThreshold: 60
     extraEnv: []
   indexer:
     replicaCount: 1
