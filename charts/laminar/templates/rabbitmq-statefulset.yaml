@@ -53,6 +53,9 @@ spec:
             - -c
             - cp /tmp/rabbitmq/rabbitmq.conf /etc/rabbitmq/rabbitmq.conf && echo '' >> /etc/rabbitmq/rabbitmq.conf;
               cp /tmp/rabbitmq/enabled_plugins /etc/rabbitmq/enabled_plugins
+              {{- if .Values.rabbitmq.streams.enabled }};
+              echo "stream.advertised_host = $(hostname).{{ include "laminar.resourceName" "rabbitmq-headless" }}.{{ .Release.Namespace }}.svc" >> /etc/rabbitmq/rabbitmq.conf
+              {{- end }}
       volumes:
         - name: rabbitmq-config
           configMap:
@@ -115,6 +118,11 @@ spec:
             - name: amqp
               containerPort: {{ .Values.rabbitmq.service.amqpPort }}
               protocol: TCP
+            {{- if .Values.rabbitmq.streams.enabled }}
+            - name: stream
+              containerPort: {{ .Values.rabbitmq.streams.port }}
+              protocol: TCP
+            {{- end }}
             - name: management
               containerPort: 15672
               protocol: TCP

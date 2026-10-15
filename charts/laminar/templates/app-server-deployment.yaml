@@ -121,6 +121,9 @@ spec:
             - name: NEXT_INTERNAL_URL
               value: http://{{ include "laminar.resourceName" "frontend-service" }}:{{ .Values.frontend.service.port }}
             {{- end }}
+            {{- with include "lmnr.rabbitmq.streams.env" (dict "root" . "consumer" false) }}
+            {{- . | nindent 12 }}
+            {{- end }}
             {{- with .Values.appServer.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
