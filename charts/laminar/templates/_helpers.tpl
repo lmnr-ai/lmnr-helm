@@ -314,3 +314,169 @@ path from one bool removes the old footgun where they could disagree.
 {{- define "lmnr.frontend.imageName" -}}
 {{- if .Values.frontend.subPath.enabled -}}frontend-ee-basepath{{- else -}}{{ .Values.images.frontend.name }}{{- end -}}
 {{- end }}
+
+{{/*
+Parse a size quantity into an integer byte count. Accepts Kubernetes
+quantities ("4Gi", "512Mi", "0.5Gi", "4G") and RabbitMQ-style units ("2GB",
+"50MiB"); a bare number is bytes. Decimal suffixes are powers of 1000,
+binary (i) suffixes powers of 1024.
+Usage: {{ include "lmnr.bytes" "4Gi" }}
+*/}}
+{{- define "lmnr.bytes" -}}
+{{- if not (kindIs "string" .) -}}
+{{- /* YAML numbers arrive as float64; toString would print 2.62144e+07 */ -}}
+{{- . | int64 -}}
+{{- else -}}
+{{- $q := . | trim -}}
+{{- $num := regexFind "^[0-9]+(\\.[0-9]+)?" $q -}}
+{{- $unit := trimPrefix $num $q | trim -}}
+{{- $units := dict "" 1.0 "k" 1e3 "K" 1e3 "kB" 1e3 "KB" 1e3 "M" 1e6 "MB" 1e6 "G" 1e9 "GB" 1e9 "T" 1e12 "TB" 1e12 "Ki" 1024.0 "KiB" 1024.0 "Mi" 1048576.0 "MiB" 1048576.0 "Gi" 1073741824.0 "GiB" 1073741824.0 "Ti" 1099511627776.0 "TiB" 1099511627776.0 -}}
+{{- if or (not $num) (not (hasKey $units $unit)) -}}
+{{- fail (printf "cannot parse size %q (expected e.g. 4Gi, 512Mi, 2GB)" $q) -}}
+{{- end -}}
+{{- mulf (float64 $num) (index $units $unit) | floor | int64 -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+RabbitMQ Streams helpers. Everything stream-related that the app pods read is
+emitted by "lmnr.rabbitmq.streams.env" from the single rabbitmq.streams block,
+so the producer (app-server) and consumer (app-server-consumer) can never
+disagree on topology or on whether the indexer stream has a reader.
+*/}}
+
+{{/* Number of super streams the app may declare (spans + Quickwit indexer).
+Counted as 2 even with the indexer off: retention is creation-only, so the
+budget must already cover the indexer stream if it is turned on later. */}}
+{{- define "lmnr.rabbitmq.streams.count" -}}2{{- end }}
+
+{{- define "lmnr.rabbitmq.streams.host" -}}
+{{- if .Values.rabbitmq.streams.host -}}
+{{- .Values.rabbitmq.streams.host -}}
+{{- else -}}
+{{- include "laminar.resourceName" "rabbitmq-service" -}}
+{{- end -}}
+{{- end }}
+
+{{- define "lmnr.rabbitmq.streams.replicationFactor" -}}
+{{- $s := .Values.rabbitmq.streams -}}
+{{- if $s.replicationFactor -}}
+{{- $s.replicationFactor | int -}}
+{{- else if .Values.rabbitmq.enabled -}}
+{{- min 2 (.Values.rabbitmq.replicaCount | int) -}}
+{{- else -}}
+2
+{{- end -}}
+{{- end }}
+
+{{/* Per-partition retention cap. Explicit value wins; otherwise half of the
+RabbitMQ volume is split across every partition of every super stream. */}}
+{{- define "lmnr.rabbitmq.streams.maxLengthBytes" -}}
+{{- $s := .Values.rabbitmq.streams -}}
+{{- if $s.maxLengthBytes -}}
+{{- include "lmnr.bytes" $s.maxLengthBytes -}}
+{{- else if not (and .Values.rabbitmq.enabled .Values.rabbitmq.persistence.enabled) -}}
+{{- fail "rabbitmq.streams.maxLengthBytes must be set explicitly when rabbitmq.enabled or rabbitmq.persistence.enabled is false: the chart can only derive stream retention from the in-chart RabbitMQ volume size" -}}
+{{- else -}}
+{{- $disk := include "lmnr.bytes" .Values.rabbitmq.persistence.size | int64 -}}
+{{- $slots := mul (include "lmnr.rabbitmq.streams.count" . | int64) ($s.partitions | int64) -}}
+{{- div (div $disk 2) $slots -}}
+{{- end -}}
+{{- end }}
+
+{{/* Per-reader memory budget. Explicit value wins; otherwise
+appServerConsumer.resources.limits.memory / 32 clamped to [16Mi, 128Mi]. */}}
+{{- define "lmnr.rabbitmq.streams.channelMaxBytes" -}}
+{{- $r := .Values.rabbitmq.streams.reader -}}
+{{- $floor := 16777216 -}}
+{{- $ceil := 134217728 -}}
+{{- if $r.channelMaxBytes -}}
+{{- include "lmnr.bytes" $r.channelMaxBytes -}}
+{{- else -}}
+{{- $limit := dig "limits" "memory" "" (.Values.appServerConsumer.resources | default dict) -}}
+{{- if $limit -}}
+{{- div (include "lmnr.bytes" $limit | int64) 32 | max $floor | min $ceil -}}
+{{- else -}}
+{{- $ceil -}}
+{{- end -}}
+{{- end -}}
+{{- end }}
+
+{{/* Render-time checks; fail fast instead of shipping a broker that blocks
+publishers on a full disk or a client that can't reach partition leaders. */}}
+{{- define "lmnr.rabbitmq.streams.validate" -}}
+{{- $s := .Values.rabbitmq.streams -}}
+{{- if lt ($s.partitions | int) 1 -}}
+{{- fail "rabbitmq.streams.partitions must be >= 1" -}}
+{{- end -}}
+{{- if .Values.rabbitmq.enabled -}}
+{{- if not .Values.rabbitmq.headlessService.enabled -}}
+{{- fail "rabbitmq.streams.enabled requires rabbitmq.headlessService.enabled: stream clients dial each broker pod by its headless-service DNS name" -}}
+{{- end -}}
+{{- $rf := include "lmnr.rabbitmq.streams.replicationFactor" . | int -}}
+{{- if or (lt $rf 1) (gt $rf (.Values.rabbitmq.replicaCount | int)) -}}
+{{- fail (printf "rabbitmq.streams.replicationFactor (%d) must be between 1 and rabbitmq.replicaCount (%d)" $rf (.Values.rabbitmq.replicaCount | int)) -}}
+{{- end -}}
+{{- if .Values.rabbitmq.persistence.enabled -}}
+{{- $maxLen := include "lmnr.rabbitmq.streams.maxLengthBytes" . | int64 -}}
+{{- $total := mul (include "lmnr.rabbitmq.streams.count" . | int64) ($s.partitions | int64) $maxLen -}}
+{{- $disk := include "lmnr.bytes" .Values.rabbitmq.persistence.size | int64 -}}
+{{- $usable := sub $disk (include "lmnr.bytes" .Values.rabbitmq.config.diskFreeLimit | int64) -}}
+{{- if gt $total $usable -}}
+{{- fail (printf "RabbitMQ streams can occupy %d bytes (2 streams × %d partitions × %d maxLengthBytes), which exceeds rabbitmq.persistence.size (%s) minus config.diskFreeLimit (%s). Lower rabbitmq.streams.maxLengthBytes or grow the volume; a full disk blocks every publisher." $total ($s.partitions | int) $maxLen .Values.rabbitmq.persistence.size .Values.rabbitmq.config.diskFreeLimit) -}}
+{{- end -}}
+{{- end -}}
+{{- else if not $s.host -}}
+{{- fail "rabbitmq.streams.host must be set when rabbitmq.enabled is false" -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Stream env vars for an app-server pod. Pass (dict "root" . "consumer" true)
+from app-server-consumer to add the reader tuning. Credentials reuse the
+broker's default user via $(VAR) expansion of the envFrom secrets, so they
+work for every secrets source (k8s / AWS / Vault). Override
+RABBITMQ_STREAM_USERNAME / RABBITMQ_STREAM_PASSWORD via extraEnv for an
+external broker with different credentials.
+*/}}
+{{- define "lmnr.rabbitmq.streams.env" -}}
+{{- $root := .root -}}
+{{- $s := $root.Values.rabbitmq.streams -}}
+{{- if $s.enabled -}}
+{{- include "lmnr.rabbitmq.streams.validate" $root -}}
+- name: RABBITMQ_STREAMS_ENABLED
+  value: "true"
+- name: RABBITMQ_STREAM_HOST
+  value: {{ include "lmnr.rabbitmq.streams.host" $root | quote }}
+- name: RABBITMQ_STREAM_PORT
+  value: {{ $s.port | quote }}
+- name: RABBITMQ_STREAM_USERNAME
+  value: "$(RABBITMQ_DEFAULT_USER)"
+- name: RABBITMQ_STREAM_PASSWORD
+  value: "$(RABBITMQ_DEFAULT_PASS)"
+- name: RABBITMQ_STREAM_LOAD_BALANCER_MODE
+  value: {{ $s.loadBalancerMode | quote }}
+- name: RABBITMQ_STREAM_SPANS_INDEXER_ENABLED
+  value: {{ $s.indexerEnabled | quote }}
+- name: RABBITMQ_STREAM_PARTITIONS
+  value: {{ $s.partitions | int | quote }}
+- name: RABBITMQ_STREAM_REPLICATION_FACTOR
+  value: {{ include "lmnr.rabbitmq.streams.replicationFactor" $root | quote }}
+- name: RABBITMQ_STREAM_MAX_LENGTH_BYTES
+  value: {{ include "lmnr.rabbitmq.streams.maxLengthBytes" $root | quote }}
+- name: RABBITMQ_STREAM_MAX_AGE_SECS
+  value: {{ $s.maxAgeSecs | int64 | quote }}
+- name: RABBITMQ_STREAM_MAX_SEGMENT_SIZE_BYTES
+  value: {{ include "lmnr.bytes" $s.maxSegmentSizeBytes | quote }}
+{{- if .consumer }}
+- name: RABBITMQ_STREAM_SPANS_BATCHERS
+  value: {{ $s.reader.spansBatchers | int | quote }}
+- name: RABBITMQ_STREAM_SPANS_INDEXER_BATCHERS
+  value: {{ $s.reader.spansIndexerBatchers | int | quote }}
+- name: RABBITMQ_STREAM_CHANNEL_MAX_BYTES
+  value: {{ include "lmnr.rabbitmq.streams.channelMaxBytes" $root | quote }}
+- name: RABBITMQ_STREAM_CLIENT_CHANNEL_CAPACITY
+  value: {{ $s.reader.clientChannelCapacity | int | quote }}
+{{- end }}
+{{- end -}}
+{{- end }}
