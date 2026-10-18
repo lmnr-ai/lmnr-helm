@@ -293,6 +293,9 @@ frontend:
     signalsEnabled: "true"
     # Enables the chat-with-trace feature in the frontend. Requires llmProvider (+ creds).
     agentChatEnabled: "true"
+    # Set to "true" to opt out of the anonymous usage heartbeat (deployment UUID,
+    # app version and row counts; no customer content). Rendered as LAMINAR_TELEMETRY_DISABLED.
+    telemetryDisabled: "false"
     # Whether the frontend should CREATE SCHEMA for global.postgresSchema on first
     # boot. Only takes effect for a non-"public" schema. Set to "false" if the
     # schema is pre-provisioned or the DB role lacks CREATE privileges.

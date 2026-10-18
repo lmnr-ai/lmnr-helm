@@ -24,6 +24,7 @@ This guide covers advanced configuration options for the Laminar Helm chart.
 - [Node Placement](#node-placement)
 - [Resource Limits](#resource-limits)
 - [Frontend Graceful Shutdown](#frontend-graceful-shutdown)
+- [Usage Telemetry](#usage-telemetry)
 - [Upgrading the Chart](#upgrading-the-chart)
 
 ## Cloud Provider
@@ -1380,6 +1381,18 @@ frontend:
 ```
 
 The defaults add about 20 seconds per frontend pod to a rollout. If your load balancer takes longer to deregister targets, raise `preStopSleepSeconds` (and `terminationGracePeriodSeconds` with it). The chart fails to render if `terminationGracePeriodSeconds` is not greater than `preStopSleepSeconds`.
+
+## Usage Telemetry
+
+Self-hosted deployments send an anonymous usage heartbeat from the frontend: an opaque per-deployment UUID, the app version and table row counts. It carries no customer content, PII or source IP. To opt out:
+
+```yaml
+frontend:
+  env:
+    telemetryDisabled: "true"
+```
+
+This renders `LAMINAR_TELEMETRY_DISABLED=true` on the frontend pod.
 
 ## All Configuration Options
 

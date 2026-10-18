@@ -114,6 +114,8 @@ spec:
               value: {{ .Values.frontend.env.signalsEnabled | quote }}
             - name: AGENT_CHAT_ENABLED
               value: {{ .Values.frontend.env.agentChatEnabled | quote }}
+            - name: LAMINAR_TELEMETRY_DISABLED
+              value: {{ .Values.frontend.env.telemetryDisabled | default "false" | quote }}
             {{- with .Values.frontend.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
