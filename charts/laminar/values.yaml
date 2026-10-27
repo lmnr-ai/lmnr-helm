@@ -173,6 +173,14 @@ secrets:
     # Frontend secrets - Worker URLs
     DATASET_EXPORT_WORKER_URL: ""
     DATASET_EXPORT_SECRET_KEY: ""
+    # Frontend secrets - SQL access to Postgres entities
+    # Dedicated read-only Postgres role that ClickHouse uses to read evaluation,
+    # dataset and signal names and dashboards in SQL queries and custom dashboards.
+    # The frontend creates the role on boot; it must NOT be POSTGRES_USER or a
+    # privileged role. Leave empty to turn this off (those queries then fail with
+    # "pg entities are not available on this deployment").
+    CLICKHOUSE_POSTGRES_USER: ""
+    CLICKHOUSE_POSTGRES_PASSWORD: ""
     DATA_EXPORTER_URL: ""
     DATA_EXPORTER_SECRET_KEY: ""
     # Frontend secrets - Slack (brokered OAuth for self-hosters).
@@ -297,6 +305,12 @@ frontend:
     # boot. Only takes effect for a non-"public" schema. Set to "false" if the
     # schema is pre-provisioned or the DB role lacks CREATE privileges.
     postgresCreateSchema: "true"
+    # Postgres host and port as the ClickHouse server reaches them, for SQL access
+    # to Postgres entities (see CLICKHOUSE_POSTGRES_USER in secrets.data). Leave the
+    # host empty to use the bundled Postgres (laminar-postgres-service) when
+    # postgres.enabled; set it to your endpoint when using an external Postgres.
+    clickhousePostgresHost: ""
+    clickhousePostgresPort: "5432"
   # First launch runs all migrations to prepare databases, which can take several minutes.
   # Larger initial delays are set to account for this.
   readinessProbe:

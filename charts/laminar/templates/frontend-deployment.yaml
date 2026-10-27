@@ -88,6 +88,17 @@ spec:
               value: {{ .Values.global.postgresSchema | quote }}
             - name: POSTGRES_CREATE_SCHEMA
               value: {{ .Values.frontend.env.postgresCreateSchema | quote }}
+            {{- $chPgHost := .Values.frontend.env.clickhousePostgresHost }}
+            {{- if and (not $chPgHost) .Values.postgres.enabled }}
+            {{- $chPgHost = include "laminar.resourceName" "postgres-service" }}
+            {{- end }}
+            {{- with $chPgHost }}
+            # Read by ClickHouse's PostgreSQL engine, so it's the host as ClickHouse reaches it.
+            - name: CLICKHOUSE_POSTGRES_HOST
+              value: {{ . | quote }}
+            {{- end }}
+            - name: CLICKHOUSE_POSTGRES_PORT
+              value: {{ .Values.frontend.env.clickhousePostgresPort | quote }}
             - name: NEXT_PUBLIC_URL
               value: {{ include "lmnr.nextPublicUrl" (dict "service" .Values.frontend.env "global" .Values.global) }}
             - name: REDIS_URL
