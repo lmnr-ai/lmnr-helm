@@ -368,7 +368,7 @@ secrets:
     CLICKHOUSE_POSTGRES_PASSWORD: "<strong password>"   # e.g. openssl rand -hex 24
 ```
 
-On boot, the frontend creates the role, grants it `SELECT` on only the columns it needs, and points ClickHouse at it. With the bundled Postgres (`postgres.enabled: true`), nothing else is needed. With an external Postgres, also set the host as the **ClickHouse pod** reaches it:
+On boot, the frontend creates the role, grants it `SELECT` on only the columns it needs, and points ClickHouse at it. The host defaults to the bundled Postgres (`laminar-postgres-service`). With an external Postgres, set it to the host the **ClickHouse pod** reaches it at:
 
 ```yaml
 frontend:

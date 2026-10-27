@@ -306,10 +306,9 @@ frontend:
     # schema is pre-provisioned or the DB role lacks CREATE privileges.
     postgresCreateSchema: "true"
     # Postgres host and port as the ClickHouse server reaches them, for SQL access
-    # to Postgres entities (see CLICKHOUSE_POSTGRES_USER in secrets.data). Leave the
-    # host empty to use the bundled Postgres (laminar-postgres-service) when
-    # postgres.enabled; set it to your endpoint when using an external Postgres.
-    clickhousePostgresHost: ""
+    # to Postgres entities (see CLICKHOUSE_POSTGRES_USER in secrets.data).
+    # Change when using an external Postgres.
+    clickhousePostgresHost: "laminar-postgres-service"
     clickhousePostgresPort: "5432"
   # First launch runs all migrations to prepare databases, which can take several minutes.
   # Larger initial delays are set to account for this.
