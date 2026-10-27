@@ -978,6 +978,85 @@ rabbitmq:
     # container, but that disappears on SIGKILL — keep console logging
     # on so `kubectl logs` shows the failure.
     logLevel: "info"
+  # RabbitMQ Streams transport for span ingest (opt-in). See
+  # CONFIGURATION.md "RabbitMQ Streams" before enabling.
+  #
+  # Off (default): span ingest and Quickwit indexing ride quorum queues.
+  # On: those two high-volume paths move to RabbitMQ super streams, which
+  # buffer a burst on broker DISK rather than broker memory. That stops a
+  # large burst from tripping the memory watermark, which blocks every
+  # publisher. Everything else stays on queues, and if the stream endpoint
+  # is unreachable at boot, the app-server falls back to queues.
+  #
+  # One block drives both app-server (producer) and app-server-consumer, so
+  # the two roles always agree on whether a stream exists and has a reader.
+  streams:
+    enabled: false
+    # Stream-protocol port (separate from AMQP 5672).
+    port: 5552
+    # Bootstrap host. Empty = the in-chart RabbitMQ service. Set this when
+    # rabbitmq.enabled is false and you bring your own broker (it must have
+    # the rabbitmq_stream plugin enabled).
+    host: ""
+    # Set to true only when the broker sits behind a load balancer that the
+    # app pods cannot bypass. The in-chart broker advertises per-pod DNS names,
+    # so leave this false for it.
+    loadBalancerMode: false
+    # Also move Quickwit indexing onto a stream. It only takes effect when
+    # Quickwit is enabled.
+    indexerEnabled: true
+
+    # ---- Topology: applied ONLY when the streams are first created ----
+    # The broker ignores these values for streams that already exist, so
+    # changing them later has no effect on retention. Partition count can
+    # never change in place: it would re-route in-flight traces.
+    #
+    # Number of partitions per super stream. Keep it at least as large as the
+    # most app-server-consumer replicas you will ever run (extra pods sit
+    # idle), and size it before first enabling streams.
+    partitions: 16
+    # Replicas per partition. Empty = min(2, rabbitmq.replicaCount), or 2
+    # for an external broker. Scaling RabbitMQ later does not add replicas
+    # to existing streams.
+    replicationFactor: ""
+    # Retention cap PER PARTITION, in bytes. There are two super streams
+    # (spans + indexer), so stream disk use is 2 × partitions × maxLengthBytes,
+    # and with replicas a single node can hold every partition.
+    # Empty = derived from rabbitmq.persistence.size: half the volume is
+    # split across all partitions of both streams (100Gi / 16 partitions →
+    # ~1.56 GiB each), and the other half is left for quorum queues and the
+    # disk_free_limit floor. An explicit value must fit within
+    # persistence.size minus config.diskFreeLimit, or rendering fails.
+    # Required when rabbitmq.enabled or rabbitmq.persistence.enabled is false.
+    maxLengthBytes: ""
+    # Retention by age (12h). Records older than this are dropped even if
+    # never consumed.
+    maxAgeSecs: 43200
+    # Retention drops whole closed segments, so small segments keep expiry
+    # fine-grained relative to maxLengthBytes.
+    maxSegmentSizeBytes: 26214400
+
+    # ---- Stream readers (app-server-consumer only) ----
+    reader:
+      # Batcher tasks per reader. Partitions are pinned to batchers by
+      # partition_index % batchers.
+      spansBatchers: 4
+      spansIndexerBatchers: 4
+      # Per-reader memory budget in bytes: records received but not yet flushed.
+      # When it is spent, the reader stops pulling and the backlog stays on
+      # broker disk. There are two readers (spans + indexer), and decoded
+      # records take roughly 2× their wire size, so streams can use about
+      # 4 × channelMaxBytes of consumer memory.
+      # Empty = derived from appServerConsumer.resources.limits.memory:
+      # limit / 32, clamped to [16Mi, 128Mi], which keeps streams at ~1/8 of the
+      # pod (4Gi limit → 128Mi, 2Gi → 64Mi).
+      channelMaxBytes: ""
+      # The stream client's own delivery buffers sit in front of the budget
+      # above and are capped by RECORD COUNT: one per owned partition plus one
+      # per super stream. Worst case is 2 × (partitions + 1) × this many
+      # records, and each record is a whole span export batch. The client's
+      # built-in default (10000) can OOM the consumer under a backlog.
+      clientChannelCapacity: 16
 
 # Storage configuration
 storage:

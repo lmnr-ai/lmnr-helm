@@ -1,0 +1,31 @@
+# RabbitMQ Streams for span ingest
+#
+# Moves span ingest and Quickwit indexing from quorum queues onto RabbitMQ
+# super streams, so an ingest burst queues up on broker disk instead of broker
+# memory. Read CONFIGURATION.md "RabbitMQ Streams" first: partition count and
+# retention are fixed when the streams are first created.
+#
+# Usage:
+#   helm upgrade -i laminar ./charts/laminar \
+#     -f laminar.yaml \
+#     -f examples/rabbitmq-streams.yaml
+#
+# Enabling streams restarts the RabbitMQ pod once (new plugin + listener).
+
+rabbitmq:
+  persistence:
+    # Retention is derived from this: half the volume is split across
+    # 2 streams × 16 partitions, here ~3.1 GiB per partition (~100 GiB total).
+    size: "200Gi"
+  streams:
+    enabled: true
+    # Must be >= the most app-server-consumer replicas you'll ever run.
+    # Cannot be changed after the first enable.
+    partitions: 16
+
+appServerConsumer:
+  resources:
+    limits:
+      # The stream readers' memory budget is derived from this limit
+      # (limit / 32, clamped to [16Mi, 128Mi] per reader).
+      memory: "4Gi"

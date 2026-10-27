@@ -21,6 +21,7 @@ This guide covers advanced configuration options for the Laminar Helm chart.
 - [Storage Configuration](#storage-configuration)
 - [ClickHouse S3 Storage](#clickhouse-s3-storage)
 - [Quickwit Storage Backend](#quickwit-storage-backend)
+- [RabbitMQ Streams](#rabbitmq-streams)
 - [PII Redaction](#pii-redaction)
 - [Node Placement](#node-placement)
 - [Resource Limits](#resource-limits)
@@ -1283,6 +1284,96 @@ When `global.cloudProvider: gcp`, the chart auto-fills `quickwit.s3.flavor: "gcs
 A complete example also lives in [`examples/quickwit-gcs-storage.yaml`](./examples/quickwit-gcs-storage.yaml).
 
 See [Quickwit's storage configuration reference](https://quickwit.io/docs/configuration/storage-config) for the full list of supported flavors.
+
+## RabbitMQ Streams
+
+By default the two highest-volume ingest paths, span ingest and Quickwit indexing, go through RabbitMQ **quorum queues**. Queues work well at small to moderate scale. Under a large burst, though, a quorum queue backlog builds up in broker *memory*. Once it reaches the memory watermark, RabbitMQ blocks **every** publisher, and ingest stops.
+
+**Streams** are an opt-in alternative transport for those two paths. A stream is an append-only log on disk, so a burst becomes consumer lag on broker disk rather than broker memory pressure. Everything else stays on queues. If the app-server can't reach the stream endpoint at boot, it logs the error and falls back to queues; no data is dropped.
+
+Enable it in your `laminar.yaml`:
+
+```yaml
+rabbitmq:
+  streams:
+    enabled: true
+```
+
+That single block configures both sides:
+
+- **Broker**: enables the `rabbitmq_stream` plugin, opens the stream port (5552) on the RabbitMQ pod and Services, sets `stream.frame_max` to `rabbitmq.config.maxMessageSize`, and advertises each pod by its headless-service DNS name so clients can reach partition leaders. The first `helm upgrade` that enables streams restarts the RabbitMQ pod once.
+- **app-server and app-server-consumer**: the same `RABBITMQ_STREAM_*` settings are rendered into both pods from this one block, so the producer and the consumer always agree on topology and on whether each stream has a reader. Credentials reuse `RABBITMQ_DEFAULT_USER` / `RABBITMQ_DEFAULT_PASS` from your secrets, whichever store they come from.
+
+See [`examples/rabbitmq-streams.yaml`](./examples/rabbitmq-streams.yaml).
+
+### Decide these before the first enable
+
+The broker applies partition count, retention and replication **only when the streams are first created**. After that, changing the values has no effect on the existing streams:
+
+| Value | Default | Notes |
+|---|---|---|
+| `rabbitmq.streams.partitions` | `16` | Fixed for good: traces are hash-routed to partitions, so changing the count would re-route them mid-flight. Set it to at least the largest number of `appServerConsumer` replicas you'll ever run (extra pods sit idle). |
+| `rabbitmq.streams.maxLengthBytes` | derived from disk | Retention cap **per partition**. See [disk sizing](#disk-sizing-retention). To change it afterwards, use `rabbitmqctl set_policy`. |
+| `rabbitmq.streams.maxAgeSecs` | `43200` (12h) | Records older than this are deleted **even if never consumed**. |
+| `rabbitmq.streams.replicationFactor` | `min(2, rabbitmq.replicaCount)` | Replicas per partition. Scaling RabbitMQ later does not add replicas to existing streams. |
+
+### Disk sizing (retention)
+
+There are two super streams (spans and indexer), and retention is per partition, so streams can occupy:
+
+```
+2 × partitions × maxLengthBytes
+```
+
+With replication, a single node can hold every partition. Size the total against **one** node's volume, not the sum across nodes.
+
+When `maxLengthBytes` is empty, the chart derives it from `rabbitmq.persistence.size`. Half the volume is split evenly across all partitions of both streams, and the other half is left for quorum queues and the `diskFreeLimit` floor:
+
+| `persistence.size` | partitions | `maxLengthBytes` (derived) | stream total |
+|---|---|---|---|
+| `100Gi` (default) | 16 | ~1.56 GiB | ~50 GiB |
+| `200Gi` | 16 | ~3.1 GiB | ~100 GiB |
+| `500Gi` | 16 | ~7.8 GiB | ~250 GiB |
+
+Retention also **ignores consumer progress**: if the consumers fall further behind than the retention window, the oldest unread records are deleted. Size the volume for the longest consumer outage you want to survive at peak ingest rate.
+
+If you set `maxLengthBytes` explicitly, rendering fails when the total exceeds `persistence.size − config.diskFreeLimit`. A full disk would block every publisher, on queues as well as streams. With `rabbitmq.persistence.enabled: false` or an external broker (`rabbitmq.enabled: false`), the chart has no volume size to work from, so you must set `maxLengthBytes` yourself.
+
+### Memory sizing (app-server-consumer)
+
+The stream readers live in `app-server-consumer`, and their buffers scale with its memory limit. Two settings bound them:
+
+- **`rabbitmq.streams.reader.channelMaxBytes`**: the byte budget for records each reader has received but not yet written. When the budget is spent, the reader stops pulling, and the backlog stays on broker disk. There are two readers, and a decoded record takes about 2× its wire size, so streams use up to roughly **4 × channelMaxBytes**. When empty, the chart derives it from `appServerConsumer.resources.limits.memory`:
+
+  ```
+  channelMaxBytes = clamp(limits.memory / 32, 16Mi, 128Mi)
+  ```
+
+  This keeps the readers at about 1/8 of the pod's limit.
+
+  | consumer `limits.memory` | derived `channelMaxBytes` |
+  |---|---|
+  | `1Gi` | 32Mi |
+  | `2Gi` | 64Mi |
+  | `4Gi` (default) and up | 128Mi |
+
+  If you raise the consumer's memory limit, the budget follows on the next `helm upgrade`. Unlike the topology values, it is a runtime setting.
+
+- **`rabbitmq.streams.reader.clientChannelCapacity`** (default `16`): the stream client keeps its own delivery buffers in front of that budget, capped by **record count**. There is one per owned partition plus one per stream, so the worst case is `2 × (partitions + 1) × clientChannelCapacity` records, and each record is a whole span export batch. The client's built-in default (10000) can OOM the consumer under a backlog, so the chart always sets it. If you raise `partitions` substantially, lower this or give the consumer more memory.
+
+The queue workers keep running alongside the stream readers (they drain any queue backlog and handle the fallback path), so leave headroom for them as well.
+
+### Disabling streams
+
+Turning `rabbitmq.streams.enabled` back off is safe only once the consumers have caught up. Unread stream records aren't moved back to the queues, and retention eventually deletes them. Before you disable streams, check that consumer lag is near zero, either in the RabbitMQ management UI (**Stream Connections** → consumers) or with:
+
+```bash
+kubectl exec laminar-rabbitmq-0 -- rabbitmq-streams list_stream_consumers stream offset_lag
+```
+
+### External broker
+
+With `rabbitmq.enabled: false`, set `rabbitmq.streams.host` to your broker's stream endpoint and set `maxLengthBytes` explicitly. The broker needs the `rabbitmq_stream` plugin enabled, and each node must advertise a hostname the app pods can resolve. If the broker sits behind a load balancer the pods can't bypass, set `rabbitmq.streams.loadBalancerMode: true`. If the stream credentials differ from `RABBITMQ_DEFAULT_USER` / `RABBITMQ_DEFAULT_PASS`, override `RABBITMQ_STREAM_USERNAME` / `RABBITMQ_STREAM_PASSWORD` through `appServer.extraEnv` and `appServerConsumer.extraEnv`.
 
 ## PII Redaction
 
