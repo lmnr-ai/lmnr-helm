@@ -10,6 +10,7 @@ This guide covers advanced configuration options for the Laminar Helm chart.
 - [Container Images](#container-images)
 - [Secrets Management](#secrets-management)
 - [Postgres Schema](#postgres-schema)
+- [SQL Access to Postgres Entities](#sql-access-to-postgres-entities)
 - [Frontend URL (NEXT_PUBLIC_URL)](#frontend-url-next_public_url)
 - [Extra Environment Variables](#extra-environment-variables)
 - [Extra Volumes and Volume Mounts](#extra-volumes-and-volume-mounts)
@@ -349,6 +350,43 @@ Notes:
 - A `public` value (any case) is treated as the default schema: it is never created and migrations stay in the standard `drizzle` tracker schema, so existing deployments are untouched.
 - `postgresCreateSchema` only has an effect for a non-`public` schema.
 - Changing the schema of an already-populated database does not move existing tables; set it before the first deploy.
+
+## SQL Access to Postgres Entities
+
+Some data that SQL queries and custom dashboards read lives in Postgres, not ClickHouse: evaluation, dataset and signal names, `evaluation_datapoints.group_id`, and dashboards. ClickHouse reads it live from Postgres through a dedicated read-only role. Without that role, those queries fail with:
+
+```
+pg entities are not available on this deployment: ClickHouse cannot read them from Postgres.
+```
+
+To enable it, set credentials for the role:
+
+```yaml
+secrets:
+  data:
+    CLICKHOUSE_POSTGRES_USER: "clickhouse_ro"
+    CLICKHOUSE_POSTGRES_PASSWORD: "<strong password>"   # e.g. openssl rand -hex 24
+```
+
+On boot, the frontend creates the role, grants it `SELECT` on only the columns it needs, and points ClickHouse at it. The host defaults to the bundled Postgres (`laminar-postgres-service`). With an external Postgres, set it to the host the **ClickHouse pod** reaches it at:
+
+```yaml
+frontend:
+  env:
+    clickhousePostgresHost: "mydb.abc123.us-east-1.rds.amazonaws.com"
+    clickhousePostgresPort: "5432"
+```
+
+The database and schema default to the ones the app already uses (`DATABASE_URL` and `global.postgresSchema`).
+
+Notes:
+
+- Use a dedicated role. The frontend refuses `POSTGRES_USER` (the app's own role) or any superuser / `CREATEROLE` / `BYPASSRLS` role, logs a warning, and leaves the feature off.
+- The app's Postgres role needs `CREATEROLE` to create the role. If it doesn't have it (common on managed Postgres with a restricted app user), have a DBA pre-create it with `CREATE ROLE clickhouse_ro LOGIN PASSWORD '...'`; the frontend then grants the permissions on boot.
+- ClickHouse must be able to reach Postgres over the network (security groups, NetworkPolicies).
+- The role gets a `statement_timeout` of 15s and a connection limit of 10, so user SQL cannot overload the primary.
+- Changing a value in `secrets.data` does not restart pods on its own. After `helm upgrade`, run `kubectl rollout restart deployment/laminar-frontend`. When it worked, the frontend logs show `✓ ClickHouse Postgres read-only role granted`.
+- With AWS Secrets Manager or Vault, store the two keys there and list them in `secretKeys` instead.
 
 ## Frontend URL (NEXT_PUBLIC_URL)
 

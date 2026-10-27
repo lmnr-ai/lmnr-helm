@@ -40,6 +40,10 @@ secrets:
     # For bedrock, leave empty — AWS_* credentials are used instead.
     LLM_API_KEY: "AIzaSy..." # your Gemini / OpenAI / OpenAI-compatible key that will be used both in the frontend and app-server-consumer
     AEAD_SECRET_KEY: "your-aead-secret (can be generated with `openssl rand -hex 32`)" # aead secret used to encrypt Laminar project api keys and model API keys for playground
+    # Dedicated read-only Postgres role for SQL queries and dashboards that read
+    # evaluation/dataset/signal names. See "SQL Access to Postgres Entities" in CONFIGURATION.md
+    # CLICKHOUSE_POSTGRES_USER: "clickhouse_ro"
+    # CLICKHOUSE_POSTGRES_PASSWORD: "<strong password>"
     # Check out charts/laminar/values.yaml for full list of secrets
     # To enable integration with official Laminar Slack app, set the license key below
     # LMNR_LICENSE_KEY: "<your-license-key>"
