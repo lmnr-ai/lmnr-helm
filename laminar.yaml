@@ -45,8 +45,10 @@ secrets:
     # CLICKHOUSE_POSTGRES_USER: "clickhouse_ro"
     # CLICKHOUSE_POSTGRES_PASSWORD: "<strong password>"
     # Check out charts/laminar/values.yaml for full list of secrets
-    # To enable integration with official Laminar Slack app, set the license key below
-    # LMNR_LICENSE_KEY: "<your-license-key>"
+    # Enterprise features run for a 30-day trial, then need a license key
+    # (also enables the official Laminar Slack app). You can set it here or in
+    # Settings -> License. See "Enterprise License" in CONFIGURATION.md.
+    # LMNR_LICENSE_KEY: "lmnr_lic_..."
     # Refer to QUICKSTART.md for more details
 
 frontend:

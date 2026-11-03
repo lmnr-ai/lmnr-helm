@@ -15,7 +15,9 @@ This guide covers advanced configuration options for the Laminar Helm chart.
 - [Extra Environment Variables](#extra-environment-variables)
 - [Extra Volumes and Volume Mounts](#extra-volumes-and-volume-mounts)
 - [OAuth setup](#oauth-setup)
+- [Enterprise License](#enterprise-license)
 - [Slack Integration](#slack-integration)
+- [Usage Telemetry](#usage-telemetry)
 - [LLM Provider](#llm-provider)
 - [Ingress and DNS](#ingress-and-dns)
 - [Storage Configuration](#storage-configuration)
@@ -618,6 +620,41 @@ helm upgrade -i laminar . -f laminar.yaml
 
 **Note:** Ensure callback/redirect URLs match your `nextauthUrl` exactly. Omit provider credentials to disable that provider
 
+## Enterprise License
+
+The chart deploys Laminar's Enterprise Edition images, licensed under the
+[Laminar Enterprise License (Elastic License 2.0)](https://laminar.sh/policies/ee-license).
+Enterprise features (Signals, signal event clusters, alerts, and Laminar Agent)
+run for a **30-day trial**, counted from the first time
+the frontend runs its database migrations on an install that has this release
+(an upgrade starts the trial too). When the trial ends they pause until a
+license key is added; tracing, search, dashboards, evaluations, and every other
+open-source feature keep working, and no data is deleted. Pending Signal
+backfills resume once a key is added. The [Slack integration](#slack-integration)
+needs a license key from the start, trial or not.
+
+Add the key in one of two places:
+
+- **In the UI:** **Settings → License** in any workspace. Only workspace owners
+  can add or replace the key, and it applies to the whole instance.
+- **In `laminar.yaml`:** takes precedence over a key saved in the UI, and hides
+  the UI form.
+
+```yaml
+secrets:
+  data:
+    LMNR_LICENSE_KEY: "lmnr_lic_..."
+```
+
+`LMNR_LICENSE_KEY` can also come from AWS Secrets Manager, Vault, or
+`extraEnv` like any other secret (see [Secrets Management](#secrets-management));
+both the frontend and the app-server read it.
+
+Keys are verified offline, so no connection to Laminar is needed for the license
+check. A key carries its expiry date; Settings → License and a banner on every
+project page show the trial countdown and upcoming expiry. To get a key, renew,
+or extend a trial, contact **founders@lmnr.ai**.
+
 ## Slack Integration
 
 Laminar can post notifications and signal alerts to Slack. Self-hosters connect
@@ -637,10 +674,10 @@ secrets:
 ```
 
 `SLACK_BROKER_URL` is Laminar Cloud's frontend origin (`https://laminar.sh`) and
-defaults to that value, so you normally only set `LMNR_LICENSE_KEY`. The license
-key is the same key used to gate other paid features — to obtain one, contact
-**founders@lmnr.ai**. When the license key is set, the "Connect Slack" button in
-workspace settings uses the brokered flow.
+defaults to that value, so you normally only set the license key. It is the same
+key described in [Enterprise License](#enterprise-license), and a key saved in
+Settings → License works too. When a valid, unexpired key is present, the
+"Connect Slack" button in workspace settings uses the brokered flow.
 
 ### Token encryption key
 
@@ -652,6 +689,30 @@ normally set this: when left empty, the chart defaults it to your
 encrypted under a separate key. If `AEAD_SECRET_KEY` (or `SLACK_ENCRYPTION_KEY`)
 comes from AWS Secrets Manager or Vault, the auto-default is skipped — provide
 `SLACK_ENCRYPTION_KEY` through the same external store.
+
+## Usage Telemetry
+
+The frontend sends Laminar a usage heartbeat every 6 hours, once
+per deployment however many replicas run. It contains:
+
+- a random deployment ID, generated on first boot;
+- the Laminar version and `ENVIRONMENT`;
+- row counts per table and which optional features are enabled;
+- the license status (trial, active, or expired) with the trial start and
+  install dates;
+- up to 20 domains of the instance's user email addresses (for example
+  `example.com`, never full addresses).
+
+It never contains trace content or other customer data, and no IP address is
+stored. To opt out, set `LAMINAR_TELEMETRY_DISABLED` on the frontend through
+`extraEnv`:
+
+```yaml
+frontend:
+  extraEnv:
+    - name: LAMINAR_TELEMETRY_DISABLED
+      value: "true"
+```
 
 ## LLM Provider
 

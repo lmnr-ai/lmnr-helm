@@ -31,7 +31,11 @@ The whole Quickwit stack (workloads + `QUICKWIT_*_URL` env vars on the three app
 
 ## Slack integration (self-hosters)
 
-Self-hosters use the brokered OAuth flow via `secrets.data`: `SLACK_BROKER_URL` (= `https://laminar.sh`, Laminar Cloud's origin) + `LMNR_LICENSE_KEY`. This uses Laminar Cloud's official Slack app, so self-hosters don't recreate the Slack app or set `SLACK_CLIENT_ID`/`SECRET`/`SIGNING_SECRET`/`REDIRECT_URL` (those were removed from the chart — bring-your-own is no longer supported). `LMNR_LICENSE_KEY` is the general enterprise license key (reused by other paid features), authenticated broker-side via SHA3-256 hash lookup against the Cloud `slack_broker_instances` table. Documented under "Slack Integration" in CONFIGURATION.md.
+Self-hosters use the brokered OAuth flow via `secrets.data`: `SLACK_BROKER_URL` (= `https://laminar.sh`, Laminar Cloud's origin) + `LMNR_LICENSE_KEY`. This uses Laminar Cloud's official Slack app, so self-hosters don't recreate the Slack app or set `SLACK_CLIENT_ID`/`SECRET`/`SIGNING_SECRET`/`REDIRECT_URL` (those were removed from the chart — bring-your-own is no longer supported). `LMNR_LICENSE_KEY` is the general enterprise license key (a signed `lmnr_lic_...` key, verified offline by the images and by the broker). Documented under "Enterprise License" in CONFIGURATION.md.
+
+## Enterprise license and telemetry
+
+The `-ee` images run EE features (Signals, clusters, alerts, Laminar Agent) for a 30-day trial, then need `LMNR_LICENSE_KEY`. The key can also be saved in the app (Settings -> License), and the env value wins. It goes through `secrets.data` like any secret, so empty values are skipped by `secrets.yaml` (an empty env var would otherwise be read as an invalid key). The images are ELv2 (https://laminar.sh/policies/ee-license), and there is deliberately no `acceptLicense` value. The usage heartbeat opt-out (`LAMINAR_TELEMETRY_DISABLED`, frontend only) deliberately has NO typed value in `values.yaml`, so it isn't advertised as a toggle; CONFIGURATION.md documents it via `frontend.extraEnv`. Keep the heartbeat contents there in sync with lmnr's privacy notice.
 
 ## Object storage (Quickwit + ClickHouse)
 
