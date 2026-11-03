@@ -183,14 +183,17 @@ secrets:
     CLICKHOUSE_POSTGRES_PASSWORD: ""
     DATA_EXPORTER_URL: ""
     DATA_EXPORTER_SECRET_KEY: ""
-    # Frontend secrets - Slack (brokered OAuth for self-hosters).
-    # The instance uses Laminar Cloud's official Slack app via the broker, so
-    # no Slack app of your own is required. SLACK_BROKER_URL is Laminar Cloud's
-    # broker endpoint (https://laminar.sh); LMNR_LICENSE_KEY is your enterprise
-    # license key, which the broker uses to authenticate this instance. Set both
-    # to enable Slack; leave empty to disable.
-    SLACK_BROKER_URL: "https://laminar.sh"
+    # Enterprise license key (lmnr_lic_...). The images run enterprise features
+    # (Signals, clusters, alerts, Laminar Agent) for a 30-day trial, then need
+    # a key; the Slack integration needs one from the start. Leave empty to add the key in the UI instead
+    # (Settings -> License); a key set here takes precedence. The images are
+    # licensed under the Laminar Enterprise License (ELv2):
+    # https://laminar.sh/policies/ee-license. Keys: founders@lmnr.ai.
     LMNR_LICENSE_KEY: ""
+    # Slack (brokered OAuth for self-hosters). The instance uses Laminar
+    # Cloud's official Slack app via the broker, so no Slack app of your own is
+    # required. The broker authenticates this instance with its license key.
+    SLACK_BROKER_URL: "https://laminar.sh"
     # Quickwit secrets
     QUICKWIT_DATABASE_URL: "postgres://lmnr:lmnr123@laminar-postgres-service:5432/postgres"
 
@@ -301,6 +304,10 @@ frontend:
     signalsEnabled: "true"
     # Enables the chat-with-trace feature in the frontend. Requires llmProvider (+ creds).
     agentChatEnabled: "true"
+    # Opts out of the usage heartbeat the frontend sends to Laminar every 6
+    # hours (version, row counts, license status, user email domains; never
+    # trace content). See "Usage Telemetry" in CONFIGURATION.md.
+    telemetryDisabled: "false"
     # Whether the frontend should CREATE SCHEMA for global.postgresSchema on first
     # boot. Only takes effect for a non-"public" schema. Set to "false" if the
     # schema is pre-provisioned or the DB role lacks CREATE privileges.

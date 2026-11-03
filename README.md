@@ -159,19 +159,36 @@ For production deployments, additionally configure:
 
 See [CONFIGURATION.md](./CONFIGURATION.md) for complete configuration reference.
 
-### Slack Notifications (optional)
+### Images and licensing
 
-To enable Slack notifications and alerts, set an enterprise license key in
-`secrets.data`. This connects your self-hosted instance to the official Laminar
-Slack app:
+This chart deploys Laminar's Enterprise Edition images
+(`app-server-ee`, `frontend-ee`, `frontend-ee-basepath`, `pii-redactor-ee` on
+`ghcr.io/lmnr-ai`), which are licensed under the
+[Laminar Enterprise License (Elastic License 2.0)](https://laminar.sh/policies/ee-license).
+Everything that is also in the open-source [lmnr](https://github.com/lmnr-ai/lmnr)
+repository stays free to use.
+
+Enterprise features (Signals, signal event clusters, alerts, and Laminar Agent)
+run for a **30-day trial** from the first install, then need a license key. The
+Slack integration needs a key from the start. Tracing and all other open-source features keep working
+without one. Add the key in the UI (**Settings → License**, workspace owners),
+or set it in `secrets.data`, which takes precedence:
 
 ```yaml
 secrets:
   data:
-    LMNR_LICENSE_KEY: "your-enterprise-license-key"
+    LMNR_LICENSE_KEY: "lmnr_lic_..."
 ```
 
-To get a license key, contact **founders@lmnr.ai**.
+The same key enables the official Laminar Slack app. To get a license key or a
+longer trial, contact **founders@lmnr.ai**. See
+[Enterprise License](./CONFIGURATION.md#enterprise-license) for details.
+
+### Usage telemetry
+
+The frontend sends Laminar a small usage heartbeat every 6 hours: no trace
+content and no IP address. To opt out, set `frontend.env.telemetryDisabled: "true"`.
+See [Usage Telemetry](./CONFIGURATION.md#usage-telemetry) for what it contains.
 
 ## Common Operations
 
