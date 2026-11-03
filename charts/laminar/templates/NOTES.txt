@@ -12,10 +12,3 @@ To get one, contact founders@lmnr.ai.
 
 The Enterprise Edition images are licensed under the Laminar Enterprise
 License (Elastic License 2.0): https://laminar.sh/policies/ee-license
-
-{{- if ne (toString .Values.frontend.env.telemetryDisabled) "true" }}
-
-The frontend sends Laminar a usage heartbeat every 6 hours (no trace content).
-Opt out with frontend.env.telemetryDisabled: "true".
-See "Usage Telemetry" in https://github.com/lmnr-ai/lmnr-helm/blob/main/CONFIGURATION.md
-{{- end }}
