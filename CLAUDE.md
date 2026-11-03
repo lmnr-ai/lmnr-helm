@@ -35,7 +35,7 @@ Self-hosters use the brokered OAuth flow via `secrets.data`: `SLACK_BROKER_URL` 
 
 ## Enterprise license and telemetry
 
-The `-ee` images run EE features (Signals, clusters, alerts, Laminar Agent) for a 30-day trial, then need `LMNR_LICENSE_KEY`. The key can also be saved in the app (Settings -> License), and the env value wins. It goes through `secrets.data` like any secret, so empty values are skipped by `secrets.yaml` (an empty env var would otherwise be read as an invalid key). The images are ELv2 (https://laminar.sh/policies/ee-license), and there is deliberately no `acceptLicense` value. `frontend.env.telemetryDisabled` renders `LAMINAR_TELEMETRY_DISABLED` (frontend only) to opt out of the usage heartbeat; keep the heartbeat contents in CONFIGURATION.md in sync with lmnr's privacy notice. Documented under "Slack Integration" in CONFIGURATION.md.
+The `-ee` images run EE features (Signals, clusters, alerts, Laminar Agent) for a 30-day trial, then need `LMNR_LICENSE_KEY`. The key can also be saved in the app (Settings -> License), and the env value wins. It goes through `secrets.data` like any secret, so empty values are skipped by `secrets.yaml` (an empty env var would otherwise be read as an invalid key). The images are ELv2 (https://laminar.sh/policies/ee-license), and there is deliberately no `acceptLicense` value. The usage heartbeat opt-out (`LAMINAR_TELEMETRY_DISABLED`, frontend only) deliberately has NO typed value in `values.yaml`, so it isn't advertised as a toggle; CONFIGURATION.md documents it via `frontend.extraEnv`. Keep the heartbeat contents there in sync with lmnr's privacy notice.
 
 ## Object storage (Quickwit + ClickHouse)
 

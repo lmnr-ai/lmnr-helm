@@ -704,12 +704,14 @@ per deployment however many replicas run. It contains:
   `example.com`, never full addresses).
 
 It never contains trace content or other customer data, and no IP address is
-stored. Opt out with:
+stored. To opt out, set `LAMINAR_TELEMETRY_DISABLED` on the frontend through
+`extraEnv`:
 
 ```yaml
 frontend:
-  env:
-    telemetryDisabled: "true"
+  extraEnv:
+    - name: LAMINAR_TELEMETRY_DISABLED
+      value: "true"
 ```
 
 ## LLM Provider

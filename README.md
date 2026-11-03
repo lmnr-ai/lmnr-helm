@@ -186,9 +186,9 @@ longer trial, contact **founders@lmnr.ai**. See
 
 ### Usage telemetry
 
-The frontend sends Laminar a small usage heartbeat every 6 hours: no trace
-content and no IP address. To opt out, set `frontend.env.telemetryDisabled: "true"`.
-See [Usage Telemetry](./CONFIGURATION.md#usage-telemetry) for what it contains.
+The frontend sends Laminar a small usage heartbeat every 6 hours, with no trace
+content and no IP address. See [Usage Telemetry](./CONFIGURATION.md#usage-telemetry)
+for what it contains.
 
 ## Common Operations
 
