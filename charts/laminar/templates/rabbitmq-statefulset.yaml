@@ -36,8 +36,9 @@ spec:
         # leaves the running broker on the old snapshot: the init
         # container copies the configmap into an emptyDir at pod start,
         # and nothing about the StatefulSet's pod template changes, so
-        # K8s never restarts the pod.
-        checksum/config: {{ include (print $.Template.BasePath "/rabbitmq-configmap.yaml") . | sha256sum }}
+        # K8s never restarts the pod. Only `.data` is hashed, so metadata
+        # like the `helm.sh/chart` version label doesn't trigger a restart.
+        checksum/config: {{ (include (print $.Template.BasePath "/rabbitmq-configmap.yaml") . | fromYaml).data | toYaml | sha256sum }}
     spec:
       serviceAccountName: {{ include "lmnr.secrets.serviceAccountName" . }}
       initContainers:
