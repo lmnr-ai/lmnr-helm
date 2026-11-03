@@ -43,6 +43,16 @@ Run Quickwit's full-text search index against Google Cloud Storage instead of AW
 helm upgrade -i laminar .. -f ../laminar.yaml -f quickwit-gcs-storage.yaml
 ```
 
+### RabbitMQ Streams (`rabbitmq-streams.yaml`)
+
+Move span ingest and Quickwit indexing from RabbitMQ quorum queues to RabbitMQ super streams.
+
+**Use case:** High or bursty trace volume. A burst is buffered on broker disk, so it can't trip the broker's memory watermark and block every publisher. See [CONFIGURATION.md — RabbitMQ Streams](../CONFIGURATION.md#rabbitmq-streams) before enabling.
+
+```bash
+helm upgrade -i laminar .. -f ../laminar.yaml -f rabbitmq-streams.yaml
+```
+
 ### Mixed Storage Classes (`mixed-storage-classes.yaml`)
 
 Use different storage classes for different services based on performance needs.
