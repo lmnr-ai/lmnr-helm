@@ -164,6 +164,9 @@ secrets:
     AUTH_OKTA_CLIENT_ID: ""
     AUTH_OKTA_CLIENT_SECRET: ""
     AUTH_OKTA_ISSUER: ""
+    # Bearer token Okta sends to <frontend URL>/api/auth/scim/v2. Setting it makes
+    # Okta SCIM manage users and workspace membership. See CONFIGURATION.md.
+    AUTH_OKTA_SCIM_TOKEN: ""
     ## keycloak
     AUTH_KEYCLOAK_ID: ""
     AUTH_KEYCLOAK_SECRET: ""
