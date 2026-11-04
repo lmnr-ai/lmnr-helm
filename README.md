@@ -150,7 +150,7 @@ storage:
 
 For production deployments, additionally configure:
 
-1. **OAuth Configuration** for logging in to the UI platform. Google and Github are supported.
+1. **OAuth Configuration** for logging in to the UI platform. GitHub, Google, Azure AD, Okta and Keycloak are supported, and Okta SCIM can manage users and workspace membership. See [OAuth setup](./CONFIGURATION.md#oauth-setup).
 2. **Secure passwords** for PostgreSQL, ClickHouse, and RabbitMQ (in secrets.data)
 3. **External secret management** (AWS Secrets Manager, HashiCorp Vault, or `extraEnv` with `secretKeyRef` for pre-existing K8s Secrets)
 4. **HTTPS / TLS** — via cert-manager (automatic Let's Encrypt), AWS ACM, or a pre-existing certificate imported as a Kubernetes secret
