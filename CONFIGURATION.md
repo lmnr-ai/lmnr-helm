@@ -483,7 +483,7 @@ frontend:
 
 ## OAuth setup
 
-Laminar supports OAuth authentication with GitHub, Google, and Azure AD. Configure by adding provider credentials to your `laminar.yaml`.
+Laminar supports OAuth authentication with GitHub, Google, Azure AD, Okta and Keycloak, plus Okta SCIM provisioning for group-managed workspaces. Configure by adding provider credentials to your `laminar.yaml`.
 
 ### GitHub OAuth
 
@@ -527,15 +527,77 @@ secrets:
 
 ### Okta OIDC Auth
 
-Get your Okta **Client ID** and **Client Secret** as well as **OIDC issuer**. In `laminar.yaml`
+In the Okta Admin Console, create an app integration (**OIDC - OpenID Connect**, **Web Application**) with:
+
+- **Sign-in redirect URI**: `https://app.yourdomain.com/api/auth/callback/okta` (include the sub-path if you [serve Laminar under one](#serving-under-a-sub-path-reverse-proxy))
+- **Grant type**: Authorization Code
+
+Copy the **Client ID**, **Client Secret** and the **issuer** to your `laminar.yaml`. The issuer is your Okta org URL (`https://your-org.okta.com`) or a custom authorization server (`https://your-org.okta.com/oauth2/default`). Use the full `https://` URL.
 
 ```yaml
 secrets:
   data:
     AUTH_OKTA_CLIENT_ID: "your-okta-client-id"
     AUTH_OKTA_CLIENT_SECRET: "your-okta-client-secret"
-    AUTH_OKTA_ISSUER: "https://your-okta-domain.com/oauth2/default"
+    AUTH_OKTA_ISSUER: "https://your-org.okta.com/oauth2/default"
 ```
+
+Without SCIM (below), any user Okta authenticates can sign in. An existing Laminar user with the same email is linked to their Okta login. New users go through the normal onboarding and are added to workspaces by invitation.
+
+### Okta SCIM provisioning (group-managed workspaces)
+
+With SCIM, Okta controls who can sign in and which workspaces they belong to. Setting `AUTH_OKTA_SCIM_TOKEN` turns it on for the whole deployment:
+
+- Only users that Okta has provisioned through SCIM, and that are still active, can sign in with Okta. Unassigning or deactivating a user in Okta removes their workspace memberships and sessions.
+- Okta groups decide workspace membership and role (see the naming below). A workspace that a group names but that doesn't exist yet is created with a `default` project when its first member is provisioned.
+- Membership is read-only in Laminar: invitations, role changes, removing members, ownership transfer, and creating, renaming or deleting workspaces are disabled. Groups never grant `owner`, so SCIM-managed workspaces have no owner.
+- A signed-in user whose groups grant no workspace sees a "no workspace access" page instead of onboarding.
+
+SCIM is configured on top of the OIDC setup above and needs a frontend image that includes Okta SCIM support ([lmnr-ai/lmnr#2656](https://github.com/lmnr-ai/lmnr/pull/2656)).
+
+**1. Generate a bearer token** and add it to `laminar.yaml`. Okta sends it on every SCIM request; it must not contain whitespace.
+
+```bash
+openssl rand -hex 32
+```
+
+```yaml
+secrets:
+  data:
+    AUTH_OKTA_SCIM_TOKEN: "your-generated-token"
+```
+
+**2. Add SCIM provisioning in Okta.** Either enable SCIM on your OIDC app integration, or add a separate app from the Okta catalog (e.g. **SCIM 2.0 Test App (OAuth Bearer Token)**) next to the OIDC app. Under **Provisioning → Integration**:
+
+| Setting | Value |
+| --- | --- |
+| SCIM connector base URL | `https://app.yourdomain.com/api/auth/scim/v2` (include the sub-path, if any) |
+| Unique identifier field for users | `userName` |
+| Supported provisioning actions | Push New Users, Push Profile Updates, Push Groups |
+| Authentication mode | HTTP Header (Bearer), with the token from step 1 |
+
+The SCIM base URL must be reachable from Okta over HTTPS. Keep the default `externalId` mapping (the Okta user ID). Laminar uses it to match SCIM users to their OIDC sign-ins.
+
+Then, under **Provisioning → To App**, enable **Create Users**, **Update User Attributes** and **Deactivate Users**.
+
+**3. Name your groups** with this pattern:
+
+```
+laminar:<env>:<workspace_name>:<role>
+```
+
+- `<env>` is any non-empty label for the deployment, e.g. `prod` or `staging`. Laminar does not check it, so push only this deployment's groups (e.g. a Push Groups rule matching `laminar:prod:`), otherwise staging groups would grant access to production.
+- `<workspace_name>` is matched case-insensitively against workspace names. It must not contain `:`.
+- `<role>` is `member` or `admin`. If a user is in several groups for the same workspace, the highest role wins.
+- Groups that don't match the pattern, including `:owner` groups, are ignored.
+
+Example: `laminar:prod:acme:admin` makes members admins of the `acme` workspace.
+
+**4. Assign, then push.** In the SCIM app, assign the users or groups under **Assignments** first so Okta creates the users in Laminar, then push the `laminar:*` groups under **Push Groups**. Okta rejects a pushed group whose members it hasn't provisioned yet ("One or more Group members are invalid").
+
+Users who are not assigned to the SCIM app get "Your Okta account doesn't have access to Laminar" on sign-in.
+
+> **Note:** Renaming a workspace in Okta is not supported: a group with a new name creates a new workspace on the next push. Workspaces created by SCIM are not deleted when their groups are removed.
 
 ### Keycloak OIDC Auth
 
@@ -600,6 +662,7 @@ secrets:
     AUTH_OKTA_CLIENT_ID: "your-okta-client-id"
     AUTH_OKTA_CLIENT_SECRET: "your-okta-client-secret"
     AUTH_OKTA_ISSUER: "https://your-okta-domain.com/oauth2/default"
+    # AUTH_OKTA_SCIM_TOKEN: "your-scim-token" # optional, see Okta SCIM provisioning
     AUTH_KEYCLOAK_ID: "your-keycloak-id"
     AUTH_KEYCLOAK_SECRET: "your-keycloak-secret"
     AUTH_KEYCLOAK_ISSUER: "https://your-keycloak-domain.com/realms/My_Realm"
