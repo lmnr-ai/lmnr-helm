@@ -14,6 +14,12 @@ global:
   # lmnr-cli authentication. Per-service overrides: frontend.env.nextPublicUrl,
   # appServer.env.nextPublicUrl, appServerConsumer.env.nextPublicUrl.
   nextPublicUrl: "https://localhost:3000"
+  # Public URL of the app-server's MCP endpoint, e.g. "https://api.yourdomain.com/v1/mcp".
+  # Dispatched to app-server and frontend as MCP_RESOURCE_URL. Setting it turns on
+  # "Sign in with OAuth" for MCP clients (Claude Code, Cursor, ...): the frontend issues
+  # access tokens for this URL and the app-server accepts them. Empty keeps MCP on
+  # project API keys only. Must be exactly the URL users add to their MCP client.
+  mcpResourceUrl: ""
   # Namespace for all resources (default: default)
   # When installing the chart, you can specify a custom namespace with --namespace flag
   # If you want a dedicated namespace, use: helm install laminar . --namespace laminar --create-namespace

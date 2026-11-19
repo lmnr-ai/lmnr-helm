@@ -94,6 +94,10 @@ spec:
               value: {{ .Values.frontend.env.clickhousePostgresPort | quote }}
             - name: NEXT_PUBLIC_URL
               value: {{ include "lmnr.nextPublicUrl" (dict "service" .Values.frontend.env "global" .Values.global) }}
+            {{- with .Values.global.mcpResourceUrl }}
+            - name: MCP_RESOURCE_URL
+              value: {{ . | quote }}
+            {{- end }}
             - name: REDIS_URL
               value: {{ .Values.frontend.env.redisUrl }}
             {{- if include "lmnr.quickwit.enabled" . }}
