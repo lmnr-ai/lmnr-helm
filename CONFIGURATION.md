@@ -418,7 +418,7 @@ global:
 
 - It is dispatched as `MCP_RESOURCE_URL` to the `app-server` and the `frontend`. The frontend issues access tokens for this URL, and the app-server only accepts tokens issued for it, so both must get the same value. Set it only here.
 - Use the exact public URL users add to their MCP client: the app-server's ingress host plus `/v1/mcp`, with no trailing slash.
-- The app-server's nginx forwards `/.well-known/oauth-protected-resource`, the discovery document MCP clients fetch to find the sign-in page. Your own proxies in front of the app-server must forward it too.
+- The app-server's nginx forwards `/.well-known/oauth-protected-resource` and `/.well-known/oauth-protected-resource/v1/mcp`, the discovery document MCP clients fetch to find the sign-in page. Your own proxies in front of the app-server must forward it too.
 - Leave it empty to keep MCP on project API keys only. The OAuth discovery routes then return 404.
 
 ## Extra Environment Variables

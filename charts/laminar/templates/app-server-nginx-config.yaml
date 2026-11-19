@@ -40,7 +40,13 @@ data:
 
         # MCP OAuth discovery (RFC 9728). The app-server's 401 on /v1/mcp points MCP
         # clients here; it returns 404 unless global.mcpResourceUrl is set.
-        location ^~ /.well-known/oauth-protected-resource {
+        location = /.well-known/oauth-protected-resource {
+          proxy_pass http://{{ .Values.appServer.nginx.proxyUpstreamHost }}:{{ .Values.appServer.env.port }};
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+        }
+
+        location = /.well-known/oauth-protected-resource/v1/mcp {
           proxy_pass http://{{ .Values.appServer.nginx.proxyUpstreamHost }}:{{ .Values.appServer.env.port }};
           proxy_set_header Host $host;
           proxy_set_header X-Real-IP $remote_addr;
