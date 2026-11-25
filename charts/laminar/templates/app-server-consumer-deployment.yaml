@@ -149,6 +149,9 @@ spec:
             - name: PII_REDACTOR_URL
               value: http://{{ include "laminar.resourceName" "pii-redactor-service" }}:{{ .Values.piiRedactor.service.port }}
             {{- end }}
+            {{- with include "lmnr.rabbitmq.streams.env" (dict "root" . "consumer" true) }}
+            {{- . | nindent 12 }}
+            {{- end }}
             {{- with .Values.appServerConsumer.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
