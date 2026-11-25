@@ -12,6 +12,7 @@ This guide covers advanced configuration options for the Laminar Helm chart.
 - [Postgres Schema](#postgres-schema)
 - [SQL Access to Postgres Entities](#sql-access-to-postgres-entities)
 - [Frontend URL (NEXT_PUBLIC_URL)](#frontend-url-next_public_url)
+- [MCP OAuth sign-in (MCP_RESOURCE_URL)](#mcp-oauth-sign-in-mcp_resource_url)
 - [Extra Environment Variables](#extra-environment-variables)
 - [Extra Volumes and Volume Mounts](#extra-volumes-and-volume-mounts)
 - [OAuth setup](#oauth-setup)
@@ -405,6 +406,20 @@ global:
 All three pods must agree on this value — set it only via `global.nextPublicUrl`. If you need to override it for one pod in an unusual setup, use the per-pod override (e.g. `frontend.env.nextPublicUrl`, `appServer.env.nextPublicUrl`), but this is rarely needed.
 
 > When serving under a sub-path, the URL must include the prefix: `"https://app.yourdomain.com/lmnr"`. See [Serving under a sub-path](#serving-under-a-sub-path-reverse-proxy).
+
+## MCP OAuth sign-in (MCP_RESOURCE_URL)
+
+Laminar's MCP server lives on the app-server at `/v1/mcp`. By default MCP clients connect with a project API key. Set `global.mcpResourceUrl` to also let users **sign in with OAuth** from clients such as Claude Code or Cursor, with no API key to copy:
+
+```yaml
+global:
+  mcpResourceUrl: "https://api.yourdomain.com/v1/mcp"
+```
+
+- It is dispatched as `MCP_RESOURCE_URL` to the `app-server` and the `frontend`. The frontend issues access tokens for this URL, and the app-server only accepts tokens issued for it, so both must get the same value. Set it only here.
+- Use the exact public URL users add to their MCP client: the app-server's ingress host plus `/v1/mcp`, with no trailing slash.
+- The app-server's nginx forwards `/.well-known/oauth-protected-resource` and `/.well-known/oauth-protected-resource/v1/mcp`, the discovery document MCP clients fetch to find the sign-in page. Your own proxies in front of the app-server must forward it too.
+- Leave it empty to keep MCP on project API keys only. The OAuth discovery routes then return 404.
 
 ## Extra Environment Variables
 
